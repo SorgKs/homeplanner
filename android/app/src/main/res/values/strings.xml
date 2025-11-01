@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">HomePlanner</string>
+    <string name="events">События</string>
+    <string name="tasks">Задачи</string>
+    <string name="add_event">Добавить событие</string>
+    <string name="add_task">Добавить задачу</string>
+    <string name="title">Название</string>
+    <string name="description">Описание</string>
+    <string name="event_date">Дата события</string>
+    <string name="reminder_time">Напоминание</string>
+    <string name="recurrence_type">Повторение</string>
+    <string name="recurrence_interval">Интервал</string>
+    <string name="next_due_date">Следующая дата</string>
+    <string name="save">Сохранить</string>
+    <string name="cancel">Отмена</string>
+    <string name="delete">Удалить</string>
+    <string name="complete">Выполнено</string>
+    <string name="edit">Редактировать</string>
+    <string name="api_base_url">http://10.0.2.2:8000/api/v1</string>
+</resources>
+

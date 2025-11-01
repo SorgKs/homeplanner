@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест редактирования задачи</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 3px;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+    </style>
+</head>
+<body>
+    <h1>Тест: Редактирование задачи с изменением типа на "разовое"</h1>
+    
+    <div class="test-section">
+        <h2>Имитация формы редактирования задачи</h2>
+        <p><strong>Исходное состояние:</strong> Задача с типом "interval"</p>
+        
+        <label>Тип задачи (task-is-recurring):</label>
+        <select id="task-is-recurring">
+            <option value="false">Разовое событие</option>
+            <option value="recurring">Повторяющаяся задача (по расписанию)</option>
+            <option value="interval" selected>Задача с интервалом (от подтверждения)</option>
+        </select>
+        
+        <br><br>
+        <button onclick="testScenario1()">Сценарий 1: Задача → Разовое (не должно работать)</button>
+        <button onclick="testScenario2()">Сценарий 2: Задача → Recurring</button>
+        <button onclick="testScenario3()">Сценарий 3: Задача → Interval (без изменений)</button>
+        
+        <div id="result1" class="result" style="display: none;"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Логика обработки</h2>
+        <div id="logic-output"></div>
+    </div>
+
+    <script>
+        // Имитация текущей логики из app.js
+        function simulateHandleTaskSubmit(taskType, taskSchedulingType) {
+            const log = [];
+            log.push(`<strong>Входные данные:</strong>`);
+            log.push(`- taskType (type из базы): ${taskType}`);
+            log.push(`- taskSchedulingType (из формы): ${taskSchedulingType}`);
+            log.push('');
+            
+            // Логика из начала handleTaskSubmit
+            log.push(`<strong>Проверка 1 (в начале функции):</strong>`);
+            if (taskType === 'task' && taskSchedulingType === 'false') {
+                log.push(`⚠️ Обнаружено: задача (task) с типом 'false'`);
+                taskSchedulingType = 'recurring';
+                log.push(`✅ Исправлено: taskSchedulingType = 'recurring'`);
+            } else {
+                log.push(`✓ Проверка пройдена`);
+            }
+            log.push('');
+            
+            // Логика при сохранении задачи
+            if (taskType === 'task') {
+                log.push(`<strong>Проверка 2 (при сохранении задачи):</strong>`);
+                if (taskSchedulingType !== 'recurring' && taskSchedulingType !== 'interval') {
+                    log.push(`⚠️ Обнаружено невалидное значение: '${taskSchedulingType}'`);
+                    taskSchedulingType = 'recurring';
+                    log.push(`✅ Исправлено: taskSchedulingType = 'recurring'`);
+                } else {
+                    log.push(`✓ Значение валидно: '${taskSchedulingType}'`);
+                }
+                log.push('');
+                
+                log.push(`<strong>Результат:</strong>`);
+                log.push(`- task_type для отправки: ${taskSchedulingType}`);
+                
+                const taskData = {
+                    task_type: taskSchedulingType,
+                    // ... другие поля
+                };
+                
+                log.push(`- Данные для отправки: ${JSON.stringify(taskData, null, 2)}`);
+                
+                return {
+                    success: true,
+                    task_type: taskSchedulingType,
+                    message: 'Задача будет сохранена с типом: ' + taskSchedulingType
+                };
+            } else if (taskType === 'event') {
+                log.push(`<strong>Результат:</strong> Событие будет обновлено`);
+                return {
+                    success: true,
+                    message: 'Событие будет обновлено'
+                };
+            }
+            
+            return { success: false, message: 'Неизвестный тип' };
+        }
+        
+        function testScenario1() {
+            document.getElementById('task-is-recurring').value = 'false';
+            const result = simulateHandleTaskSubmit('task', 'false');
+            displayResult('result1', result, simulateHandleTaskSubmit('task', 'false'));
+        }
+        
+        function testScenario2() {
+            document.getElementById('task-is-recurring').value = 'recurring';
+            const result = simulateHandleTaskSubmit('task', 'recurring');
+            displayResult('result1', result, simulateHandleTaskSubmit('task', 'recurring'));
+        }
+        
+        function testScenario3() {
+            document.getElementById('task-is-recurring').value = 'interval';
+            const result = simulateHandleTaskSubmit('task', 'interval');
+            displayResult('result1', result, simulateHandleTaskSubmit('task', 'interval'));
+        }
+        
+        function displayResult(id, result, fullLog) {
+            const div = document.getElementById(id);
+            const logicDiv = document.getElementById('logic-output');
+            
+            div.style.display = 'block';
+            div.className = 'result ' + (result.success ? 'success' : 'error');
+            div.innerHTML = `<strong>Результат:</strong> ${result.message}`;
+            
+            logicDiv.innerHTML = fullLog.join('<br>');
+        }
+        
+        // Автоматический тест при загрузке
+        window.onload = function() {
+            console.log('=== Тест: Редактирование задачи интервал → разовое ===');
+            const result = simulateHandleTaskSubmit('task', 'false');
+            console.log('Результат:', result);
+            
+            // Отображаем результат
+            testScenario1();
+        };
+    </script>
+</body>
+</html>
+

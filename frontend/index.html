@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HomePlanner - Планировщик задач</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-layout">
+        <header>
+            <h1>🏠 HomePlanner</h1>
+        </header>
+
+        <div class="content-wrapper">
+            <aside class="sidebar">
+                <nav class="sidebar-nav">
+                    <div class="sidebar-section">
+                        <h3 class="sidebar-title">Вид</h3>
+                        <div class="view-toggle">
+                            <button class="btn btn-secondary sidebar-btn" id="view-today-btn">📅 Сегодня</button>
+                            <button class="btn btn-secondary sidebar-btn" id="view-all-btn">📋 Все задачи</button>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-primary sidebar-btn" id="add-task-btn">
+                        <span>+</span> Добавить задачу
+                    </button>
+                    <button class="btn btn-secondary sidebar-btn" id="add-group-btn">
+                        <span>📁</span> Создать группу
+                    </button>
+                    
+                    <div class="sidebar-section">
+                        <h3 class="sidebar-title">Поиск и фильтры</h3>
+                        <div class="search-box">
+                            <input type="text" id="tasks-search" placeholder="Поиск задач...">
+                        </div>
+                        <button class="filter-btn sidebar-btn" id="tasks-filter-btn">Фильтры</button>
+                    </div>
+                </nav>
+            </aside>
+
+            <main class="main-content">
+                <div id="tasks-list" class="items-list"></div>
+            </main>
+        </div>
+
+        <!-- Task Modal -->
+        <div id="task-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2 id="task-modal-title">Добавить задачу</h2>
+                <form id="task-form">
+                    <input type="hidden" id="task-id">
+                    <input type="hidden" id="task-type">
+                    <div class="form-group">
+                        <label for="task-title">Название:</label>
+                        <input type="text" id="task-title" required placeholder="Введите название задачи">
+                    </div>
+                    <div class="form-group">
+                        <label for="task-description">Описание:</label>
+                        <textarea id="task-description" placeholder="Описание (необязательно)"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="task-is-recurring">Тип задачи:</label>
+                        <select id="task-is-recurring" required>
+                            <option value="one_time">Разовое</option>
+                            <option value="recurring">Повторяющаяся задача (по расписанию)</option>
+                            <option value="interval">Задача с интервалом (от подтверждения)</option>
+                        </select>
+                    </div>
+                    <div id="recurring-fields" style="display: none;">
+                        <div class="form-group">
+                            <label for="task-recurrence">Повторение:</label>
+                            <select id="task-recurrence">
+                                <option value="daily">Ежедневно</option>
+                                <option value="weekly">Еженедельно</option>
+                                <option value="monthly">Ежемесячно</option>
+                                <option value="yearly">Ежегодно</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="task-interval">Интервал:</label>
+                            <input type="number" id="task-interval" min="1" value="1" placeholder="Каждые N периодов">
+                        </div>
+                    </div>
+                    <div id="interval-fields" style="display: none;">
+                        <div class="form-group">
+                            <label for="task-interval-days">Интервал в днях:</label>
+                            <input type="number" id="task-interval-days" min="1" value="7" placeholder="Через сколько дней после подтверждения">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="task-due-date" id="date-label">Начало:</label>
+                        <input type="datetime-local" id="task-due-date" required>
+                        <div class="quick-date-buttons" style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickDate('today')">Сегодня</button>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickDate('tomorrow')">Завтра</button>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="setQuickDate('monday')">Понедельник</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="task-group-id">Группа:</label>
+                        <select id="task-group-id">
+                            <option value="">Без группы</option>
+                        </select>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                        <button type="button" class="btn btn-secondary" id="task-cancel">Отмена</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Group Modal -->
+        <div id="group-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2 id="group-modal-title">Создать группу</h2>
+                <form id="group-form">
+                    <input type="hidden" id="group-id">
+                    <div class="form-group">
+                        <label for="group-name">Название группы:</label>
+                        <input type="text" id="group-name" required placeholder="Например: Полить цветы">
+                    </div>
+                    <div class="form-group">
+                        <label for="group-description">Описание:</label>
+                        <textarea id="group-description" placeholder="Описание группы (необязательно)"></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                        <button type="button" class="btn btn-secondary" id="group-cancel">Отмена</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="api.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
+
