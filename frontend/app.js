@@ -121,27 +121,76 @@ async function loadData() {
         allTasks = tasks.map(t => {
             // Определяем статус выполнения: задача выполнена если:
             // 1. Она неактивна (is_active = false) - для разовых задач
-            // 2. Или она была выполнена сегодня и дата сегодняшняя - для повторяющихся и интервальных
-            let isCompleted = !t.is_active;
+            // 2. Или она была выполнена сегодня или ранее - для повторяющихся и интервальных (включая просроченные)
+            let isCompleted = false;
             
-            // Для повторяющихся и интервальных задач проверяем last_completed_at
-            if (!isCompleted && t.last_completed_at && (t.task_type === 'recurring' || t.task_type === 'interval')) {
-                const completedDate = new Date(t.last_completed_at);
-                const taskDate = new Date(t.next_due_date);
-                
-                // Проверяем, выполнена ли задача сегодня
-                const completedToday = completedDate.getFullYear() === today.getFullYear() &&
-                                       completedDate.getMonth() === today.getMonth() &&
-                                       completedDate.getDate() === today.getDate();
-                
-                // Проверяем, назначена ли задача на сегодня
-                const taskDueToday = taskDate.getFullYear() === today.getFullYear() &&
-                                     taskDate.getMonth() === today.getMonth() &&
-                                     taskDate.getDate() === today.getDate();
-                
-                // Если задача была выполнена сегодня и её дата сегодняшняя - она выполнена
-                if (completedToday && taskDueToday) {
-                    isCompleted = true;
+            // Для разовых задач: выполнена если неактивна
+            if (t.task_type === 'one_time') {
+                isCompleted = !t.is_active;
+            } else {
+                // Для повторяющихся и интервальных задач: проверяем last_completed_at
+                if (t.last_completed_at) {
+                    // Парсим дату из строки (может быть в UTC)
+                    const completedDate = new Date(t.last_completed_at);
+                    
+                    // Создаем объекты дат только с датой (без времени) для корректного сравнения
+                    // Преобразуем в локальное время, чтобы сравнение было корректным
+                    const completedDateLocal = new Date(
+                        completedDate.getFullYear(),
+                        completedDate.getMonth(),
+                        completedDate.getDate()
+                    );
+                    const todayLocal = new Date(
+                        now.getFullYear(),
+                        now.getMonth(),
+                        now.getDate()
+                    );
+                    
+                    // Проверяем, выполнена ли задача сегодня (сравниваем только даты без времени)
+                    // Используем getTime() для корректного сравнения дат
+                    const completedToday = completedDateLocal.getTime() === todayLocal.getTime();
+                    
+                    // Также проверяем дату задачи - если она просрочена или на сегодня
+                    const taskDate = new Date(t.next_due_date);
+                    const taskDateLocal = new Date(
+                        taskDate.getFullYear(),
+                        taskDate.getMonth(),
+                        taskDate.getDate()
+                    );
+                    const taskDueTodayOrOverdue = taskDateLocal <= todayLocal;
+                    
+                    // Логика определения выполнения:
+                    // 1. Если задача была выполнена сегодня И её дата сегодня или просрочена - она выполнена
+                    // 2. Если задача просрочена (дата в прошлом) И была выполнена - она выполнена
+                    //    (для просроченных задач не важно, когда именно была выполнена, важно что была)
+                    if (completedToday && taskDueTodayOrOverdue) {
+                        // Выполнена сегодня и дата сегодня или просрочена
+                        isCompleted = true;
+                    } else if (taskDateLocal < todayLocal) {
+                        // Просроченная задача: если была выполнена - она выполнена (независимо от даты выполнения)
+                        isCompleted = true;
+                    }
+                    
+                    // Отладка: логируем для просроченных задач
+                    if (t.task_type === 'recurring' || t.task_type === 'interval') {
+                        if (taskDateLocal < todayLocal && !isCompleted) {
+                            console.log('Просроченная задача не помечена как выполненная:', {
+                                id: t.id,
+                                title: t.title,
+                                task_type: t.task_type,
+                                last_completed_at: t.last_completed_at,
+                                completedDate: completedDate,
+                                completedDateLocal: completedDateLocal,
+                                today: todayLocal,
+                                completedToday: completedToday,
+                                taskDate: taskDate,
+                                taskDateLocal: taskDateLocal,
+                                taskDueTodayOrOverdue: taskDueTodayOrOverdue,
+                                isCompleted: isCompleted,
+                                next_due_date: t.next_due_date
+                            });
+                        }
+                    }
                 }
             }
             
@@ -216,19 +265,42 @@ function filterAndRenderTasks() {
     filteredTasks = allTasks.filter(task => {
         // Применяем фильтр по виду
         if (currentView === 'today') {
-            // Для вида "Сегодня" показываем только задачи на сегодня
-            const taskDate = new Date(task.due_date);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const tomorrow = new Date(today);
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            
-            if (taskDate < today || taskDate >= tomorrow) {
-                return false;
+            // Для вида "Сегодня" используем функцию проверки видимости
+            if (typeof shouldBeVisibleInTodayView !== 'undefined') {
+                // Функция доступна (подключен utils/todayViewFilter.js)
+                if (!shouldBeVisibleInTodayView(task, new Date())) {
+                    return false;
+                }
+            } else {
+                // Fallback: встроенная логика (если функция не подключена)
+                const taskDate = new Date(task.due_date);
+                const now = new Date();
+                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                const tomorrow = new Date(today);
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                
+                const taskDateLocal = new Date(
+                    taskDate.getFullYear(),
+                    taskDate.getMonth(),
+                    taskDate.getDate()
+                );
+                const isDueTodayOrOverdue = taskDateLocal < tomorrow;
+                
+                let completedToday = false;
+                if (task.is_completed && task.last_completed_at) {
+                    const completedDate = new Date(task.last_completed_at);
+                    const completedDateLocal = new Date(
+                        completedDate.getFullYear(),
+                        completedDate.getMonth(),
+                        completedDate.getDate()
+                    );
+                    completedToday = completedDateLocal.getTime() === today.getTime();
+                }
+                
+                if (!isDueTodayOrOverdue && !completedToday) {
+                    return false;
+                }
             }
-            
-            // Показываем все задачи на сегодня, включая выполненные
-            // Не фильтруем по is_active - показываем и выполненные задачи
         }
         
         const matchesSearch = !searchQuery || 
@@ -256,7 +328,7 @@ function renderTasks() {
     
     if (filteredTasks.length === 0) {
         const emptyMsg = currentView === 'today'
-            ? 'Нет задач на сегодня'
+            ? 'Нет задач на сегодня и просроченных задач'
             : (searchQuery || filterState ? 'Задачи не найдены' : 'Нет задач');
         container.innerHTML = `
             <div class="empty-state">
@@ -323,7 +395,8 @@ function renderTodayView() {
  * Render single task item for today view.
  */
 function renderTodayTaskItem(task, group) {
-    const isCompleted = task.is_completed || !task.is_active;
+    // Используем is_completed из данных задачи (уже правильно вычислен в loadData)
+    const isCompleted = task.is_completed;
     const fullTitle = group ? `${group.name}: ${task.title}` : task.title;
     
     return `
@@ -434,7 +507,8 @@ function renderAllTasksCard(task, now) {
     // Статус активности
     const activeStatus = task.is_active ? '✅ Активна' : '❌ Неактивна';
     
-    const isCompleted = task.is_completed || !task.is_active;
+    // Используем is_completed из данных задачи (уже правильно вычислен в loadData)
+    const isCompleted = task.is_completed;
     
     return `
         <div class="item-card ${isCompleted ? 'completed' : ''} ${isUrgent ? 'urgent' : ''}">
@@ -525,8 +599,13 @@ function openTaskModal(taskId = null) {
     const modal = document.getElementById('task-modal');
     const form = document.getElementById('task-form');
     const title = document.getElementById('task-modal-title');
+    const dateInput = document.getElementById('task-due-date');
 
     updateGroupSelect();
+    
+    // Убираем ограничение min для даты (чтобы можно было ставить даты в прошлом)
+    // Это нужно делать каждый раз при открытии модального окна
+    dateInput.removeAttribute('min');
 
     if (taskId) {
         const task = allTasks.find(t => t.id === taskId);
@@ -537,7 +616,7 @@ function openTaskModal(taskId = null) {
             document.getElementById('task-title').value = task.title;
             document.getElementById('task-description').value = task.description || '';
             document.getElementById('task-group-id').value = task.group_id || '';
-            document.getElementById('task-due-date').value = formatDatetimeLocal(task.due_date);
+            dateInput.value = formatDatetimeLocal(task.due_date);
             
             // Определяем тип задачи
             const taskSchedulingType = task.task_type || 'one_time';
@@ -807,6 +886,7 @@ async function toggleTaskComplete(id, completed) {
         
         if (completed) {
             // Отмечаем задачу как выполненную
+            console.log('Подтверждаем задачу:', { id, task_type: task.task_type, next_due_date: task.due_date, is_active: task.is_active });
             await tasksAPI.complete(id);
             showToast('Задача отмечена как выполненная', 'success');
         } else {
@@ -840,7 +920,21 @@ async function toggleTaskComplete(id, completed) {
             await tasksAPI.update(id, updateData);
             showToast('Статус подтверждения сброшен', 'success');
         }
+        
+        // Отладка: проверяем задачу после обновления
         await loadData();
+        const updatedTask = allTasks.find(t => t.id === id);
+        if (updatedTask) {
+            console.log('Задача после подтверждения:', {
+                id: updatedTask.id,
+                title: updatedTask.title,
+                task_type: updatedTask.task_type,
+                is_completed: updatedTask.is_completed,
+                last_completed_at: updatedTask.last_completed_at,
+                is_active: updatedTask.is_active,
+                next_due_date: updatedTask.due_date
+            });
+        }
     } catch (error) {
         console.error('Error toggling task complete:', error);
         showToast('Ошибка обновления задачи: ' + error.message, 'error');

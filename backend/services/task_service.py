@@ -121,8 +121,8 @@ class TaskService:
     def complete_task(db: Session, task_id: int) -> Task | None:
         """Mark a task as completed and update next due date.
         
-        If task is due today, the date is not updated immediately.
-        Date will be updated only after midnight (next day).
+        If task is due today or overdue, the date is not updated immediately.
+        Date will be updated only after midnight (next day) via get_all_tasks.
         """
         from backend.models.task import TaskType
 
@@ -133,40 +133,42 @@ class TaskService:
         task.last_completed_at = datetime.utcnow()
         now = datetime.utcnow()
         
-        # Check if task is due today (within current day)
+        # Check if task is due today or overdue (within current day or before)
         task_date = task.next_due_date.replace(hour=0, minute=0, second=0, microsecond=0)
         today = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        is_due_today = task_date == today
+        is_due_today_or_overdue = task_date <= today
 
         # Calculate next due date based on task type
         if task.task_type == TaskType.ONE_TIME:
             # For one-time tasks: just mark as inactive (completed)
-            # Don't change the date - keep it for today so it stays visible
+            # Don't change the date - keep it so it stays visible
             task.is_active = False
         elif task.task_type == TaskType.INTERVAL:
-            # For interval tasks: calculate next date but don't update if due today
-            # Date will be updated only after midnight (next day)
-            if not is_due_today:
-                # Task is not due today, update the date immediately
+            # For interval tasks: don't update date immediately if task is due today or overdue
+            # Date will be updated only after midnight (next day) via get_all_tasks
+            # This ensures that completed tasks remain visible until next day
+            if not is_due_today_or_overdue:
+                # Task is due in the future (not today or overdue), update the date immediately
                 if task.interval_days:
                     next_date = now + timedelta(days=task.interval_days)
                 else:
                     next_date = now + timedelta(days=1)
                 task.next_due_date = next_date
-            # If due today, keep the date as is - it will be updated after midnight
+            # If due today or overdue, keep the date as is - it will be updated after midnight
             # The frontend will handle updating tasks at the start of a new day
         else:
-            # For recurring tasks: calculate next date but don't update if due today
-            # Date will be updated only after midnight (next day)
-            if not is_due_today:
-                # Task is not due today, update the date immediately
+            # For recurring tasks: don't update date immediately if task is due today or overdue
+            # Date will be updated only after midnight (next day) via get_all_tasks
+            # This ensures that completed tasks remain visible until next day
+            if not is_due_today_or_overdue:
+                # Task is due in the future (not today or overdue), update the date immediately
                 next_date = TaskService._calculate_next_due_date(
                     task.next_due_date,
                     task.recurrence_type,
                     task.recurrence_interval,
                 )
                 task.next_due_date = next_date
-            # If due today, keep the date as is - it will be updated after midnight
+            # If due today or overdue, keep the date as is - it will be updated after midnight
             # The frontend will handle updating tasks at the start of a new day
 
         db.commit()

@@ -158,12 +158,14 @@ def test_delete_task(client):
 
 def test_complete_task(client):
     """Test completing a task."""
-    # Create a test task
+    # Create a test task due today
+    today = datetime.utcnow().replace(hour=9, minute=0, second=0, microsecond=0)
     task_data = {
         "title": "Test Task",
+        "task_type": "recurring",
         "recurrence_type": RecurrenceType.DAILY.value,
         "recurrence_interval": 1,
-        "next_due_date": datetime.utcnow().isoformat(),
+        "next_due_date": today.isoformat(),
     }
     create_response = client.post("/api/v1/tasks/", json=task_data)
     task_id = create_response.json()["id"]
@@ -174,6 +176,7 @@ def test_complete_task(client):
     assert response.status_code == 200
     data = response.json()
     assert data["last_completed_at"] is not None
-    # Next due date should be updated
-    assert data["next_due_date"] != original_due_date
+    # Next due date should NOT be updated immediately if due today
+    # Date will be updated only after midnight (next day)
+    assert data["next_due_date"] == original_due_date
 
