@@ -950,3 +950,36 @@ nav {
     }
 }
 
+/* History view styles */
+.history-entry {
+    display: grid;
+    grid-template-columns: 160px 1fr 130px 2fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 4px;
+    border-left: 3px solid;
+}
+
+.history-entry-date {
+    color: #000;
+    font-size: 0.9em;
+    white-space: nowrap;
+}
+
+.history-entry-task {
+    color: #333;
+    font-weight: 500;
+}
+
+.history-entry-action {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.history-entry-comment {
+    color: #000;
+    font-size: 0.9em;
+    word-break: break-word;
+}
+

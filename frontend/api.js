@@ -20,10 +20,28 @@ function formatDatetimeLocal(isoString) {
 
 /**
  * Convert datetime-local input value to ISO string.
+ * 
+ * datetime-local values are in local time, and we store them as-is (no UTC conversion).
+ * The datetime-local format is "YYYY-MM-DDTHH:mm", which we convert to ISO format
+ * while preserving local time.
  */
 function parseDatetimeLocal(datetimeLocal) {
     if (!datetimeLocal) return null;
-    return new Date(datetimeLocal).toISOString();
+    
+    // datetime-local format is "YYYY-MM-DDTHH:mm" (local time, no timezone)
+    // Parse the string and create ISO string in local time
+    const [datePart, timePart] = datetimeLocal.split('T');
+    const [year, month, day] = datePart.split('-').map(Number);
+    const [hours, minutes] = timePart.split(':').map(Number);
+    
+    // Format as ISO string (YYYY-MM-DDTHH:mm:00) without timezone
+    // This preserves local time without UTC conversion
+    const monthStr = String(month).padStart(2, '0');
+    const dayStr = String(day).padStart(2, '0');
+    const hoursStr = String(hours).padStart(2, '0');
+    const minutesStr = String(minutes).padStart(2, '0');
+    
+    return `${year}-${monthStr}-${dayStr}T${hoursStr}:${minutesStr}:00`;
 }
 
 /**
@@ -149,6 +167,28 @@ const tasksAPI = {
             method: 'POST',
         });
         if (!response.ok) throw new Error('Failed to complete task');
+        return response.json();
+    },
+
+    async getHistory(id) {
+        const response = await fetch(`${API_BASE_URL}/tasks/${id}/history`);
+        if (!response.ok) throw new Error('Failed to fetch task history');
+        return response.json();
+    },
+
+    async markShown(id) {
+        const response = await fetch(`${API_BASE_URL}/tasks/${id}/mark-shown`, {
+            method: 'POST',
+        });
+        if (!response.ok) throw new Error('Failed to mark task as shown');
+        return response.json();
+    },
+
+    async deleteHistoryEntry(historyId) {
+        const response = await fetch(`${API_BASE_URL}/history/${historyId}`, {
+            method: 'DELETE',
+        });
+        if (!response.ok) throw new Error('Failed to delete history entry');
         return response.json();
     },
 };

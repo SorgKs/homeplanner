@@ -98,3 +98,18 @@ def complete_task(
         )
     return TaskResponse.model_validate(completed_task)
 
+
+@router.post("/{task_id}/mark-shown", response_model=TaskResponse)
+def mark_task_shown(
+    task_id: int,
+    db: Session = Depends(get_db),
+) -> TaskResponse:
+    """Mark task as shown for current iteration."""
+    shown_task = TaskService.mark_task_shown(db, task_id)
+    if not shown_task:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Task with id {task_id} not found",
+        )
+    return TaskResponse.model_validate(shown_task)
+

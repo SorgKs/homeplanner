@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from backend.models.task import RecurrenceType, TaskType
 
@@ -42,6 +42,7 @@ class TaskUpdate(BaseModel):
     reminder_time: datetime | None = None
     is_active: bool | None = None
     last_completed_at: datetime | None = None
+    last_shown_at: datetime | None = None
     group_id: int | None = None
 
     @field_validator("title")
@@ -68,6 +69,16 @@ class TaskUpdate(BaseModel):
             raise ValueError("Interval days must be >= 1")
         return v
 
+    @model_validator(mode="after")
+    def validate_recurring_reminder_time(self) -> "TaskBase":
+        """Validate reminder_time is required for all recurring tasks."""
+        # For all recurring tasks, reminder_time is required
+        if (self.task_type == TaskType.RECURRING and 
+            self.reminder_time is None):
+            raise ValueError("reminder_time is required for recurring tasks (время обязательно для задач типа расписание)")
+        
+        return self
+
 
 class TaskResponse(TaskBase):
     """Schema for task response."""
@@ -78,6 +89,7 @@ class TaskResponse(TaskBase):
     group_id: int | None
     interval_days: int | None
     last_completed_at: datetime | None
+    last_shown_at: datetime | None
     created_at: datetime
     updated_at: datetime
 

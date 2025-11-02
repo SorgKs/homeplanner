@@ -43,7 +43,7 @@ class TestTaskService:
 
     def test_create_task(self, db_session: "Session") -> None:
         """Test creating a task."""
-        today = datetime.utcnow().replace(hour=9, minute=0, second=0, microsecond=0)
+        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
         task_data = TaskCreate(
             title="Test Task",
             description="Test Description",
@@ -62,7 +62,7 @@ class TestTaskService:
 
     def test_get_task(self, db_session: "Session") -> None:
         """Test getting a task by ID."""
-        today = datetime.utcnow().replace(hour=9, minute=0, second=0, microsecond=0)
+        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
         task_data = TaskCreate(
             title="Test Task",
             task_type=TaskType.ONE_TIME,
@@ -83,7 +83,7 @@ class TestTaskService:
 
     def test_get_all_tasks(self, db_session: "Session") -> None:
         """Test getting all tasks."""
-        today = datetime.utcnow().replace(hour=9, minute=0, second=0, microsecond=0)
+        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
         
         task1_data = TaskCreate(
             title="Task 1",
@@ -107,7 +107,7 @@ class TestTaskService:
 
     def test_get_all_tasks_active_only(self, db_session: "Session") -> None:
         """Test getting only active tasks."""
-        today = datetime.utcnow().replace(hour=9, minute=0, second=0, microsecond=0)
+        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
         
         task1_data = TaskCreate(
             title="Active Task",
@@ -134,7 +134,7 @@ class TestTaskService:
 
     def test_update_task(self, db_session: "Session") -> None:
         """Test updating a task."""
-        today = datetime.utcnow().replace(hour=9, minute=0, second=0, microsecond=0)
+        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
         task_data = TaskCreate(
             title="Original Title",
             task_type=TaskType.ONE_TIME,
@@ -158,7 +158,7 @@ class TestTaskService:
 
     def test_delete_task(self, db_session: "Session") -> None:
         """Test deleting a task."""
-        today = datetime.utcnow().replace(hour=9, minute=0, second=0, microsecond=0)
+        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
         task_data = TaskCreate(
             title="Test Task",
             task_type=TaskType.ONE_TIME,
@@ -180,7 +180,7 @@ class TestTaskService:
 
     def test_complete_task_one_time(self, db_session: "Session") -> None:
         """Test completing a one-time task."""
-        today = datetime.utcnow().replace(hour=9, minute=0, second=0, microsecond=0)
+        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
         task_data = TaskCreate(
             title="One-time Task",
             task_type=TaskType.ONE_TIME,
@@ -198,7 +198,7 @@ class TestTaskService:
 
     def test_complete_task_recurring(self, db_session: "Session") -> None:
         """Test completing a recurring task due today."""
-        today = datetime.utcnow().replace(hour=9, minute=0, second=0, microsecond=0)
+        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
         task_data = TaskCreate(
             title="Daily Task",
             task_type=TaskType.RECURRING,
@@ -217,7 +217,7 @@ class TestTaskService:
 
     def test_complete_task_recurring_future(self, db_session: "Session") -> None:
         """Test completing a recurring task due in the future."""
-        tomorrow = datetime.utcnow() + timedelta(days=1)
+        tomorrow = datetime.now() + timedelta(days=1)
         tomorrow = tomorrow.replace(hour=9, minute=0, second=0, microsecond=0)
         
         task_data = TaskCreate(
@@ -238,7 +238,7 @@ class TestTaskService:
 
     def test_complete_task_interval(self, db_session: "Session") -> None:
         """Test completing an interval task due today."""
-        today = datetime.utcnow().replace(hour=9, minute=0, second=0, microsecond=0)
+        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
         task_data = TaskCreate(
             title="Interval Task",
             task_type=TaskType.INTERVAL,
@@ -307,7 +307,7 @@ class TestTaskService:
 
     def test_get_upcoming_tasks(self, db_session: "Session") -> None:
         """Test getting upcoming tasks."""
-        today = datetime.utcnow().replace(hour=9, minute=0, second=0, microsecond=0)
+        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
         
         task1_data = TaskCreate(
             title="Task Today",

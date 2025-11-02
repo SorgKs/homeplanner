@@ -13,6 +13,7 @@ from backend.database import Base
 from backend.models.event import Event  # noqa: F401
 from backend.models.group import Group  # noqa: F401
 from backend.models.task import Task  # noqa: F401
+from backend.models.task_history import TaskHistory  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

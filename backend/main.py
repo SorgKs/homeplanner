@@ -7,7 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.config import get_settings
 from backend.database import engine, init_db
-from backend.routers import events, groups, tasks
+from backend.models import Event, Group, Task, TaskHistory  # noqa: F401
+from backend.routers import events, groups, task_history, tasks
 
 
 @asynccontextmanager
@@ -44,6 +45,7 @@ def create_app() -> FastAPI:
     app.include_router(events.router, prefix="/api/v1/events", tags=["events"])
     app.include_router(tasks.router, prefix="/api/v1/tasks", tags=["tasks"])
     app.include_router(groups.router, prefix="/api/v1/groups", tags=["groups"])
+    app.include_router(task_history.router, prefix="/api/v1", tags=["task_history"])
 
     return app
 

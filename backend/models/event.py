@@ -25,8 +25,8 @@ class Event(Base):
     reminder_time = Column(DateTime, nullable=True, index=True)
     is_completed = Column(Boolean, default=False, nullable=False)
     group_id = Column(Integer, ForeignKey("groups.id"), nullable=True, index=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=datetime.now, nullable=False)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
 
     # Relationships
     group = relationship("Group", back_populates="events")

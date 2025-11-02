@@ -60,8 +60,8 @@ def test_create_event(client):
     event_data = {
         "title": "Test Event",
         "description": "Test Description",
-        "event_date": (datetime.utcnow() + timedelta(days=1)).isoformat(),
-        "reminder_time": (datetime.utcnow() + timedelta(hours=12)).isoformat(),
+        "event_date": (datetime.now() + timedelta(days=1)).isoformat(),
+        "reminder_time": (datetime.now() + timedelta(hours=12)).isoformat(),
     }
     response = client.post("/api/v1/events/", json=event_data)
     assert response.status_code == 201
@@ -76,7 +76,7 @@ def test_get_events(client):
     # Create a test event
     event_data = {
         "title": "Test Event",
-        "event_date": (datetime.utcnow() + timedelta(days=1)).isoformat(),
+        "event_date": (datetime.now() + timedelta(days=1)).isoformat(),
     }
     client.post("/api/v1/events/", json=event_data)
 
@@ -93,7 +93,7 @@ def test_get_event_by_id(client):
     # Create a test event
     event_data = {
         "title": "Test Event",
-        "event_date": (datetime.utcnow() + timedelta(days=1)).isoformat(),
+        "event_date": (datetime.now() + timedelta(days=1)).isoformat(),
     }
     create_response = client.post("/api/v1/events/", json=event_data)
     event_id = create_response.json()["id"]
@@ -111,7 +111,7 @@ def test_update_event(client):
     # Create a test event
     event_data = {
         "title": "Test Event",
-        "event_date": (datetime.utcnow() + timedelta(days=1)).isoformat(),
+        "event_date": (datetime.now() + timedelta(days=1)).isoformat(),
     }
     create_response = client.post("/api/v1/events/", json=event_data)
     event_id = create_response.json()["id"]
@@ -129,7 +129,7 @@ def test_delete_event(client):
     # Create a test event
     event_data = {
         "title": "Test Event",
-        "event_date": (datetime.utcnow() + timedelta(days=1)).isoformat(),
+        "event_date": (datetime.now() + timedelta(days=1)).isoformat(),
     }
     create_response = client.post("/api/v1/events/", json=event_data)
     event_id = create_response.json()["id"]
@@ -148,7 +148,7 @@ def test_complete_event(client):
     # Create a test event
     event_data = {
         "title": "Test Event",
-        "event_date": (datetime.utcnow() + timedelta(days=1)).isoformat(),
+        "event_date": (datetime.now() + timedelta(days=1)).isoformat(),
     }
     create_response = client.post("/api/v1/events/", json=event_data)
     event_id = create_response.json()["id"]

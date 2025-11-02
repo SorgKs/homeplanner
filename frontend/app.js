@@ -7,7 +7,8 @@ let groups = []; // Список групп
 let filteredTasks = [];
 let searchQuery = '';
 let filterState = null;
-let currentView = 'today'; // 'today' или 'all'
+let currentView = 'today'; // 'today', 'all' или 'history'
+let adminMode = false; // Режим администратора
 
 /**
  * Initialize application.
@@ -37,6 +38,19 @@ function setupEventListeners() {
     // View toggle buttons
     document.getElementById('view-today-btn').addEventListener('click', () => switchView('today'));
     document.getElementById('view-all-btn').addEventListener('click', () => switchView('all'));
+    document.getElementById('view-history-btn').addEventListener('click', () => switchView('history'));
+    
+    // Admin mode toggle
+    document.getElementById('toggle-admin-btn').addEventListener('click', toggleAdminMode);
+    
+    // History filters
+    document.getElementById('history-group-filter').addEventListener('change', () => {
+        updateHistoryFilters(); // Update task list based on group
+        renderHistoryView();
+    });
+    document.getElementById('history-task-filter').addEventListener('change', renderHistoryView);
+    document.getElementById('history-date-from').addEventListener('change', renderHistoryView);
+    document.getElementById('history-date-to').addEventListener('change', renderHistoryView);
 
     // Form submissions
     document.getElementById('task-form').addEventListener('submit', handleTaskSubmit);
@@ -89,6 +103,7 @@ function setupEventListeners() {
             const modal = e.target.closest('.modal');
             if (modal.id === 'task-modal') closeTaskModal();
             else if (modal.id === 'group-modal') closeGroupModal();
+            else if (modal.id === 'history-modal') closeHistoryModal();
         });
     });
 
@@ -130,7 +145,7 @@ async function loadData() {
             } else {
                 // Для повторяющихся и интервальных задач: проверяем last_completed_at
                 if (t.last_completed_at) {
-                    // Парсим дату из строки (может быть в UTC)
+                    // Парсим дату из строки (локальное время)
                     const completedDate = new Date(t.last_completed_at);
                     
                     // Создаем объекты дат только с датой (без времени) для корректного сравнения
@@ -246,16 +261,56 @@ function switchView(view) {
     currentView = view;
     const todayBtn = document.getElementById('view-today-btn');
     const allBtn = document.getElementById('view-all-btn');
+    const historyBtn = document.getElementById('view-history-btn');
+    const historyFilters = document.getElementById('history-filters-section');
+    const tasksFilters = document.getElementById('tasks-filters-section');
+    
+    // Update button states
+    todayBtn.classList.remove('active');
+    allBtn.classList.remove('active');
+    historyBtn.classList.remove('active');
     
     if (view === 'today') {
         todayBtn.classList.add('active');
-        allBtn.classList.remove('active');
-    } else {
-        todayBtn.classList.remove('active');
+        historyFilters.style.display = 'none';
+        tasksFilters.style.display = 'block';
+    } else if (view === 'all') {
         allBtn.classList.add('active');
+        historyFilters.style.display = 'none';
+        tasksFilters.style.display = 'block';
+    } else if (view === 'history') {
+        historyBtn.classList.add('active');
+        historyFilters.style.display = 'block';
+        tasksFilters.style.display = 'none';
+        renderHistoryView();
+        return;
     }
     
     filterAndRenderTasks();
+}
+
+/**
+ * Toggle admin mode.
+ */
+function toggleAdminMode() {
+    adminMode = !adminMode;
+    const adminBtn = document.getElementById('toggle-admin-btn');
+    const adminText = document.getElementById('admin-mode-text');
+    
+    if (adminMode) {
+        adminBtn.classList.add('active');
+        adminText.textContent = 'Выйти из админ';
+    } else {
+        adminBtn.classList.remove('active');
+        adminText.textContent = 'Админ режим';
+    }
+    
+    // Re-render current view to show/hide admin features
+    if (currentView === 'history') {
+        renderHistoryView();
+    } else {
+        filterAndRenderTasks();
+    }
 }
 
 /**
@@ -343,6 +398,8 @@ function renderTasks() {
     // Выбираем способ отображения в зависимости от вида
     if (currentView === 'today') {
         renderTodayView();
+    } else if (currentView === 'history') {
+        renderHistoryView();
     } else {
         renderAllTasksView();
     }
@@ -371,6 +428,14 @@ function renderTodayView() {
         }
     });
 
+    // Mark tasks as shown for current iteration
+    filteredTasks.forEach(task => {
+        // Mark asynchronously without waiting
+        tasksAPI.markShown(task.id).catch(err => {
+            console.error('Error marking task as shown:', err);
+        });
+    });
+    
     let html = '<div class="today-tasks-list">';
     
     // Отображаем задачи по группам
@@ -616,6 +681,8 @@ function openTaskModal(taskId = null) {
             document.getElementById('task-title').value = task.title;
             document.getElementById('task-description').value = task.description || '';
             document.getElementById('task-group-id').value = task.group_id || '';
+            // Store original value in data attribute for comparison
+            dateInput.dataset.originalValue = task.due_date;
             dateInput.value = formatDatetimeLocal(task.due_date);
             
             // Определяем тип задачи
@@ -657,6 +724,8 @@ function openTaskModal(taskId = null) {
         document.getElementById('recurring-fields').style.display = 'none';
         document.getElementById('interval-fields').style.display = 'none';
         document.getElementById('date-label').textContent = 'Начало:';
+        // Clear original value for new tasks
+        dateInput.removeAttribute('data-original-value');
         setQuickDate('today');
     }
 
@@ -742,23 +811,49 @@ async function handleTaskSubmit(e) {
         if (groupIdValue !== null) {
             taskData.group_id = groupIdValue;
         }
-        taskData.next_due_date = parseDatetimeLocal(document.getElementById('task-due-date').value);
+        // Get date value, preserving original value if unchanged
+        const dateInput = document.getElementById('task-due-date');
+        const originalValue = dateInput.dataset.originalValue;
+        const currentValue = dateInput.value;
+        
+        if (originalValue && id && taskType) {
+            // For editing: check if date actually changed
+            const originalLocal = formatDatetimeLocal(originalValue);
+            if (currentValue === originalLocal) {
+                // Date hasn't changed, use original value
+                taskData.next_due_date = originalValue;
+            } else {
+                // Date changed, convert new local time
+                taskData.next_due_date = parseDatetimeLocal(currentValue);
+            }
+        } else {
+            // For new tasks or if no original value, convert local time
+            taskData.next_due_date = parseDatetimeLocal(currentValue);
+        }
         
         if (taskSchedulingType === 'one_time') {
             // Для разовых задач очищаем все поля повторения
             taskData.recurrence_type = null;
             taskData.recurrence_interval = null;
             taskData.interval_days = null;
+            taskData.reminder_time = null;
         } else if (taskSchedulingType === 'recurring') {
+            // Universal function for saving recurring task configuration
+            // Simply save interval and datetime for any interval type
             taskData.recurrence_type = document.getElementById('task-recurrence').value;
             taskData.recurrence_interval = parseInt(document.getElementById('task-interval').value);
             // Явно очищаем interval_days для recurring задач
             taskData.interval_days = null;
+            
+            // Save reminder_time as passed (no normalization, no special handling)
+            // Normalization is only used for calculating next date and formatting comments on backend
+            taskData.reminder_time = taskData.next_due_date;
         } else if (taskSchedulingType === 'interval') {
             taskData.interval_days = parseInt(document.getElementById('task-interval-days').value);
             // Явно очищаем recurrence_type и recurrence_interval для interval задач
             taskData.recurrence_type = null;
             taskData.recurrence_interval = null;
+            taskData.reminder_time = null;
         }
         
         console.log('Saving task with data:', taskData);
@@ -1089,6 +1184,278 @@ function setQuickDate(type) {
     const minutes = String(date.getMinutes()).padStart(2, '0');
     
     dateInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+/**
+ * View task history.
+ */
+async function viewTaskHistory(taskId) {
+    try {
+        const task = allTasks.find(t => t.id === taskId);
+        if (!task) {
+            showToast('Задача не найдена', 'error');
+            return;
+        }
+
+        const modal = document.getElementById('history-modal');
+        const titleEl = document.getElementById('history-task-title');
+        const contentEl = document.getElementById('history-content');
+
+        titleEl.textContent = task.title;
+        contentEl.innerHTML = '<p>Загрузка истории...</p>';
+
+        modal.classList.add('show');
+        modal.style.display = 'block';
+
+        const history = await tasksAPI.getHistory(taskId);
+
+        if (history.length === 0) {
+            contentEl.innerHTML = '<p style="text-align: center; color: #666;">История пуста</p>';
+            return;
+        }
+
+        const actionLabels = {
+            'created': 'Создана',
+            'first_shown': 'Первый показ',
+            'confirmed': 'Подтверждена',
+            'unconfirmed': 'Отмена подтверждения',
+            'edited': 'Изменена',
+            'deleted': 'Удалена',
+            'activated': 'Активирована',
+            'deactivated': 'Деактивирована'
+        };
+
+        let html = '<div style="display: flex; flex-direction: column; gap: 12px;">';
+        history.forEach(entry => {
+            const actionDate = new Date(entry.action_timestamp);
+            const iterationDateStr = entry.iteration_date 
+                ? `(итерация: ${formatDateTime(entry.iteration_date)})` 
+                : '';
+            
+            let metadataHtml = '';
+            if (entry.meta_data) {
+                try {
+                    const metadata = JSON.parse(entry.meta_data);
+                    if (metadata.old && metadata.new) {
+                        // Format changes
+                        const changes = Object.keys(metadata.new).map(key => {
+                            return `  • ${key}: "${metadata.old[key]}" → "${metadata.new[key]}"`;
+                        }).join('<br>');
+                        metadataHtml = `<div style="margin-top: 8px; padding: 8px; background: #f0f0f0; border-radius: 4px; font-size: 0.9em;">Изменения:<br>${changes}</div>`;
+                    } else if (typeof metadata === 'object') {
+                        metadataHtml = `<div style="margin-top: 8px; padding: 8px; background: #f0f0f0; border-radius: 4px; font-size: 0.9em;">${JSON.stringify(metadata, null, 2)}</div>`;
+                    }
+                } catch (e) {
+                    // Metadata is not JSON
+                    metadataHtml = '';
+                }
+            }
+
+            html += `
+                <div style="padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-weight: 600;">${actionLabels[entry.action] || entry.action}</span>
+                        <span style="color: #666; font-size: 0.9em;">${formatDateTime(actionDate)}</span>
+                    </div>
+                    ${iterationDateStr ? `<div style="color: #888; font-size: 0.85em; margin-top: 4px;">${iterationDateStr}</div>` : ''}
+                    ${metadataHtml}
+                </div>
+            `;
+        });
+        html += '</div>';
+        contentEl.innerHTML = html;
+    } catch (error) {
+        console.error('Error loading history:', error);
+        showToast('Ошибка загрузки истории: ' + error.message, 'error');
+    }
+}
+
+/**
+ * Render history view with filters.
+ */
+async function renderHistoryView() {
+    try {
+        const container = document.getElementById('tasks-list');
+        container.innerHTML = '<p>Загрузка истории...</p>';
+
+        // Get filter values
+        const selectedGroupId = document.getElementById('history-group-filter').value;
+        const selectedTaskId = document.getElementById('history-task-filter').value;
+        const dateFrom = document.getElementById('history-date-from').value;
+        const dateTo = document.getElementById('history-date-to').value;
+
+        // Update filters with current data
+        updateHistoryFilters();
+
+        // Load history for all tasks
+        const historyPromises = allTasks.map(task => {
+            const taskGroup = groups.find(g => g.id === task.group_id);
+            return tasksAPI.getHistory(task.id).then(history => 
+                history.map(entry => ({
+                    ...entry, 
+                    task_title: task.title,
+                    task_id: task.id,
+                    group_id: task.group_id,
+                    group_name: taskGroup ? taskGroup.name : null
+                }))
+            );
+        });
+        let allHistory = (await Promise.all(historyPromises)).flat();
+
+        // Apply filters
+        if (selectedGroupId) {
+            allHistory = allHistory.filter(entry => entry.group_id == selectedGroupId);
+        }
+        if (selectedTaskId) {
+            allHistory = allHistory.filter(entry => entry.task_id == selectedTaskId);
+        }
+        if (dateFrom) {
+            allHistory = allHistory.filter(entry => entry.action_timestamp >= dateFrom);
+        }
+        if (dateTo) {
+            allHistory = allHistory.filter(entry => entry.action_timestamp <= dateTo + 'T23:59:59');
+        }
+
+        if (allHistory.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">История пуста</p>';
+            return;
+        }
+
+        // Sort by timestamp desc
+        allHistory.sort((a, b) => new Date(b.action_timestamp) - new Date(a.action_timestamp));
+
+        const actionLabels = {
+            'created': 'Создана',
+            'first_shown': 'Показана',
+            'confirmed': 'Подтверждена',
+            'unconfirmed': 'Отмена',
+            'edited': 'Изменена',
+            'deleted': 'Удалена',
+            'activated': 'Активирована',
+            'deactivated': 'Деактивирована'
+        };
+
+        const actionColors = {
+            'created': '#4CAF50',      // Green
+            'first_shown': '#2196F3',  // Blue
+            'confirmed': '#8BC34A',    // Light Green
+            'unconfirmed': '#FF9800',  // Orange
+            'edited': '#FFC107',       // Amber
+            'deleted': '#F44336',      // Red
+            'activated': '#4CAF50',    // Green
+            'deactivated': '#9E9E9E'   // Grey
+        };
+
+        let html = '<div style="display: flex; flex-direction: column; gap: 4px;">';
+        allHistory.forEach(entry => {
+            const actionDate = new Date(entry.action_timestamp);
+            const actionColor = actionColors[entry.action] || '#757575';
+            const bgColor = actionColor + '20'; // Add transparency
+            
+            let changesText = '';
+            if (entry.comment) {
+                changesText = entry.comment;
+            }
+            
+            const fullTaskName = entry.group_name 
+                ? `${entry.group_name}: ${entry.task_title}`
+                : entry.task_title;
+
+            html += `
+                <div class="history-entry" style="background: ${bgColor}; border-left-color: ${actionColor};">
+                    <span class="history-entry-date">${formatDateTime(actionDate)}</span>
+                    <span class="history-entry-task">${escapeHtml(fullTaskName)}</span>
+                    <span class="history-entry-action" style="color: ${actionColor};">
+                        ${actionLabels[entry.action] || entry.action}
+                    </span>
+                    <span class="history-entry-comment">${changesText ? escapeHtml(changesText) : ''}</span>
+                    ${adminMode ? `<button class="btn btn-danger" onclick="deleteHistoryEntry(${entry.id}, ${entry.task_id})" title="Удалить запись">✕</button>` : ''}
+                </div>
+            `;
+        });
+        html += '</div>';
+        container.innerHTML = html;
+    } catch (error) {
+        console.error('Error loading history:', error);
+        showToast('Ошибка загрузки истории: ' + error.message, 'error');
+    }
+}
+
+/**
+ * Update history filter dropdowns with current data.
+ */
+function updateHistoryFilters() {
+    // Update group filter
+    const groupFilter = document.getElementById('history-group-filter');
+    const currentGroupValue = groupFilter.value;
+    
+    // Keep "All groups" option
+    groupFilter.innerHTML = '<option value="">Все группы</option>';
+    groups.forEach(group => {
+        const option = document.createElement('option');
+        option.value = group.id;
+        option.textContent = group.name;
+        groupFilter.appendChild(option);
+    });
+    
+    // Restore selection if still valid
+    if (currentGroupValue) {
+        groupFilter.value = currentGroupValue;
+    }
+    
+    // Update task filter
+    const taskFilter = document.getElementById('history-task-filter');
+    const currentTaskValue = taskFilter.value;
+    
+    // Keep "All tasks" option
+    taskFilter.innerHTML = '<option value="">Все задачи</option>';
+    
+    // Filter tasks by selected group if needed
+    const tasksToShow = currentGroupValue 
+        ? allTasks.filter(task => task.group_id == currentGroupValue)
+        : allTasks;
+    
+    tasksToShow.forEach(task => {
+        const option = document.createElement('option');
+        option.value = task.id;
+        option.textContent = task.title;
+        taskFilter.appendChild(option);
+    });
+    
+    // Restore selection if still valid
+    if (currentTaskValue) {
+        taskFilter.value = currentTaskValue;
+    }
+}
+
+/**
+ * Close history modal.
+ */
+function closeHistoryModal() {
+    const modal = document.getElementById('history-modal');
+    modal.style.display = 'none';
+    modal.classList.remove('show');
+}
+
+/**
+ * Delete history entry.
+ */
+async function deleteHistoryEntry(historyId, taskId) {
+    if (!confirm('Вы уверены, что хотите удалить эту запись истории?')) {
+        return;
+    }
+    
+    try {
+        await tasksAPI.deleteHistoryEntry(historyId);
+        showToast('Запись истории удалена', 'success');
+        // Reload history view
+        if (currentView === 'history') {
+            renderHistoryView();
+        }
+    } catch (error) {
+        console.error('Failed to delete history entry:', error);
+        showToast('Ошибка удаления записи истории: ' + error.message, 'error');
+    }
 }
 
 // Initialize app on load

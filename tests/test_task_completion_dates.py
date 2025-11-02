@@ -63,7 +63,7 @@ class TestTaskCompletionDates:
     def test_completion_does_not_change_date_immediately_for_today(self, client):
         """Test that completing a task due today does not change its date immediately."""
         # Create a recurring task due today
-        today = datetime.utcnow().replace(hour=9, minute=0, second=0, microsecond=0)
+        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
         today_start = today.replace(hour=0, minute=0, second=0, microsecond=0)
         
         task_data = {
@@ -100,7 +100,7 @@ class TestTaskCompletionDates:
     def test_completion_does_not_change_date_immediately_for_overdue_task(self, client):
         """Test that completing an overdue task does not change its date immediately."""
         # Create a recurring task due yesterday (overdue)
-        yesterday = datetime.utcnow() - timedelta(days=1)
+        yesterday = datetime.now() - timedelta(days=1)
         yesterday = yesterday.replace(hour=9, minute=0, second=0, microsecond=0)
         yesterday_start = yesterday.replace(hour=0, minute=0, second=0, microsecond=0)
         
@@ -141,7 +141,7 @@ class TestTaskCompletionDates:
     def test_completion_changes_date_for_future_tasks(self, client):
         """Test that completing a task due in the future changes its date immediately."""
         # Create a recurring task due tomorrow
-        tomorrow = datetime.utcnow() + timedelta(days=1)
+        tomorrow = datetime.now() + timedelta(days=1)
         tomorrow = tomorrow.replace(hour=9, minute=0, second=0, microsecond=0)
         
         task_data = {
@@ -177,7 +177,7 @@ class TestTaskCompletionDates:
     def test_date_updates_on_next_day_for_completed_tasks(self, client, db_session):
         """Test that date updates on next day for tasks completed today."""
         # Create a recurring task due today
-        today = datetime.utcnow().replace(hour=9, minute=0, second=0, microsecond=0)
+        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
         today_start = today.replace(hour=0, minute=0, second=0, microsecond=0)
         
         task_data = {
@@ -225,7 +225,7 @@ class TestTaskCompletionDates:
         # Date should be updated to today or future
         updated_due_date = task_in_list.next_due_date
         updated_due_date_start = updated_due_date.replace(hour=0, minute=0, second=0, microsecond=0)
-        today_check = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        today_check = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
         
         # Date should be updated (today or future)
         assert updated_due_date_start >= today_check, (
@@ -236,7 +236,7 @@ class TestTaskCompletionDates:
     def test_interval_task_completion_date_logic(self, client):
         """Test interval task date logic on completion."""
         # Create an interval task due today
-        today = datetime.utcnow().replace(hour=9, minute=0, second=0, microsecond=0)
+        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
         today_start = today.replace(hour=0, minute=0, second=0, microsecond=0)
         
         task_data = {
@@ -270,7 +270,7 @@ class TestTaskCompletionDates:
     def test_one_time_task_completion_does_not_change_date(self, client):
         """Test that one-time task completion does not change date."""
         # Create a one-time task due today
-        today = datetime.utcnow().replace(hour=9, minute=0, second=0, microsecond=0)
+        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
         today_start = today.replace(hour=0, minute=0, second=0, microsecond=0)
         
         task_data = {

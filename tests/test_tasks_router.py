@@ -59,7 +59,7 @@ class TestTasksRouter:
 
     def test_create_task(self, client: TestClient) -> None:
         """Test creating a task via API."""
-        today = datetime.utcnow().replace(hour=9, minute=0, second=0, microsecond=0)
+        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
         task_data = {
             "title": "Test Task",
             "description": "Test Description",
@@ -78,7 +78,7 @@ class TestTasksRouter:
 
     def test_get_tasks(self, client: TestClient) -> None:
         """Test getting all tasks via API."""
-        today = datetime.utcnow().replace(hour=9, minute=0, second=0, microsecond=0)
+        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
         
         task1_data = {
             "title": "Task 1",
@@ -102,7 +102,7 @@ class TestTasksRouter:
 
     def test_get_tasks_active_only(self, client: TestClient) -> None:
         """Test getting only active tasks via API."""
-        today = datetime.utcnow().replace(hour=9, minute=0, second=0, microsecond=0)
+        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
         
         task1_data = {
             "title": "Active Task",
@@ -131,7 +131,7 @@ class TestTasksRouter:
 
     def test_get_task(self, client: TestClient) -> None:
         """Test getting a specific task via API."""
-        today = datetime.utcnow().replace(hour=9, minute=0, second=0, microsecond=0)
+        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
         task_data = {
             "title": "Test Task",
             "task_type": TaskType.ONE_TIME.value,
@@ -156,7 +156,7 @@ class TestTasksRouter:
 
     def test_update_task(self, client: TestClient) -> None:
         """Test updating a task via API."""
-        today = datetime.utcnow().replace(hour=9, minute=0, second=0, microsecond=0)
+        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
         task_data = {
             "title": "Original Title",
             "task_type": TaskType.ONE_TIME.value,
@@ -182,7 +182,7 @@ class TestTasksRouter:
 
     def test_delete_task(self, client: TestClient) -> None:
         """Test deleting a task via API."""
-        today = datetime.utcnow().replace(hour=9, minute=0, second=0, microsecond=0)
+        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
         task_data = {
             "title": "Test Task",
             "task_type": TaskType.ONE_TIME.value,
@@ -208,7 +208,7 @@ class TestTasksRouter:
 
     def test_complete_task(self, client: TestClient) -> None:
         """Test completing a task via API."""
-        today = datetime.utcnow().replace(hour=9, minute=0, second=0, microsecond=0)
+        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
         task_data = {
             "title": "Test Task",
             "task_type": TaskType.ONE_TIME.value,
@@ -232,7 +232,7 @@ class TestTasksRouter:
 
     def test_get_upcoming_tasks(self, client: TestClient) -> None:
         """Test getting upcoming tasks via API."""
-        today = datetime.utcnow().replace(hour=9, minute=0, second=0, microsecond=0)
+        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
         
         task1_data = {
             "title": "Task Today",

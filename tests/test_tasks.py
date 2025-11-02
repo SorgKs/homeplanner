@@ -63,8 +63,8 @@ def test_create_task(client):
         "description": "Test Description",
         "recurrence_type": RecurrenceType.DAILY.value,
         "recurrence_interval": 1,
-        "next_due_date": (datetime.utcnow() + timedelta(days=1)).isoformat(),
-        "reminder_time": (datetime.utcnow() + timedelta(hours=12)).isoformat(),
+        "next_due_date": (datetime.now() + timedelta(days=1)).isoformat(),
+        "reminder_time": (datetime.now() + timedelta(hours=12)).isoformat(),
     }
     response = client.post("/api/v1/tasks/", json=task_data)
     assert response.status_code == 201
@@ -82,7 +82,7 @@ def test_get_tasks(client):
         "title": "Test Task",
         "recurrence_type": RecurrenceType.DAILY.value,
         "recurrence_interval": 1,
-        "next_due_date": (datetime.utcnow() + timedelta(days=1)).isoformat(),
+        "next_due_date": (datetime.now() + timedelta(days=1)).isoformat(),
     }
     client.post("/api/v1/tasks/", json=task_data)
 
@@ -101,7 +101,7 @@ def test_get_task_by_id(client):
         "title": "Test Task",
         "recurrence_type": RecurrenceType.DAILY.value,
         "recurrence_interval": 1,
-        "next_due_date": (datetime.utcnow() + timedelta(days=1)).isoformat(),
+        "next_due_date": (datetime.now() + timedelta(days=1)).isoformat(),
     }
     create_response = client.post("/api/v1/tasks/", json=task_data)
     task_id = create_response.json()["id"]
@@ -121,7 +121,7 @@ def test_update_task(client):
         "title": "Test Task",
         "recurrence_type": RecurrenceType.DAILY.value,
         "recurrence_interval": 1,
-        "next_due_date": (datetime.utcnow() + timedelta(days=1)).isoformat(),
+        "next_due_date": (datetime.now() + timedelta(days=1)).isoformat(),
     }
     create_response = client.post("/api/v1/tasks/", json=task_data)
     task_id = create_response.json()["id"]
@@ -142,7 +142,7 @@ def test_delete_task(client):
         "title": "Test Task",
         "recurrence_type": RecurrenceType.DAILY.value,
         "recurrence_interval": 1,
-        "next_due_date": (datetime.utcnow() + timedelta(days=1)).isoformat(),
+        "next_due_date": (datetime.now() + timedelta(days=1)).isoformat(),
     }
     create_response = client.post("/api/v1/tasks/", json=task_data)
     task_id = create_response.json()["id"]
@@ -159,7 +159,7 @@ def test_delete_task(client):
 def test_complete_task(client):
     """Test completing a task."""
     # Create a test task due today
-    today = datetime.utcnow().replace(hour=9, minute=0, second=0, microsecond=0)
+    today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
     task_data = {
         "title": "Test Task",
         "task_type": "recurring",

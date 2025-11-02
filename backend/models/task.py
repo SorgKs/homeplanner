@@ -18,6 +18,8 @@ class RecurrenceType(str, Enum):
     """Recurrence types for tasks."""
 
     DAILY = "daily"
+    WEEKDAYS = "weekdays"  # Monday to Friday
+    WEEKENDS = "weekends"  # Saturday and Sunday
     WEEKLY = "weekly"
     MONTHLY = "monthly"
     YEARLY = "yearly"
@@ -50,8 +52,9 @@ class Task(Base):
     is_active = Column(Boolean, default=True, nullable=False)
     group_id = Column(Integer, ForeignKey("groups.id"), nullable=True, index=True)
     last_completed_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    last_shown_at = Column(DateTime, nullable=True)  # Last time this iteration was shown
+    created_at = Column(DateTime, default=datetime.now, nullable=False)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
 
     # Relationships
     group = relationship("Group", back_populates="tasks")

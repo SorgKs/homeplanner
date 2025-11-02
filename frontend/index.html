@@ -19,8 +19,9 @@
                     <div class="sidebar-section">
                         <h3 class="sidebar-title">Вид</h3>
                         <div class="view-toggle">
-                            <button class="btn btn-secondary sidebar-btn" id="view-today-btn">📅 Сегодня</button>
+                            <button class="btn btn-secondary sidebar-btn active" id="view-today-btn">📅 Сегодня</button>
                             <button class="btn btn-secondary sidebar-btn" id="view-all-btn">📋 Все задачи</button>
+                            <button class="btn btn-secondary sidebar-btn" id="view-history-btn">📜 История</button>
                         </div>
                     </div>
                     
@@ -32,11 +33,39 @@
                     </button>
                     
                     <div class="sidebar-section">
+                        <button class="btn btn-secondary sidebar-btn" id="toggle-admin-btn">
+                            <span>🔧</span> <span id="admin-mode-text">Админ режим</span>
+                        </button>
+                    </div>
+                    
+                    <div class="sidebar-section" id="tasks-filters-section">
                         <h3 class="sidebar-title">Поиск и фильтры</h3>
                         <div class="search-box">
                             <input type="text" id="tasks-search" placeholder="Поиск задач...">
                         </div>
                         <button class="filter-btn sidebar-btn" id="tasks-filter-btn">Фильтры</button>
+                    </div>
+                    
+                    <div class="sidebar-section" id="history-filters-section" style="display: none;">
+                        <h3 class="sidebar-title">Фильтры истории</h3>
+                        <div class="search-box">
+                            <select id="history-group-filter" style="width: 100%;">
+                                <option value="">Все группы</option>
+                            </select>
+                        </div>
+                        <div class="search-box">
+                            <select id="history-task-filter" style="width: 100%;">
+                                <option value="">Все задачи</option>
+                            </select>
+                        </div>
+                        <div class="search-box">
+                            <label style="display: block; margin-bottom: 4px; font-size: 0.9em;">С</label>
+                            <input type="date" id="history-date-from" style="width: 100%;">
+                        </div>
+                        <div class="search-box">
+                            <label style="display: block; margin-bottom: 4px; font-size: 0.9em;">По</label>
+                            <input type="date" id="history-date-to" style="width: 100%;">
+                        </div>
                     </div>
                 </nav>
             </aside>
@@ -134,6 +163,17 @@
                         <button type="button" class="btn btn-secondary" id="group-cancel">Отмена</button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- Task History Modal -->
+        <div id="history-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>История задачи: <span id="history-task-title"></span></h2>
+                <div id="history-content" style="max-height: 400px; overflow-y: auto;">
+                    <p>Загрузка истории...</p>
+                </div>
             </div>
         </div>
     </div>
