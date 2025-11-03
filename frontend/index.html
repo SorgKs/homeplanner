@@ -22,6 +22,7 @@
                             <button class="btn btn-secondary sidebar-btn active" id="view-today-btn">📅 Сегодня</button>
                             <button class="btn btn-secondary sidebar-btn" id="view-all-btn">📋 Все задачи</button>
                             <button class="btn btn-secondary sidebar-btn" id="view-history-btn">📜 История</button>
+                            <button class="btn btn-secondary sidebar-btn" id="view-settings-btn">⚙️ Настройки</button>
                         </div>
                     </div>
                     
@@ -71,6 +72,28 @@
             </aside>
 
             <main class="main-content">
+                <div id="settings-view" style="display:none;">
+                    <div class="card" style="margin-bottom:16px; padding:12px;">
+                        <h3 style="margin-top:0;">Установить Android приложение</h3>
+                        <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
+                            <button class="btn btn-primary" id="show-apk-qr-btn">Показать QR для APK</button>
+                            <a class="btn btn-secondary" id="direct-apk-link" href="#" target="_blank" rel="noopener">Скачать APK</a>
+                            <div id="apk-qr" style="display:none; padding:8px; border:1px solid #ddd; border-radius:8px;"></div>
+                        </div>
+                        <div style="margin-top:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                            <label for="apk-host-input" style="font-size:0.9em;">Хост для телефона (LAN/IP:порт):</label>
+                            <input id="apk-host-input" type="text" placeholder="192.168.1.10:8000" style="max-width:260px;">
+                            <button class="btn btn-secondary" id="apply-apk-host">Обновить QR</button>
+                            <small id="apk-host-hint" style="color:#666;">Если здесь localhost — телефон не откроет ссылку. Укажите IP машины с бэкендом.</small>
+                        </div>
+                        <div style="margin-top:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                            <label for="api-base-input" style="font-size:0.9em;">API Base URL (frontend):</label>
+                            <input id="api-base-input" type="text" placeholder="http://192.168.1.2:8000/api/v1" style="min-width:320px;">
+                            <button class="btn btn-secondary" id="apply-api-base">Сохранить</button>
+                            <small style="color:#666;">Сохраняется в localStorage и используется на клиенте.</small>
+                        </div>
+                    </div>
+                </div>
                 <div id="tasks-list" class="items-list"></div>
             </main>
         </div>
@@ -104,10 +127,55 @@
                             <label for="task-recurrence">Повторение:</label>
                             <select id="task-recurrence">
                                 <option value="daily">Ежедневно</option>
+                                <option value="weekdays">По будням</option>
+                                <option value="weekends">По выходным</option>
                                 <option value="weekly">Еженедельно</option>
                                 <option value="monthly">Ежемесячно</option>
                                 <option value="yearly">Ежегодно</option>
                             </select>
+                        </div>
+                        <div id="monthly-yearly-options" style="display: none;">
+                            <div class="form-group">
+                                <label>Привязка:</label>
+                                <div style="display: flex; gap: 16px;">
+                                    <label style="display: flex; align-items: center; gap: 4px;">
+                                        <input type="radio" name="monthly-yearly-binding" value="date" id="binding-date" checked>
+                                        <span>По дате</span>
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 4px;">
+                                        <input type="radio" name="monthly-yearly-binding" value="weekday" id="binding-weekday">
+                                        <span>По дню недели</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div id="weekday-binding-fields" style="display: none;">
+                                <div class="form-group">
+                                    <label for="weekday-day">День недели:</label>
+                                    <select id="weekday-day">
+                                        <option value="0">Понедельник</option>
+                                        <option value="1">Вторник</option>
+                                        <option value="2">Среда</option>
+                                        <option value="3">Четверг</option>
+                                        <option value="4">Пятница</option>
+                                        <option value="5">Суббота</option>
+                                        <option value="6">Воскресенье</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="weekday-number">Номер дня недели в месяце:</label>
+                                    <select id="weekday-number">
+                                        <option value="1">Первый</option>
+                                        <option value="2">Второй</option>
+                                        <option value="3">Третий</option>
+                                        <option value="4">Четвертый</option>
+                                        <option value="-1">Последний</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="weekday-time">Время:</label>
+                                    <input type="time" id="weekday-time" required>
+                                </div>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="task-interval">Интервал:</label>
@@ -120,7 +188,7 @@
                             <input type="number" id="task-interval-days" min="1" value="7" placeholder="Через сколько дней после подтверждения">
                         </div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="due-date-field">
                         <label for="task-due-date" id="date-label">Начало:</label>
                         <input type="datetime-local" id="task-due-date" required>
                         <div class="quick-date-buttons" style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
@@ -182,8 +250,102 @@
     <div class="toast-container" id="toast-container"></div>
 
     <script src="utils/todayViewFilter.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     <script src="api.js"></script>
     <script src="app.js"></script>
+    <script>
+        (function(){
+            // Compute backend host for phone: prefer user input, else API_BASE_URL, else window
+            function getBackendOrigin() {
+                const input = document.getElementById('apk-host-input');
+                const value = (input && input.value || '').trim();
+                if (value) {
+                    // if value already has scheme
+                    if (/^https?:\/\//i.test(value)) return value.replace(/\/$/, '');
+                    return window.location.protocol + '//' + value.replace(/\/$/, '');
+                }
+                if (typeof API_BASE_URL === 'string') {
+                    const base = API_BASE_URL.replace(/\/api\/v1$/, '');
+                    try { const u = new URL(base); return u.origin; } catch(_) {}
+                    return base;
+                }
+                return window.location.origin;
+            }
+
+            function buildApkUrl() {
+                const origin = getBackendOrigin();
+                return origin.replace(/\/$/, '') + '/download/latest.apk';
+            }
+
+            // Initialize link and inputs
+            const linkEl = document.getElementById('direct-apk-link');
+            const hostInput = document.getElementById('apk-host-input');
+            const apiBaseInput = document.getElementById('api-base-input');
+            const storedHost = localStorage.getItem('apkHost');
+            if (hostInput) {
+                if (storedHost) hostInput.value = storedHost;
+                else {
+                    // prefill with API host:port if not localhost
+                    try {
+                        const api = typeof API_BASE_URL === 'string' ? new URL(API_BASE_URL) : null;
+                        if (api && api.hostname !== 'localhost') hostInput.value = api.host;
+                        else if (window.location.hostname !== 'localhost') hostInput.value = window.location.host.replace(/:8080$/, ':8000');
+                    } catch(_) {}
+                }
+            }
+            if (apiBaseInput) {
+                const storedApi = localStorage.getItem('apiBaseUrl');
+                apiBaseInput.value = storedApi || (typeof API_BASE_URL === 'string' ? API_BASE_URL : 'http://192.168.1.2:8000/api/v1');
+            }
+            let apkUrl = buildApkUrl();
+            linkEl.href = apkUrl;
+            const applyBtn = document.getElementById('apply-apk-host');
+            if (applyBtn) applyBtn.addEventListener('click', function(){
+                const v = (hostInput && hostInput.value || '').trim();
+                if (v) localStorage.setItem('apkHost', v);
+                apkUrl = buildApkUrl();
+                linkEl.href = apkUrl;
+                // regenerate QR if visible
+                const qrBox = document.getElementById('apk-qr');
+                if (qrBox && qrBox.style.display !== 'none') {
+                    qrBox.innerHTML = '';
+                    renderQr(apkUrl, qrBox);
+                }
+            });
+            const applyApiBtn = document.getElementById('apply-api-base');
+            if (applyApiBtn) applyApiBtn.addEventListener('click', function(){
+                const v = (apiBaseInput && apiBaseInput.value || '').trim();
+                if (v) {
+                    localStorage.setItem('apiBaseUrl', v);
+                    // Inform user to refresh
+                    alert('API Base URL сохранён. Обновите страницу, чтобы применить.');
+                }
+            });
+            function renderQr(url, container){
+                if (window.QRCode && typeof QRCode.toCanvas === 'function') {
+                    QRCode.toCanvas(url, { width: 180 }, function(err, canvas){
+                        if (!err && canvas) container.appendChild(canvas);
+                        else {
+                            const img = new Image(); img.width = 180; img.height = 180; img.alt = 'QR code';
+                            img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(url);
+                            container.appendChild(img);
+                        }
+                    });
+                } else {
+                    const img = new Image(); img.width = 180; img.height = 180; img.alt = 'QR code';
+                    img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(url);
+                    container.appendChild(img);
+                }
+            }
+
+            document.getElementById('show-apk-qr-btn').addEventListener('click', function(){
+                const qrBox = document.getElementById('apk-qr');
+                qrBox.style.display = 'block';
+                qrBox.innerHTML = '';
+                renderQr(apkUrl, qrBox);
+            });
+        })();
+    </script>
 </body>
 </html>
 

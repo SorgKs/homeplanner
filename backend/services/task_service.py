@@ -172,11 +172,12 @@ class TaskService:
         for key, value in update_data.items():
             setattr(task, key, value)
         
-        # Validate that all recurring tasks have reminder_time
+        # Validate that all recurring tasks have reminder_time only if user explicitly attempts to clear or set relevant fields
         from backend.models.task import TaskType
-        if (task.task_type == TaskType.RECURRING and 
-            task.reminder_time is None):
-            raise ValueError("reminder_time is required for recurring tasks (время обязательно для задач типа расписание)")
+        if task.task_type == TaskType.RECURRING:
+            # If reminder_time was part of the update and became None, block it
+            if "reminder_time" in update_data and task.reminder_time is None:
+                raise ValueError("reminder_time is required for recurring tasks (время обязательно для задач типа расписание)")
 
         db.commit()
         db.refresh(task)
@@ -234,7 +235,9 @@ class TaskService:
                         RecurrenceType.WEEKENDS: "выходные",
                         RecurrenceType.WEEKLY: "еженедельно",
                         RecurrenceType.MONTHLY: "ежемесячно",
+                        RecurrenceType.MONTHLY_WEEKDAY: "ежемесячно (по дню недели)",
                         RecurrenceType.YEARLY: "ежегодно",
+                        RecurrenceType.YEARLY_WEEKDAY: "ежегодно (по дню недели)",
                         RecurrenceType.CUSTOM: "произвольно",
                         RecurrenceType.INTERVAL: "интервал",
                     }
@@ -334,19 +337,43 @@ class TaskService:
             return False
 
         # Log deletion to history before deleting
+        # Save task_id and task data before deletion (for cascade protection)
+        saved_task_id = task.id
+        saved_task_title = task.title
+        
         from backend.models.task_history import TaskHistoryAction
-        from backend.services.task_history_service import TaskHistoryService
+        import json
         
         # Generate comment with task settings
         task_settings = TaskService._format_task_settings(task.task_type, task)
         comment = task_settings
         
-        TaskHistoryService.log_action(
-            db, task.id, TaskHistoryAction.DELETED, comment=comment
+        # Create metadata with task info (including title) to preserve it after deletion
+        metadata = {
+            "task_id": saved_task_id,
+            "task_title": saved_task_title,
+            "task_type": task.task_type.value if hasattr(task.task_type, 'value') else str(task.task_type),
+        }
+        metadata_json = json.dumps(metadata)
+        
+        # Create history entry manually to ensure it's saved with task_id before deletion
+        from backend.models.task_history import TaskHistory
+        history_entry = TaskHistory(
+            task_id=saved_task_id,
+            action=TaskHistoryAction.DELETED,
+            action_timestamp=datetime.now(),
+            comment=comment,
+            meta_data=metadata_json
         )
-
-        db.delete(task)
+        db.add(history_entry)
+        # Commit history entry first to ensure it's saved in database before deletion
         db.commit()
+        
+        # Now delete the task
+        # After deletion, task_id will become NULL due to cascade, but the history entry
+        # is already saved in the database, so it won't be affected
+        db.delete(task)
+        db.commit()  # Commit deletion
         return True
 
     @staticmethod
@@ -417,6 +444,140 @@ class TaskService:
         return task
 
     @staticmethod
+    def uncomplete_task(db: Session, task_id: int) -> Task | None:
+        """Revert task completion (cancel confirmation).
+
+        For one-time tasks, mark task as active again.
+        For recurring and interval tasks, clear last_completed_at.
+        Does not change next_due_date here.
+        """
+        from backend.models.task import TaskType
+
+        task = db.query(Task).filter(Task.id == task_id).first()
+        if not task:
+            return None
+
+        # Clear completion timestamp
+        task.last_completed_at = None
+
+        if task.task_type == TaskType.ONE_TIME:
+            # Make one-time task active again
+            task.is_active = True
+
+        db.commit()
+        db.refresh(task)
+
+        # Log unconfirmation to history
+        from backend.services.task_history_service import TaskHistoryService
+        TaskHistoryService.log_task_unconfirmed(db, task.id, task.next_due_date)
+
+        return task
+
+    @staticmethod
+    def _find_nth_weekday_in_month(year: int, month: int, weekday: int, n: int) -> datetime:
+        """Find the N-th occurrence of a weekday in a given month.
+        
+        Args:
+            year: Year
+            month: Month (1-12)
+            weekday: Day of week (0=Monday, 6=Sunday)
+            n: Which occurrence (1=first, 2=second, 3=third, 4=fourth, -1=last)
+        
+        Returns:
+            datetime object for the N-th weekday in the month
+        """
+        from calendar import monthrange
+        
+        # Get first day of month
+        first_day = datetime(year, month, 1)
+        # Find first occurrence of weekday in month
+        first_weekday = first_day.weekday()
+        days_to_first = (weekday - first_weekday) % 7
+        if days_to_first < 0:
+            days_to_first += 7
+        
+        if n == -1:
+            # Find last occurrence: go to last day and work backwards
+            last_day = monthrange(year, month)[1]
+            last_date = datetime(year, month, last_day)
+            last_weekday = last_date.weekday()
+            days_from_last = (last_weekday - weekday) % 7
+            if days_from_last < 0:
+                days_from_last += 7
+            result = last_date - timedelta(days=days_from_last)
+            # Ensure result is still in the same month
+            if result.month != month:
+                result = result - timedelta(days=7)
+        else:
+            # Find N-th occurrence
+            result = first_day + timedelta(days=days_to_first + (n - 1) * 7)
+            # Check if date is still in the same month
+            if result.month != month:
+                # This means we're trying to get a 5th occurrence, which doesn't exist
+                # Fall back to last occurrence
+                last_day = monthrange(year, month)[1]
+                last_date = datetime(year, month, last_day)
+                last_weekday = last_date.weekday()
+                days_from_last = (last_weekday - weekday) % 7
+                if days_from_last < 0:
+                    days_from_last += 7
+                result = last_date - timedelta(days=days_from_last)
+                if result.month != month:
+                    result = result - timedelta(days=7)
+        
+        return result
+    
+    @staticmethod
+    def _determine_weekday_occurrence(day_of_month: int, weekday: int, year: int, month: int) -> int:
+        """Determine which occurrence (1-4 or -1 for last) a day represents.
+        
+        Args:
+            day_of_month: Day of month (1-31)
+            weekday: Day of week (0=Monday, 6=Sunday)
+            year: Year
+            month: Month (1-12)
+        
+        Returns:
+            Occurrence number (1, 2, 3, 4, or -1 for last)
+        """
+        from calendar import monthrange
+        
+        # Check if this is the last occurrence of this weekday in the month
+        last_day = monthrange(year, month)[1]
+        last_date = datetime(year, month, last_day)
+        last_weekday = last_date.weekday()
+        days_from_last = (last_weekday - weekday) % 7
+        if days_from_last < 0:
+            days_from_last += 7
+        last_occurrence_date = last_date - timedelta(days=days_from_last)
+        if last_occurrence_date.month != month:
+            last_occurrence_date = last_occurrence_date - timedelta(days=7)
+        
+        # If this is the last occurrence
+        target_date = datetime(year, month, day_of_month)
+        if target_date.day == last_occurrence_date.day:
+            return -1
+        
+        # Otherwise, calculate which occurrence (1-4)
+        first_day = datetime(year, month, 1)
+        first_weekday = first_day.weekday()
+        days_to_first = (weekday - first_weekday) % 7
+        if days_to_first < 0:
+            days_to_first += 7
+        
+        first_occurrence = first_day + timedelta(days=days_to_first)
+        if first_occurrence.month != month:
+            # This shouldn't happen, but handle it
+            return 1
+        
+        # Calculate which occurrence
+        days_diff = (target_date - first_occurrence).days
+        occurrence = (days_diff // 7) + 1
+        
+        # Cap at 4 (we already checked if it's last)
+        return min(occurrence, 4)
+    
+    @staticmethod
     def _calculate_next_due_date(
         current_date: datetime,
         recurrence_type: RecurrenceType | None,
@@ -437,11 +598,18 @@ class TaskService:
         
         if not reminder_time:
             # Old behavior without reminder_time (for other recurrence types)
+            # Note: MONTHLY_WEEKDAY and YEARLY_WEEKDAY require reminder_time
             if recurrence_type == RecurrenceType.DAILY:
                 return current_date + timedelta(days=interval)
             elif recurrence_type == RecurrenceType.MONTHLY:
                 return current_date + timedelta(days=30 * interval)
             elif recurrence_type == RecurrenceType.YEARLY:
+                return current_date + timedelta(days=365 * interval)
+            elif recurrence_type == RecurrenceType.MONTHLY_WEEKDAY:
+                # Fallback: treat like monthly
+                return current_date + timedelta(days=30 * interval)
+            elif recurrence_type == RecurrenceType.YEARLY_WEEKDAY:
+                # Fallback: treat like yearly
                 return current_date + timedelta(days=365 * interval)
             else:
                 return current_date + timedelta(days=interval)
@@ -459,38 +627,46 @@ class TaskService:
             return next_date
         
         elif recurrence_type == RecurrenceType.WEEKDAYS:
-            # Weekdays: Monday-Friday only
+            # Weekdays: Monday-Friday only, with interval (treat like daily)
+            # Find next N weekdays (where N = interval)
             next_date = current_date.replace(hour=reminder_hour, minute=reminder_minute, second=0, microsecond=0)
-            # Move to next weekday
+            weekday_count = 0
             days_to_add = 0
-            while True:
+            
+            while weekday_count < interval:
                 candidate = current_date + timedelta(days=days_to_add)
                 weekday = candidate.weekday()  # Monday=0, Sunday=6
                 # Check if it's a weekday (0-4 = Monday-Friday)
                 if 0 <= weekday <= 4:
                     next_date = candidate.replace(hour=reminder_hour, minute=reminder_minute, second=0, microsecond=0)
                     if next_date > current_date:
-                        break
+                        weekday_count += 1
+                        if weekday_count >= interval:
+                            break
                 days_to_add += 1
-                if days_to_add > 10:  # Safety check
+                if days_to_add > 50:  # Safety check (enough for several weeks)
                     break
             return next_date
         
         elif recurrence_type == RecurrenceType.WEEKENDS:
-            # Weekends: Saturday-Sunday only
+            # Weekends: Saturday-Sunday only, with interval (treat like daily)
+            # Find next N weekend days (where N = interval)
             next_date = current_date.replace(hour=reminder_hour, minute=reminder_minute, second=0, microsecond=0)
-            # Move to next weekend day
+            weekend_count = 0
             days_to_add = 0
-            while True:
+            
+            while weekend_count < interval:
                 candidate = current_date + timedelta(days=days_to_add)
                 weekday = candidate.weekday()  # Monday=0, Sunday=6
                 # Check if it's a weekend (5=Saturday, 6=Sunday)
                 if weekday in [5, 6]:
                     next_date = candidate.replace(hour=reminder_hour, minute=reminder_minute, second=0, microsecond=0)
                     if next_date > current_date:
-                        break
+                        weekend_count += 1
+                        if weekend_count >= interval:
+                            break
                 days_to_add += 1
-                if days_to_add > 10:  # Safety check
+                if days_to_add > 50:  # Safety check (enough for several weeks)
                     break
             return next_date
         
@@ -548,6 +724,37 @@ class TaskService:
                 next_date = next_date.replace(hour=reminder_hour, minute=reminder_minute, second=0, microsecond=0)
             return next_date
         
+        elif recurrence_type == RecurrenceType.MONTHLY_WEEKDAY:
+            # Monthly by weekday: e.g., 2nd Tuesday of each month
+            # reminder_time should contain a date with the target weekday
+            # We need to determine which occurrence (1st, 2nd, 3rd, 4th, or last)
+            reminder_weekday = reminder_time.weekday()
+            reminder_day = reminder_time.day
+            reminder_month = reminder_time.month
+            reminder_year = reminder_time.year
+            # Determine which occurrence this is (1-4 or -1 for last)
+            n = TaskService._determine_weekday_occurrence(reminder_day, reminder_weekday, reminder_year, reminder_month)
+            
+            # Start from current month
+            target_month = current_date.month
+            target_year = current_date.year
+            
+            # Find the N-th weekday in current month
+            candidate = TaskService._find_nth_weekday_in_month(target_year, target_month, reminder_weekday, n)
+            candidate = candidate.replace(hour=reminder_hour, minute=reminder_minute, second=0, microsecond=0)
+            
+            if candidate <= current_date:
+                # Current month's occurrence has passed, move to next month(s)
+                months_to_add = interval
+                target_month += months_to_add
+                while target_month > 12:
+                    target_month -= 12
+                    target_year += 1
+                candidate = TaskService._find_nth_weekday_in_month(target_year, target_month, reminder_weekday, n)
+                candidate = candidate.replace(hour=reminder_hour, minute=reminder_minute, second=0, microsecond=0)
+            
+            return candidate
+        
         elif recurrence_type == RecurrenceType.YEARLY:
             # Yearly: same month, day, and time
             reminder_month = reminder_time.month
@@ -557,6 +764,30 @@ class TaskService:
             if next_date <= current_date:
                 next_date = next_date.replace(year=current_date.year + interval)
             return next_date
+        
+        elif recurrence_type == RecurrenceType.YEARLY_WEEKDAY:
+            # Yearly by weekday: e.g., 1st Monday of January each year
+            reminder_month = reminder_time.month
+            reminder_weekday = reminder_time.weekday()
+            reminder_day = reminder_time.day
+            reminder_year = reminder_time.year
+            # Determine which occurrence this is (1-4 or -1 for last)
+            n = TaskService._determine_weekday_occurrence(reminder_day, reminder_weekday, reminder_year, reminder_month)
+            
+            # Start from current year
+            target_year = current_date.year
+            
+            # Find the N-th weekday in target month of current year
+            candidate = TaskService._find_nth_weekday_in_month(target_year, reminder_month, reminder_weekday, n)
+            candidate = candidate.replace(hour=reminder_hour, minute=reminder_minute, second=0, microsecond=0)
+            
+            if candidate <= current_date:
+                # Current year's occurrence has passed, move forward by interval years
+                target_year += interval
+                candidate = TaskService._find_nth_weekday_in_month(target_year, reminder_month, reminder_weekday, n)
+                candidate = candidate.replace(hour=reminder_hour, minute=reminder_minute, second=0, microsecond=0)
+            
+            return candidate
         
         else:
             # Default to daily
@@ -638,16 +869,28 @@ class TaskService:
             elif recurrence_type == RecurrenceType.WEEKDAYS:
                 if reminder_time:
                     time_str = reminder_time.strftime("%H:%M")
-                    return f"в {time_str} по будням"
+                    if recurrence_interval == 1:
+                        return f"в {time_str} по будням"
+                    else:
+                        return f"в {time_str} каждые {recurrence_interval} будних дня"
                 else:
-                    return "по будням"
+                    if recurrence_interval == 1:
+                        return "по будням"
+                    else:
+                        return f"каждые {recurrence_interval} будних дня"
             
             elif recurrence_type == RecurrenceType.WEEKENDS:
                 if reminder_time:
                     time_str = reminder_time.strftime("%H:%M")
-                    return f"в {time_str} по выходным"
+                    if recurrence_interval == 1:
+                        return f"в {time_str} по выходным"
+                    else:
+                        return f"в {time_str} каждые {recurrence_interval} выходных дня"
                 else:
-                    return "по выходным"
+                    if recurrence_interval == 1:
+                        return "по выходным"
+                    else:
+                        return f"каждые {recurrence_interval} выходных дня"
             
             elif recurrence_type == RecurrenceType.WEEKLY:
                 # For weekly tasks, always show day of week and time
@@ -694,6 +937,36 @@ class TaskService:
                     else:
                         return f"каждые {recurrence_interval} месяца"
             
+            elif recurrence_type == RecurrenceType.MONTHLY_WEEKDAY:
+                if reminder_time:
+                    time_str = reminder_time.strftime("%H:%M")
+                    weekday_num = reminder_time.weekday()
+                    day_of_month = reminder_time.day
+                    weekdays_ru = [
+                        "понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье"
+                    ]
+                    weekday_ru = weekdays_ru[weekday_num]
+                    # Determine which occurrence (1st, 2nd, 3rd, 4th, or last)
+                    # Use a more accurate method by checking the actual date
+                    year = reminder_time.year if hasattr(reminder_time, 'year') else datetime.now().year
+                    month = reminder_time.month
+                    n = TaskService._determine_weekday_occurrence(day_of_month, weekday_num, year, month)
+                    if n == -1:
+                        nth_str = "последний"
+                    else:
+                        nth_words = {1: "первый", 2: "второй", 3: "третий", 4: "четвертый"}
+                        nth_str = nth_words.get(n, f"{n}-й")
+                    
+                    if recurrence_interval == 1:
+                        return f"{nth_str} {weekday_ru} месяца в {time_str}"
+                    else:
+                        return f"{nth_str} {weekday_ru} месяца в {time_str} каждые {recurrence_interval} месяца"
+                else:
+                    if recurrence_interval == 1:
+                        return "ежемесячно (по дню недели)"
+                    else:
+                        return f"каждые {recurrence_interval} месяца (по дню недели)"
+            
             elif recurrence_type == RecurrenceType.YEARLY:
                 if reminder_time:
                     time_str = reminder_time.strftime("%H:%M")
@@ -714,6 +987,40 @@ class TaskService:
                         return "ежегодно"
                     else:
                         return f"каждые {recurrence_interval} года"
+            
+            elif recurrence_type == RecurrenceType.YEARLY_WEEKDAY:
+                if reminder_time:
+                    time_str = reminder_time.strftime("%H:%M")
+                    weekday_num = reminder_time.weekday()
+                    day_of_month = reminder_time.day
+                    month_num = reminder_time.month
+                    weekdays_ru = [
+                        "понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье"
+                    ]
+                    weekday_ru = weekdays_ru[weekday_num]
+                    months_ru = {
+                        1: "января", 2: "февраля", 3: "марта", 4: "апреля",
+                        5: "мая", 6: "июня", 7: "июля", 8: "августа",
+                        9: "сентября", 10: "октября", 11: "ноября", 12: "декабря"
+                    }
+                    month_ru = months_ru.get(month_num, f"{month_num} месяца")
+                    # Determine which occurrence (1st, 2nd, 3rd, 4th, or last)
+                    week_of_month = (day_of_month - 1) // 7 + 1
+                    if week_of_month > 4:
+                        nth_str = "последний"
+                    else:
+                        nth_words = {1: "первый", 2: "второй", 3: "третий", 4: "четвертый"}
+                        nth_str = nth_words.get(week_of_month, f"{week_of_month}-й")
+                    
+                    if recurrence_interval == 1:
+                        return f"{nth_str} {weekday_ru} {month_ru} в {time_str} ежегодно"
+                    else:
+                        return f"{nth_str} {weekday_ru} {month_ru} в {time_str} каждые {recurrence_interval} года"
+                else:
+                    if recurrence_interval == 1:
+                        return "ежегодно (по дню недели)"
+                    else:
+                        return f"каждые {recurrence_interval} года (по дню недели)"
             
             else:
                 return "расписание"

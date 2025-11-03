@@ -7,8 +7,161 @@ let groups = []; // Список групп
 let filteredTasks = [];
 let searchQuery = '';
 let filterState = null;
-let currentView = 'today'; // 'today', 'all' или 'history'
+let currentView = 'today'; // 'today', 'all', 'history', 'settings'
 let adminMode = false; // Режим администратора
+let ws = null; // WebSocket connection
+
+function getWsUrl() {
+    const host = (typeof window !== 'undefined' && window.location && window.location.hostname) ? window.location.hostname : '192.168.1.2';
+    return `ws://${host}:8000/ws`;
+}
+
+function applyTaskEventFromWs(action, taskJson, taskId) {
+    if (action === 'deleted' && taskId != null) {
+        allTasks = allTasks.filter(t => t.id !== taskId);
+        filterAndRenderTasks();
+        return;
+    }
+    if (!taskJson) {
+        // Без payload'a делаем полную перезагрузку
+        loadData();
+        return;
+    }
+    // Преобразуем TaskResponse -> внутреннюю структуру
+    const now = new Date();
+    const todayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const t = taskJson;
+    let isCompleted = false;
+    if (t.task_type === 'one_time') {
+        isCompleted = !t.is_active;
+    } else if (t.last_completed_at) {
+        const completedDate = new Date(t.last_completed_at);
+        const completedDateLocal = new Date(
+            completedDate.getFullYear(),
+            completedDate.getMonth(),
+            completedDate.getDate()
+        );
+        const taskDate = new Date(t.next_due_date);
+        const taskDateLocal = new Date(
+            taskDate.getFullYear(),
+            taskDate.getMonth(),
+            taskDate.getDate()
+        );
+        const completedToday = completedDateLocal.getTime() === todayLocal.getTime();
+        const taskDueTodayOrOverdue = taskDateLocal <= todayLocal;
+        if (completedToday && taskDueTodayOrOverdue) {
+            isCompleted = true;
+        } else if (taskDateLocal < todayLocal) {
+            isCompleted = true;
+        }
+    }
+    const mapped = {
+        ...t,
+        type: 'task',
+        is_recurring: t.task_type === 'recurring',
+        task_type: t.task_type || 'one_time',
+        due_date: t.next_due_date,
+        is_completed: isCompleted,
+        is_active: t.is_active,
+        last_completed_at: t.last_completed_at,
+    };
+    const idx = allTasks.findIndex(x => x.id === mapped.id);
+    if (idx >= 0) {
+        allTasks[idx] = mapped;
+    } else {
+        allTasks.push(mapped);
+    }
+    filterAndRenderTasks();
+}
+
+function connectWebSocket() {
+    try {
+        const url = getWsUrl();
+        if (ws) {
+            try { ws.close(); } catch (_) {}
+        }
+        ws = new WebSocket(url);
+        ws.onopen = () => {
+            console.log('[WS] connection opened', url);
+        };
+        ws.onmessage = (ev) => {
+            try {
+                console.log('[WS<-]', ev.data);
+                const msg = JSON.parse(ev.data);
+                if (msg.type === 'task_update') {
+                    applyTaskEventFromWs(msg.action, msg.task || null, msg.task_id || null);
+                }
+            } catch (e) {
+                console.error('[WS] parse error', e);
+                // Фоллбэк: полная перезагрузка
+                loadData();
+            }
+        };
+        ws.onclose = () => {
+            console.log('[WS] connection closed, retry in 2s');
+            setTimeout(connectWebSocket, 2000);
+        };
+        ws.onerror = (e) => {
+            console.error('[WS] error', e);
+        };
+    } catch (e) {
+        console.error('[WS] failed to connect', e);
+    }
+}
+
+/**
+ * Find the N-th occurrence of a weekday in a given month.
+ * 
+ * @param {number} year - Year
+ * @param {number} month - Month (0-11, where 0=January)
+ * @param {number} weekday - Day of week (0=Monday, 6=Sunday)
+ * @param {number} n - Which occurrence (1=first, 2=second, 3=third, 4=fourth, -1=last)
+ * @returns {Date} Date object for the N-th weekday in the month
+ */
+function findNthWeekdayInMonth(year, month, weekday, n) {
+    // Get first day of month
+    const firstDay = new Date(year, month, 1);
+    // Find first occurrence of weekday in month
+    const firstWeekday = firstDay.getDay(); // 0=Sunday, 6=Saturday
+    // Convert to Monday=0, Sunday=6
+    const firstWeekdayNormalized = (firstWeekday + 6) % 7;
+    
+    let daysToFirst = (weekday - firstWeekdayNormalized + 7) % 7;
+    
+    if (n === -1) {
+        // Find last occurrence: go to last day and work backwards
+        const lastDay = new Date(year, month + 1, 0).getDate();
+        const lastDate = new Date(year, month, lastDay);
+        const lastWeekday = lastDate.getDay();
+        const lastWeekdayNormalized = (lastWeekday + 6) % 7;
+        const daysFromLast = (lastWeekdayNormalized - weekday + 7) % 7;
+        const result = new Date(year, month, lastDay - daysFromLast);
+        // Ensure result is still in the same month
+        if (result.getMonth() !== month) {
+            result.setDate(result.getDate() - 7);
+        }
+        return result;
+    } else {
+        // Find N-th occurrence
+        const result = new Date(year, month, 1 + daysToFirst + (n - 1) * 7);
+        // Check if date is still in the same month
+        if (result.getMonth() !== month) {
+            // This means we're trying to get a 5th occurrence, which doesn't exist
+            // Fall back to last occurrence
+            const lastDay = new Date(year, month + 1, 0).getDate();
+            const lastDate = new Date(year, month, lastDay);
+            const lastWeekday = lastDate.getDay();
+            const lastWeekdayNormalized = (lastWeekday + 6) % 7;
+            const daysFromLast = (lastWeekdayNormalized - weekday + 7) % 7;
+            const resultLast = new Date(year, month, lastDay - daysFromLast);
+            if (resultLast.getMonth() !== month) {
+                resultLast.setDate(resultLast.getDate() - 7);
+            }
+            return resultLast;
+        }
+        return result;
+    }
+}
 
 /**
  * Initialize application.
@@ -16,6 +169,7 @@ let adminMode = false; // Режим администратора
 async function init() {
     setupEventListeners();
     await loadData();
+    connectWebSocket();
 }
 
 /**
@@ -39,6 +193,8 @@ function setupEventListeners() {
     document.getElementById('view-today-btn').addEventListener('click', () => switchView('today'));
     document.getElementById('view-all-btn').addEventListener('click', () => switchView('all'));
     document.getElementById('view-history-btn').addEventListener('click', () => switchView('history'));
+    const settingsBtn = document.getElementById('view-settings-btn');
+    if (settingsBtn) settingsBtn.addEventListener('click', () => switchView('settings'));
     
     // Admin mode toggle
     document.getElementById('toggle-admin-btn').addEventListener('click', toggleAdminMode);
@@ -81,6 +237,9 @@ function setupEventListeners() {
             document.getElementById('task-recurrence').required = true;
             document.getElementById('task-interval').required = true;
             document.getElementById('task-interval-days').required = false;
+            // Update interval field visibility based on recurrence type
+            updateIntervalFieldVisibility();
+            updateMonthlyYearlyOptions();
         } else if (taskType === 'interval') {
             recurringFields.style.display = 'none';
             intervalFields.style.display = 'block';
@@ -95,6 +254,80 @@ function setupEventListeners() {
         if (!taskId) {
             setQuickDate('today');
         }
+    });
+    
+    // Recurrence type toggle - show/hide interval field and monthly/yearly options
+    document.getElementById('task-recurrence').addEventListener('change', () => {
+        updateIntervalFieldVisibility();
+        updateMonthlyYearlyOptions();
+    });
+    
+    function updateIntervalFieldVisibility() {
+        const taskType = document.getElementById('task-is-recurring').value;
+        const recurrenceType = document.getElementById('task-recurrence').value;
+        const intervalField = document.getElementById('task-interval').closest('.form-group');
+        
+        if (taskType === 'recurring') {
+            // Показываем поле "Интервал" для всех типов повторения (включая будни и выходные)
+            intervalField.style.display = 'block';
+            document.getElementById('task-interval').required = true;
+        }
+    }
+    
+    function updateMonthlyYearlyOptions() {
+        const taskType = document.getElementById('task-is-recurring').value;
+        const recurrenceType = document.getElementById('task-recurrence').value;
+        const monthlyYearlyOptions = document.getElementById('monthly-yearly-options');
+        const weekdayBindingFields = document.getElementById('weekday-binding-fields');
+        const dueDateField = document.getElementById('due-date-field');
+        const bindingType = document.querySelector('input[name="monthly-yearly-binding"]:checked');
+        
+        if (taskType === 'recurring' && (recurrenceType === 'monthly' || recurrenceType === 'yearly')) {
+            monthlyYearlyOptions.style.display = 'block';
+            // Show/hide fields based on binding type
+            if (bindingType && bindingType.value === 'weekday') {
+                weekdayBindingFields.style.display = 'block';
+                // For yearly_weekday, we still need to show date field for month selection
+                if (recurrenceType === 'yearly') {
+                    dueDateField.style.display = 'block';
+                    document.getElementById('date-label').textContent = 'Месяц (для выбора месяца года):';
+                    // Make date field required but only for month selection
+                    document.getElementById('task-due-date').required = true;
+                } else {
+                    // For monthly_weekday, hide date field
+                    dueDateField.style.display = 'none';
+                    document.getElementById('task-due-date').required = false;
+                }
+                // Make weekday fields required
+                document.getElementById('weekday-day').required = true;
+                document.getElementById('weekday-number').required = true;
+                document.getElementById('weekday-time').required = true;
+            } else {
+                weekdayBindingFields.style.display = 'none';
+                dueDateField.style.display = 'block';
+                document.getElementById('date-label').textContent = 'Начало:';
+                // Make weekday fields not required
+                document.getElementById('weekday-day').required = false;
+                document.getElementById('weekday-number').required = false;
+                document.getElementById('weekday-time').required = false;
+                // Make regular date field required
+                document.getElementById('task-due-date').required = true;
+            }
+        } else {
+            monthlyYearlyOptions.style.display = 'none';
+            weekdayBindingFields.style.display = 'none';
+            dueDateField.style.display = 'block';
+            document.getElementById('date-label').textContent = 'Начало:';
+            // Make regular date field required
+            document.getElementById('task-due-date').required = true;
+        }
+    }
+    
+    // Binding type toggle - show/hide weekday fields
+    document.querySelectorAll('input[name="monthly-yearly-binding"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            updateMonthlyYearlyOptions();
+        });
     });
 
     // Modal close buttons
@@ -262,27 +495,44 @@ function switchView(view) {
     const todayBtn = document.getElementById('view-today-btn');
     const allBtn = document.getElementById('view-all-btn');
     const historyBtn = document.getElementById('view-history-btn');
+    const settingsBtn = document.getElementById('view-settings-btn');
     const historyFilters = document.getElementById('history-filters-section');
     const tasksFilters = document.getElementById('tasks-filters-section');
+    const settingsView = document.getElementById('settings-view');
+    const tasksList = document.getElementById('tasks-list');
     
     // Update button states
     todayBtn.classList.remove('active');
     allBtn.classList.remove('active');
     historyBtn.classList.remove('active');
+    if (settingsBtn) settingsBtn.classList.remove('active');
     
     if (view === 'today') {
         todayBtn.classList.add('active');
         historyFilters.style.display = 'none';
         tasksFilters.style.display = 'block';
+        if (settingsView) settingsView.style.display = 'none';
+        if (tasksList) tasksList.style.display = 'block';
     } else if (view === 'all') {
         allBtn.classList.add('active');
         historyFilters.style.display = 'none';
         tasksFilters.style.display = 'block';
+        if (settingsView) settingsView.style.display = 'none';
+        if (tasksList) tasksList.style.display = 'block';
     } else if (view === 'history') {
         historyBtn.classList.add('active');
         historyFilters.style.display = 'block';
         tasksFilters.style.display = 'none';
+        if (settingsView) settingsView.style.display = 'none';
+        if (tasksList) tasksList.style.display = 'block';
         renderHistoryView();
+        return;
+    } else if (view === 'settings') {
+        if (settingsBtn) settingsBtn.classList.add('active');
+        historyFilters.style.display = 'none';
+        tasksFilters.style.display = 'none';
+        if (tasksList) tasksList.style.display = 'none';
+        if (settingsView) settingsView.style.display = 'block';
         return;
     }
     
@@ -428,13 +678,7 @@ function renderTodayView() {
         }
     });
 
-    // Mark tasks as shown for current iteration
-    filteredTasks.forEach(task => {
-        // Mark asynchronously without waiting
-        tasksAPI.markShown(task.id).catch(err => {
-            console.error('Error marking task as shown:', err);
-        });
-    });
+    // NOTE: Removed automatic markShown calls to prevent request floods and resource exhaustion
     
     let html = '<div class="today-tasks-list">';
     
@@ -560,11 +804,20 @@ function renderAllTasksCard(task, now) {
     } else if (taskType === 'recurring') {
         const recurrenceText = {
             daily: 'Ежедневно',
+            weekdays: 'По будням',
+            weekends: 'По выходным',
             weekly: 'Еженедельно',
             monthly: 'Ежемесячно',
+            monthly_weekday: 'Ежемесячно (по дню недели)',
             yearly: 'Ежегодно',
+            yearly_weekday: 'Ежегодно (по дню недели)',
         }[task.recurrence_type] || task.recurrence_type || 'Повторяющаяся';
-        typeLabel = `🔄 ${recurrenceText} (каждые ${task.recurrence_interval || 1})`;
+        // Показываем интервал для всех типов повторения
+        if (task.recurrence_interval && task.recurrence_interval > 1) {
+            typeLabel = `🔄 ${recurrenceText} (каждые ${task.recurrence_interval})`;
+        } else {
+            typeLabel = `🔄 ${recurrenceText}`;
+        }
     } else if (taskType === 'interval') {
         typeLabel = `⏱️ Интервал (${task.interval_days || 7} дней)`;
     }
@@ -625,11 +878,20 @@ function renderTaskCard(task, now) {
     } else if (taskType === 'recurring' && task.recurrence_type) {
         const recurrenceText = {
             daily: 'Ежедневно',
+            weekdays: 'По будням',
+            weekends: 'По выходным',
             weekly: 'Еженедельно',
             monthly: 'Ежемесячно',
+            monthly_weekday: 'Ежемесячно (по дню недели)',
             yearly: 'Ежегодно',
+            yearly_weekday: 'Ежегодно (по дню недели)',
         }[task.recurrence_type] || task.recurrence_type;
-        metaInfo = `<span>🔄 ${recurrenceText} (каждые ${task.recurrence_interval})</span>`;
+        // Показываем интервал для всех типов повторения
+        if (task.recurrence_interval && task.recurrence_interval > 1) {
+            metaInfo = `<span>🔄 ${recurrenceText} (каждые ${task.recurrence_interval})</span>`;
+        } else {
+            metaInfo = `<span>🔄 ${recurrenceText}</span>`;
+        }
     } else if (taskType === 'one_time') {
         metaInfo = `<span>📌 Разовое</span>`;
     }
@@ -694,11 +956,94 @@ function openTaskModal(taskId = null) {
                 document.getElementById('interval-fields').style.display = 'none';
                 document.getElementById('date-label').textContent = 'Начало:';
             } else if (taskSchedulingType === 'recurring') {
-                document.getElementById('task-recurrence').value = task.recurrence_type || 'daily';
+                let recurrenceType = task.recurrence_type || 'daily';
+                
+                // Determine binding type for monthly/yearly and set recurrence type
+                let bindingType = 'date'; // default
+                if (recurrenceType === 'monthly_weekday') {
+                    recurrenceType = 'monthly';
+                    bindingType = 'weekday';
+                } else if (recurrenceType === 'yearly_weekday') {
+                    recurrenceType = 'yearly';
+                    bindingType = 'weekday';
+                }
+                
+                document.getElementById('task-recurrence').value = recurrenceType;
                 document.getElementById('task-interval').value = task.recurrence_interval || 1;
                 document.getElementById('recurring-fields').style.display = 'block';
                 document.getElementById('interval-fields').style.display = 'none';
                 document.getElementById('date-label').textContent = 'Начало:';
+                
+                // Set binding type for monthly/yearly
+                if (recurrenceType === 'monthly' || recurrenceType === 'yearly') {
+                    document.getElementById(bindingType === 'weekday' ? 'binding-weekday' : 'binding-date').checked = true;
+                    
+                    // If weekday binding, fill weekday fields from reminder_time
+                    if (bindingType === 'weekday' && task.reminder_time) {
+                        const reminderDate = new Date(task.reminder_time);
+                        // Get day of week (0=Monday, 6=Sunday)
+                        const dayOfWeek = (reminderDate.getDay() + 6) % 7;
+                        // Get time
+                        const hours = String(reminderDate.getHours()).padStart(2, '0');
+                        const minutes = String(reminderDate.getMinutes()).padStart(2, '0');
+                        
+                        // Determine which occurrence (1-4 or -1 for last)
+                        // Use backend logic: check if this is the last occurrence
+                        const year = reminderDate.getFullYear();
+                        const month = reminderDate.getMonth();
+                        const dayOfMonth = reminderDate.getDate();
+                        
+                        // Find last occurrence
+                        const lastDay = new Date(year, month + 1, 0).getDate();
+                        const lastDate = new Date(year, month, lastDay);
+                        const lastWeekday = lastDate.getDay();
+                        const lastWeekdayNormalized = (lastWeekday + 6) % 7;
+                        const daysFromLast = (lastWeekdayNormalized - dayOfWeek + 7) % 7;
+                        const lastOccurrence = new Date(year, month, lastDay - daysFromLast);
+                        if (lastOccurrence.getMonth() !== month) {
+                            lastOccurrence.setDate(lastOccurrence.getDate() - 7);
+                        }
+                        
+                        let weekdayNumber = 1;
+                        if (lastOccurrence.getDate() === dayOfMonth) {
+                            weekdayNumber = -1; // Last occurrence
+                        } else {
+                            // Calculate which occurrence (1-4)
+                            const firstDay = new Date(year, month, 1);
+                            const firstWeekday = firstDay.getDay();
+                            const firstWeekdayNormalized = (firstWeekday + 6) % 7;
+                            const daysToFirst = (dayOfWeek - firstWeekdayNormalized + 7) % 7;
+                            const firstOccurrence = new Date(year, month, 1 + daysToFirst);
+                            const daysDiff = dayOfMonth - firstOccurrence.getDate();
+                            weekdayNumber = Math.floor(daysDiff / 7) + 1;
+                            weekdayNumber = Math.min(weekdayNumber, 4);
+                        }
+                        
+                        document.getElementById('weekday-day').value = dayOfWeek;
+                        document.getElementById('weekday-number').value = weekdayNumber;
+                        document.getElementById('weekday-time').value = `${hours}:${minutes}`;
+                        
+                        // For yearly_weekday, also set date input to show month
+                        if (recurrenceType === 'yearly' && task.reminder_time) {
+                            const reminderDate = new Date(task.reminder_time);
+                            // Set date input to a date in the correct month (first day of month)
+                            const month = reminderDate.getMonth() + 1;
+                            const year = reminderDate.getFullYear();
+                            const monthStr = String(month).padStart(2, '0');
+                            const dateStr = `${year}-${monthStr}-01T00:00`;
+                            dateInput.value = dateStr;
+                            dateInput.dataset.originalValue = task.reminder_time;
+                        }
+                    } else if (task.reminder_time) {
+                        // For date binding, use reminder_time for date input
+                        dateInput.value = formatDatetimeLocal(task.reminder_time);
+                        dateInput.dataset.originalValue = task.reminder_time;
+                    }
+                }
+                
+                // Update interval field visibility based on recurrence type
+                updateIntervalFieldVisibility();
+                updateMonthlyYearlyOptions();
             } else if (taskSchedulingType === 'interval') {
                 document.getElementById('task-interval-days').value = task.interval_days || 7;
                 document.getElementById('recurring-fields').style.display = 'none';
@@ -726,6 +1071,14 @@ function openTaskModal(taskId = null) {
         document.getElementById('date-label').textContent = 'Начало:';
         // Clear original value for new tasks
         dateInput.removeAttribute('data-original-value');
+        // Reset binding type to default (date)
+        document.getElementById('binding-date').checked = true;
+        // Hide monthly/yearly options
+        document.getElementById('monthly-yearly-options').style.display = 'none';
+        // Reset weekday fields
+        document.getElementById('weekday-day').value = '0';
+        document.getElementById('weekday-number').value = '1';
+        document.getElementById('weekday-time').value = '09:00';
         setQuickDate('today');
     }
 
@@ -812,23 +1165,80 @@ async function handleTaskSubmit(e) {
             taskData.group_id = groupIdValue;
         }
         // Get date value, preserving original value if unchanged
-        const dateInput = document.getElementById('task-due-date');
-        const originalValue = dateInput.dataset.originalValue;
-        const currentValue = dateInput.value;
+        // Check if we're using weekday binding for monthly/yearly
+        const recurrenceType = document.getElementById('task-recurrence').value;
+        const bindingType = document.querySelector('input[name="monthly-yearly-binding"]:checked');
+        const useWeekdayBinding = bindingType && bindingType.value === 'weekday' && (recurrenceType === 'monthly' || recurrenceType === 'yearly');
         
-        if (originalValue && id && taskType) {
-            // For editing: check if date actually changed
-            const originalLocal = formatDatetimeLocal(originalValue);
-            if (currentValue === originalLocal) {
-                // Date hasn't changed, use original value
-                taskData.next_due_date = originalValue;
+        if (useWeekdayBinding) {
+            // Calculate date from weekday fields
+            const weekdayDay = parseInt(document.getElementById('weekday-day').value); // 0-6 (Monday-Sunday)
+            const weekdayNumber = parseInt(document.getElementById('weekday-number').value); // 1-4 or -1
+            const weekdayTime = document.getElementById('weekday-time').value; // HH:MM
+            
+            // Calculate target date
+            const now = new Date();
+            let targetYear = now.getFullYear();
+            let targetMonth = now.getMonth(); // 0-11
+            
+            if (recurrenceType === 'yearly') {
+                // For yearly_weekday, we need to use month from date input
+                // When editing, use existing reminder_time month
+                // When creating new, use month from date input (user selects month)
+                const dateInput = document.getElementById('task-due-date');
+                const originalValue = dateInput.dataset.originalValue;
+                const currentValue = dateInput.value;
+                
+                if (originalValue && id) {
+                    // Use existing month from reminder_time
+                    const existingDate = new Date(originalValue);
+                    targetMonth = existingDate.getMonth();
+                } else if (currentValue) {
+                    // Use month from date input (user selects month)
+                    const referenceDate = new Date(currentValue);
+                    targetMonth = referenceDate.getMonth();
+                } else {
+                    // Default to current month
+                    targetMonth = now.getMonth();
+                }
+            }
+            
+            // Find the N-th weekday in the target month
+            const targetDate = findNthWeekdayInMonth(targetYear, targetMonth, weekdayDay, weekdayNumber);
+            
+            // Set time
+            const [hours, minutes] = weekdayTime.split(':').map(Number);
+            targetDate.setHours(hours, minutes, 0, 0);
+            
+            // Format as ISO string (local time, no timezone)
+            const year = targetDate.getFullYear();
+            const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+            const day = String(targetDate.getDate()).padStart(2, '0');
+            const hoursStr = String(hours).padStart(2, '0');
+            const minutesStr = String(minutes).padStart(2, '0');
+            
+            taskData.next_due_date = `${year}-${month}-${day}T${hoursStr}:${minutesStr}:00`;
+            taskData.reminder_time = taskData.next_due_date;
+        } else {
+            // Use regular date input
+            const dateInput = document.getElementById('task-due-date');
+            const originalValue = dateInput.dataset.originalValue;
+            const currentValue = dateInput.value;
+            
+            if (originalValue && id && taskType) {
+                // For editing: check if date actually changed
+                const originalLocal = formatDatetimeLocal(originalValue);
+                if (currentValue === originalLocal) {
+                    // Date hasn't changed, use original value
+                    taskData.next_due_date = originalValue;
+                } else {
+                    // Date changed, convert new local time
+                    taskData.next_due_date = parseDatetimeLocal(currentValue);
+                }
             } else {
-                // Date changed, convert new local time
+                // For new tasks or if no original value, convert local time
                 taskData.next_due_date = parseDatetimeLocal(currentValue);
             }
-        } else {
-            // For new tasks or if no original value, convert local time
-            taskData.next_due_date = parseDatetimeLocal(currentValue);
         }
         
         if (taskSchedulingType === 'one_time') {
@@ -840,14 +1250,28 @@ async function handleTaskSubmit(e) {
         } else if (taskSchedulingType === 'recurring') {
             // Universal function for saving recurring task configuration
             // Simply save interval and datetime for any interval type
-            taskData.recurrence_type = document.getElementById('task-recurrence').value;
+            let recurrenceType = document.getElementById('task-recurrence').value;
+            
+            // For monthly and yearly, determine recurrence_type based on binding option
+            if (recurrenceType === 'monthly' || recurrenceType === 'yearly') {
+                const bindingType = document.querySelector('input[name="monthly-yearly-binding"]:checked').value;
+                if (bindingType === 'weekday') {
+                    recurrenceType = recurrenceType === 'monthly' ? 'monthly_weekday' : 'yearly_weekday';
+                }
+            }
+            
+            taskData.recurrence_type = recurrenceType;
+            // For all recurrence types, use the interval value from input
             taskData.recurrence_interval = parseInt(document.getElementById('task-interval').value);
             // Явно очищаем interval_days для recurring задач
             taskData.interval_days = null;
             
             // Save reminder_time as passed (no normalization, no special handling)
             // Normalization is only used for calculating next date and formatting comments on backend
-            taskData.reminder_time = taskData.next_due_date;
+            // For weekday binding, reminder_time is already set above
+            if (!useWeekdayBinding) {
+                taskData.reminder_time = taskData.next_due_date;
+            }
         } else if (taskSchedulingType === 'interval') {
             taskData.interval_days = parseInt(document.getElementById('task-interval-days').value);
             // Явно очищаем recurrence_type и recurrence_interval для interval задач
@@ -985,34 +1409,8 @@ async function toggleTaskComplete(id, completed) {
             await tasksAPI.complete(id);
             showToast('Задача отмечена как выполненная', 'success');
         } else {
-            // Сбрасываем статус подтверждения
-            // Для разовых задач - активируем обратно
-            // Для повторяющихся и интервальных - сбрасываем last_completed_at если было выполнено сегодня
-            const updateData = {};
-            
-            if (task.task_type === 'one_time') {
-                // Для разовых задач просто активируем
-                updateData.is_active = true;
-            } else {
-                // Для повторяющихся и интервальных задач
-                // Проверяем, была ли задача выполнена сегодня
-                const now = new Date();
-                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                
-                if (task.last_completed_at) {
-                    const completedDate = new Date(task.last_completed_at);
-                    const completedToday = completedDate.getFullYear() === today.getFullYear() &&
-                                          completedDate.getMonth() === today.getMonth() &&
-                                          completedDate.getDate() === today.getDate();
-                    
-                    if (completedToday) {
-                        // Если была выполнена сегодня - сбрасываем last_completed_at
-                        updateData.last_completed_at = null;
-                    }
-                }
-            }
-            
-            await tasksAPI.update(id, updateData);
+            // Сбрасываем статус подтверждения через API /uncomplete
+            await tasksAPI.uncomplete(id);
             showToast('Статус подтверждения сброшен', 'success');
         }
         
@@ -1287,20 +1685,69 @@ async function renderHistoryView() {
         // Update filters with current data
         updateHistoryFilters();
 
-        // Load history for all tasks
-        const historyPromises = allTasks.map(task => {
-            const taskGroup = groups.find(g => g.id === task.group_id);
-            return tasksAPI.getHistory(task.id).then(history => 
-                history.map(entry => ({
-                    ...entry, 
-                    task_title: task.title,
-                    task_id: task.id,
-                    group_id: task.group_id,
-                    group_name: taskGroup ? taskGroup.name : null
-                }))
-            );
+        // Load all history (including deleted tasks)
+        const allHistoryRaw = await tasksAPI.getAllHistory();
+        
+        // Process history entries and enrich with task/group info
+        let allHistory = allHistoryRaw.map(entry => {
+            let task_id = entry.task_id;
+            let task_title = null;
+            let group_id = null;
+            let group_name = null;
+            
+            // For deleted tasks, task_id may be NULL, but it's preserved in meta_data
+            if (!task_id && entry.meta_data) {
+                try {
+                    const metadata = JSON.parse(entry.meta_data);
+                    task_id = metadata.task_id || null;
+                    task_title = metadata.task_title || null;
+                } catch (e) {
+                    // Ignore JSON parse errors
+                }
+            }
+            
+            // Find task info if it exists
+            if (task_id) {
+                const task = allTasks.find(t => t.id === task_id);
+                if (task) {
+                    task_title = task.title;
+                    group_id = task.group_id;
+                    const taskGroup = groups.find(g => g.id === task.group_id);
+                    group_name = taskGroup ? taskGroup.name : null;
+                } else {
+                    // Task was deleted, use metadata info
+                    if (!task_title && entry.meta_data) {
+                        try {
+                            const metadata = JSON.parse(entry.meta_data);
+                            task_title = metadata.task_title || `Удаленная задача #${task_id}`;
+                        } catch (e) {
+                            task_title = `Удаленная задача #${task_id}`;
+                        }
+                    }
+                }
+            } else if (entry.meta_data) {
+                // Handle case where task_id is NULL but we have metadata
+                try {
+                    const metadata = JSON.parse(entry.meta_data);
+                    if (metadata.task_title) {
+                        task_title = metadata.task_title;
+                    }
+                    if (metadata.task_id) {
+                        task_id = metadata.task_id;
+                    }
+                } catch (e) {
+                    // Ignore JSON parse errors
+                }
+            }
+            
+            return {
+                ...entry,
+                task_title: task_title || 'Неизвестная задача',
+                task_id: task_id,
+                group_id: group_id,
+                group_name: group_name
+            };
         });
-        let allHistory = (await Promise.all(historyPromises)).flat();
 
         // Apply filters
         if (selectedGroupId) {
@@ -1335,22 +1782,35 @@ async function renderHistoryView() {
             'deactivated': 'Деактивирована'
         };
 
-        const actionColors = {
-            'created': '#4CAF50',      // Green
-            'first_shown': '#2196F3',  // Blue
-            'confirmed': '#8BC34A',    // Light Green
-            'unconfirmed': '#FF9800',  // Orange
-            'edited': '#FFC107',       // Amber
-            'deleted': '#F44336',      // Red
-            'activated': '#4CAF50',    // Green
-            'deactivated': '#9E9E9E'   // Grey
+        // Light pastel background/border colors for statuses (good contrast on blue theme)
+        const actionBgColors = {
+            created: '#E3F2FD',       // very light blue
+            first_shown: '#E0F2FE',   // sky-100
+            confirmed: '#DBEAFE',     // indigo-100
+            unconfirmed: '#E0E7FF',   // indigo-100 slightly different
+            edited: '#F0F9FF',        // lightest
+            deleted: '#FFE4E6',       // light rose for emphasis but still light
+            activated: '#E6F0FF',     // custom light blue
+            deactivated: '#F1F5F9'    // slate-100 neutral
+        };
+
+        // Darker text colors for status labels to ensure readability on light bg
+        const actionTextColors = {
+            created: '#1E3A8A',       // blue-900
+            first_shown: '#0F3D84',   // custom dark blue
+            confirmed: '#1D4ED8',     // blue-700
+            unconfirmed: '#1D4ED8',   // same family for consistency
+            edited: '#0B4A6F',        // dark cyan/blue
+            deleted: '#B91C1C',       // red-700 for clarity on light rose
+            activated: '#1E40AF',     // blue-800
+            deactivated: '#334155'    // slate-700
         };
 
         let html = '<div style="display: flex; flex-direction: column; gap: 4px;">';
         allHistory.forEach(entry => {
             const actionDate = new Date(entry.action_timestamp);
-            const actionColor = actionColors[entry.action] || '#757575';
-            const bgColor = actionColor + '20'; // Add transparency
+            const borderColor = actionTextColors[entry.action] || '#475569';
+            const bgColor = actionBgColors[entry.action] || '#F1F5F9';
             
             let changesText = '';
             if (entry.comment) {
@@ -1362,10 +1822,10 @@ async function renderHistoryView() {
                 : entry.task_title;
 
             html += `
-                <div class="history-entry" style="background: ${bgColor}; border-left-color: ${actionColor};">
+                <div class="history-entry" style="background: ${bgColor}; border-left-color: ${borderColor};">
                     <span class="history-entry-date">${formatDateTime(actionDate)}</span>
                     <span class="history-entry-task">${escapeHtml(fullTaskName)}</span>
-                    <span class="history-entry-action" style="color: ${actionColor};">
+                    <span class="history-entry-action" style="color: ${borderColor};">
                         ${actionLabels[entry.action] || entry.action}
                     </span>
                     <span class="history-entry-comment">${changesText ? escapeHtml(changesText) : ''}</span>

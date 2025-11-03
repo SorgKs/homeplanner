@@ -10,7 +10,7 @@ from backend.models.task_history import TaskHistoryAction
 class TaskHistoryBase(BaseModel):
     """Base schema for TaskHistory."""
 
-    task_id: int = Field(..., description="Task ID")
+    task_id: int | None = Field(None, description="Task ID (may be NULL for deleted tasks)")
     action: TaskHistoryAction = Field(..., description="Action type")
     action_timestamp: datetime = Field(default_factory=datetime.now, description="Action timestamp")
     iteration_date: datetime | None = Field(None, description="Task iteration date")

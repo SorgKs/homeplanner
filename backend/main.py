@@ -1,6 +1,7 @@
 """Main FastAPI application entry point."""
 
 from contextlib import asynccontextmanager
+import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,6 +10,8 @@ from backend.config import get_settings
 from backend.database import engine, init_db
 from backend.models import Event, Group, Task, TaskHistory  # noqa: F401
 from backend.routers import events, groups, task_history, tasks
+from backend.routers import download
+from backend.routers import realtime
 
 
 @asynccontextmanager
@@ -23,6 +26,14 @@ async def lifespan(app: FastAPI):
 
 def create_app() -> FastAPI:
     """Create and configure FastAPI application."""
+    # Configure logging to show INFO from our modules
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s %(message)s",
+    )
+    logging.getLogger("homeplanner").setLevel(logging.INFO)
+    logging.getLogger("homeplanner.realtime").setLevel(logging.INFO)
+    logging.getLogger("homeplanner.tasks").setLevel(logging.INFO)
     settings = get_settings()
 
     app = FastAPI(
@@ -46,6 +57,8 @@ def create_app() -> FastAPI:
     app.include_router(tasks.router, prefix="/api/v1/tasks", tags=["tasks"])
     app.include_router(groups.router, prefix="/api/v1/groups", tags=["groups"])
     app.include_router(task_history.router, prefix="/api/v1", tags=["task_history"])
+    app.include_router(download.router, prefix="/download", tags=["download"])
+    app.include_router(realtime.router, tags=["realtime"])  # /ws
 
     return app
 

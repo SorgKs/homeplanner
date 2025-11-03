@@ -2,7 +2,15 @@
  * API client for HomePlanner backend.
  */
 
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+// API base URL configuration
+// Priority: window.API_BASE_URL → localStorage('apiBaseUrl') → default LAN IP
+let API_BASE_URL = (typeof window !== 'undefined' && window.API_BASE_URL) || null;
+if (!API_BASE_URL && typeof localStorage !== 'undefined') {
+    API_BASE_URL = localStorage.getItem('apiBaseUrl');
+}
+if (!API_BASE_URL) {
+    API_BASE_URL = 'http://192.168.1.2:8000/api/v1';
+}
 
 /**
  * Format datetime-local input value from ISO string.
@@ -50,7 +58,7 @@ function parseDatetimeLocal(datetimeLocal) {
 const eventsAPI = {
     async getAll(completed = null) {
         const params = completed !== null ? `?completed=${completed}` : '';
-        const response = await fetch(`${API_BASE_URL}/events${params}`);
+        const response = await fetch(`${API_BASE_URL}/events/${params}`);
         if (!response.ok) throw new Error('Failed to fetch events');
         return response.json();
     },
@@ -106,7 +114,7 @@ const tasksAPI = {
         if (activeOnly) params.append('active_only', 'true');
         if (daysAhead) params.append('days_ahead', daysAhead);
         const queryString = params.toString();
-        const url = `${API_BASE_URL}/tasks${queryString ? '?' + queryString : ''}`;
+        const url = `${API_BASE_URL}/tasks/${queryString ? '?' + queryString : ''}`;
         const response = await fetch(url);
         if (!response.ok) throw new Error('Failed to fetch tasks');
         return response.json();
@@ -129,6 +137,7 @@ const tasksAPI = {
     },
 
     async update(id, task) {
+        console.log('[HTTP->] PUT', `${API_BASE_URL}/tasks/${id}`, task);
         const response = await fetch(`${API_BASE_URL}/tasks/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -150,9 +159,25 @@ const tasksAPI = {
             } catch (e) {
                 console.error('Failed to parse error response:', e);
             }
+            console.log('[HTTP<-] PUT', `${API_BASE_URL}/tasks/${id}`, 'ERROR', errorMessage);
             throw new Error(errorMessage);
         }
-        return response.json();
+        const json = await response.json();
+        console.log('[HTTP<-] PUT', `${API_BASE_URL}/tasks/${id}`, json);
+        return json;
+    },
+
+    async uncomplete(id) {
+        console.log('[HTTP->] POST', `${API_BASE_URL}/tasks/${id}/uncomplete`);
+        const response = await fetch(`${API_BASE_URL}/tasks/${id}/uncomplete`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({}),
+        });
+        if (!response.ok) throw new Error('Failed to uncomplete task');
+        const json = await response.json();
+        console.log('[HTTP<-] POST', `${API_BASE_URL}/tasks/${id}/uncomplete`, json);
+        return json;
     },
 
     async delete(id) {
@@ -163,16 +188,25 @@ const tasksAPI = {
     },
 
     async complete(id) {
+        console.log('[HTTP->] POST', `${API_BASE_URL}/tasks/${id}/complete`);
         const response = await fetch(`${API_BASE_URL}/tasks/${id}/complete`, {
             method: 'POST',
         });
         if (!response.ok) throw new Error('Failed to complete task');
-        return response.json();
+        const json = await response.json();
+        console.log('[HTTP<-] POST', `${API_BASE_URL}/tasks/${id}/complete`, json);
+        return json;
     },
 
     async getHistory(id) {
         const response = await fetch(`${API_BASE_URL}/tasks/${id}/history`);
         if (!response.ok) throw new Error('Failed to fetch task history');
+        return response.json();
+    },
+
+    async getAllHistory() {
+        const response = await fetch(`${API_BASE_URL}/history/`);
+        if (!response.ok) throw new Error('Failed to fetch all history');
         return response.json();
     },
 
@@ -198,7 +232,7 @@ const tasksAPI = {
  */
 const groupsAPI = {
     async getAll() {
-        const response = await fetch(`${API_BASE_URL}/groups`);
+        const response = await fetch(`${API_BASE_URL}/groups/`);
         if (!response.ok) throw new Error('Failed to fetch groups');
         return response.json();
     },

@@ -21,8 +21,10 @@ class RecurrenceType(str, Enum):
     WEEKDAYS = "weekdays"  # Monday to Friday
     WEEKENDS = "weekends"  # Saturday and Sunday
     WEEKLY = "weekly"
-    MONTHLY = "monthly"
-    YEARLY = "yearly"
+    MONTHLY = "monthly"  # By day of month (e.g., 15th of each month)
+    MONTHLY_WEEKDAY = "monthly_weekday"  # By weekday of month (e.g., 2nd Tuesday of each month)
+    YEARLY = "yearly"  # By date (e.g., January 15th each year)
+    YEARLY_WEEKDAY = "yearly_weekday"  # By weekday of year (e.g., 1st Monday of January each year)
     CUSTOM = "custom"
     INTERVAL = "interval"
 

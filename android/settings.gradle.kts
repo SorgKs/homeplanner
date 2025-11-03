@@ -1,3 +1,5 @@
+rootProject.name = "HomePlannerAndroid"
+include(":app")
 pluginManagement {
     repositories {
         google()

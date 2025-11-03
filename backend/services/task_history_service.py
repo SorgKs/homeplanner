@@ -32,6 +32,15 @@ class TaskHistoryService:
             .order_by(TaskHistory.action_timestamp.desc())
             .all()
         )
+    
+    @staticmethod
+    def get_all_history(db: Session) -> list[TaskHistory]:
+        """Get all history entries (including deleted tasks where task_id is NULL)."""
+        return (
+            db.query(TaskHistory)
+            .order_by(TaskHistory.action_timestamp.desc())
+            .all()
+        )
 
     @staticmethod
     def log_action(

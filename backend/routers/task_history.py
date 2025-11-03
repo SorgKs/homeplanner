@@ -16,6 +16,15 @@ if TYPE_CHECKING:
 router = APIRouter()
 
 
+@router.get("/history", response_model=list[TaskHistoryResponse])
+def get_all_history(
+    db: Session = Depends(get_db),
+) -> list[TaskHistoryResponse]:
+    """Get all history entries (including deleted tasks)."""
+    history = TaskHistoryService.get_all_history(db)
+    return [TaskHistoryResponse.model_validate(entry) for entry in history]
+
+
 @router.get("/tasks/{task_id}/history", response_model=list[TaskHistoryResponse])
 def get_task_history(
     task_id: int,

@@ -46,7 +46,10 @@ class Settings(BaseSettings):
     debug: bool = True
 
     # CORS
-    cors_origins: str = "http://localhost:3000,http://localhost:8080,http://localhost:8081"
+    cors_origins: str = (
+        "http://localhost:3000,http://localhost:8080,http://localhost:8081,"
+        "http://192.168.1.2:8080"
+    )
     
     # Timezone
     timezone: str = get_system_timezone()
