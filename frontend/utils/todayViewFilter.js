@@ -12,47 +12,41 @@
  * @returns {boolean} True if task should be visible in 'today' view
  */
 function shouldBeVisibleInTodayView(task, currentDate) {
-    // Parse task due date
-    const taskDate = task.due_date instanceof Date 
-        ? task.due_date 
-        : new Date(task.due_date);
-    
+    // Видимость НЕ зависит от due_date (next_due_date).
     // Get today (start of day)
     const today = new Date(
         currentDate.getFullYear(),
         currentDate.getMonth(),
         currentDate.getDate()
     );
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
     
-    // Check if task is due today or overdue
-    const taskDateLocal = new Date(
-        taskDate.getFullYear(),
-        taskDate.getMonth(),
-        taskDate.getDate()
-    );
-    const isDueTodayOrOverdue = taskDateLocal < tomorrow;
-    
-    // Check if task was completed today
-    // For one_time tasks, completion is indicated by is_active=False
-    // For recurring and interval tasks, completion is indicated by last_completed_at
-    let completedToday = false;
     const taskType = task.task_type || 'one_time';
     
     if (taskType === 'one_time') {
-        // For one_time tasks, if they're inactive, they're completed
-        // But we only show them if they were due today
-        // If overdue and completed - don't show
+        // For one_time tasks: check due date for completed tasks
+        const taskDate = task.due_date instanceof Date 
+            ? task.due_date 
+            : new Date(task.due_date);
+        const taskDateLocal = new Date(
+            taskDate.getFullYear(),
+            taskDate.getMonth(),
+            taskDate.getDate()
+        );
+        const isDueToday = taskDateLocal.getTime() === today.getTime();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const isDueTodayOrOverdue = taskDateLocal < tomorrow;
+        
         if (task.is_active === false) {
             // Completed one_time task - only show if due today
-            return taskDateLocal.getTime() === today.getTime();
+            return isDueToday;
         } else {
             // Uncompleted one_time task - show if due today or overdue
             return isDueTodayOrOverdue;
         }
     } else {
-        // For recurring and interval tasks
+        // For recurring and interval tasks: visibility does NOT depend on due_date
+        let completedToday = false;
         if (task.is_completed && task.last_completed_at) {
             const completedDate = task.last_completed_at instanceof Date
                 ? task.last_completed_at
@@ -67,14 +61,15 @@ function shouldBeVisibleInTodayView(task, currentDate) {
         }
         
         // For recurring/interval tasks:
-        // - Visible if due today or overdue AND not completed, OR
-        // - Visible if completed TODAY (regardless of due date)
+        // - Visible if completed today (regardless of due_date), OR
+        // - Visible if active (regardless of due_date)
         if (task.is_completed) {
-            // Completed task - only visible if completed today
+            // Completed task - visible if completed today (regardless of due_date)
             return completedToday;
         } else {
-            // Uncompleted task - visible if due today or overdue
-            return isDueTodayOrOverdue;
+            // Uncompleted task - visible if active (regardless of due_date)
+            // Все активные повторяющиеся/интервальные задачи видны в "Сегодня"
+            return task.is_active !== false;
         }
     }
 }

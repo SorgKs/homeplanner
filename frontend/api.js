@@ -9,7 +9,8 @@ if (!API_BASE_URL && typeof localStorage !== 'undefined') {
     API_BASE_URL = localStorage.getItem('apiBaseUrl');
 }
 if (!API_BASE_URL) {
-    API_BASE_URL = 'http://192.168.1.2:8000/api/v1';
+    const hostname = (typeof window !== 'undefined' && window.location && window.location.hostname) ? window.location.hostname : 'localhost';
+    API_BASE_URL = `http://${hostname}:8000/api/v1`;
 }
 
 /**
@@ -120,6 +121,12 @@ const tasksAPI = {
         return response.json();
     },
 
+    async getToday() {
+        const response = await fetch(`${API_BASE_URL}/tasks/today`);
+        if (!response.ok) throw new Error('Failed to fetch today tasks');
+        return response.json();
+    },
+
     async get(id) {
         const response = await fetch(`${API_BASE_URL}/tasks/${id}`);
         if (!response.ok) throw new Error('Failed to fetch task');
@@ -205,7 +212,7 @@ const tasksAPI = {
     },
 
     async getAllHistory() {
-        const response = await fetch(`${API_BASE_URL}/history/`);
+        const response = await fetch(`${API_BASE_URL}/history`);
         if (!response.ok) throw new Error('Failed to fetch all history');
         return response.json();
     },

@@ -5,6 +5,7 @@ import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from backend.config import get_settings
 from backend.database import engine, init_db
@@ -59,6 +60,10 @@ def create_app() -> FastAPI:
     app.include_router(task_history.router, prefix="/api/v1", tags=["task_history"])
     app.include_router(download.router, prefix="/download", tags=["download"])
     app.include_router(realtime.router, tags=["realtime"])  # /ws
+
+    # Serve frontend static files
+    # Mounts the 'frontend' directory at root, serving index.html by default
+    app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
 
     return app
 

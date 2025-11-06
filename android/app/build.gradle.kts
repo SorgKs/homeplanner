@@ -3,6 +3,8 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+import java.util.Properties
+
 // Read and increment build number
 val buildNumberFile = file("build_number.txt")
 var buildNumber = 1
@@ -32,7 +34,14 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "API_BASE_URL", "\"http://192.168.1.2:8000/api/v1\"")
+        // Resolve API base URL from local.properties or environment to keep Android and Web on the same backend
+        val localProps = project.rootProject.file("local.properties").takeIf { it.exists() }?.reader()?.use {
+            Properties().apply { load(it) }
+        }
+        val apiBaseUrlFromLocal = localProps?.getProperty("apiBaseUrl")
+        val apiBaseUrlFromEnv = System.getenv("HP_API_BASE_URL")
+        val resolvedApiBaseUrl = (apiBaseUrlFromLocal ?: apiBaseUrlFromEnv) ?: "http://192.168.1.2:8000/api/v1"
+        buildConfigField("String", "API_BASE_URL", "\"$resolvedApiBaseUrl\"")
         buildConfigField("String", "VERSION_NAME", "\"$versionNameStr\"")
     }
 
@@ -45,7 +54,14 @@ android {
             )
         }
         debug {
-            buildConfigField("String", "API_BASE_URL", "\"http://192.168.1.2:8000/api/v1\"")
+            // Use same resolved API base URL in debug
+            val localProps = project.rootProject.file("local.properties").takeIf { it.exists() }?.reader()?.use {
+                Properties().apply { load(it) }
+            }
+            val apiBaseUrlFromLocal = localProps?.getProperty("apiBaseUrl")
+            val apiBaseUrlFromEnv = System.getenv("HP_API_BASE_URL")
+            val resolvedApiBaseUrl = (apiBaseUrlFromLocal ?: apiBaseUrlFromEnv) ?: "http://192.168.1.2:8000/api/v1"
+            buildConfigField("String", "API_BASE_URL", "\"$resolvedApiBaseUrl\"")
             buildConfigField("String", "VERSION_NAME", "\"$versionNameStr\"")
         }
     }
@@ -82,6 +98,9 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material:material")
+    // Icons for Material Design (managed by Compose BOM)
+    implementation("androidx.compose.material:material-icons-extended")
     implementation("com.google.android.material:material:1.12.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")

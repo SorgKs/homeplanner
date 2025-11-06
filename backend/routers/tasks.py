@@ -67,13 +67,36 @@ def create_task(
 def get_tasks(
     active_only: bool = Query(False, description="Filter only active tasks"),
     days_ahead: int | None = Query(None, ge=1, description="Get tasks due in next N days"),
+    filter: str | None = Query(None, description="Predefined filter (e.g., 'today')"),
     db: Session = Depends(get_db),
 ) -> list[TaskResponse]:
-    """Get all tasks, optionally filtered by active status or upcoming dates."""
-    if days_ahead:
+    """Get tasks with optional predefined filters.
+
+    Supported filters:
+    - filter=today: серверная единая логика видимости «Сегодня»
+    - days_ahead: предстоящие задачи за N дней
+    - active_only: только активные
+    """
+    if filter == "today":
+        tasks = TaskService.get_today_tasks(db)
+    elif days_ahead:
         tasks = TaskService.get_upcoming_tasks(db, days_ahead=days_ahead)
     else:
         tasks = TaskService.get_all_tasks(db, active_only=active_only)
+    return [TaskResponse.model_validate(task) for task in tasks]
+
+
+@router.get("/today", response_model=list[TaskResponse])
+def get_today_tasks(
+    db: Session = Depends(get_db),
+) -> list[TaskResponse]:
+    """Get tasks visible in 'today' view.
+    
+    Returns tasks that are due today, overdue, or completed today.
+    Logic matches frontend shouldBeVisibleInTodayView for consistency.
+    This is the single source of truth for 'today' view filtering.
+    """
+    tasks = TaskService.get_today_tasks(db)
     return [TaskResponse.model_validate(task) for task in tasks]
 
 
