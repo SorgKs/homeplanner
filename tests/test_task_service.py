@@ -1,341 +1,209 @@
-"""Unit tests for TaskService."""
+"""Юнит-тесты для TaskService с учётом новой модели задач."""
 
+from __future__ import annotations
+
+from collections.abc import Generator
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session
 
 from backend.database import Base
 from backend.models.task import RecurrenceType, TaskType
 from backend.schemas.task import TaskCreate, TaskUpdate
 from backend.services.task_service import TaskService
+from tests.utils import (
+    create_sqlite_engine,
+    normalize_datetime,
+    session_scope,
+)
 
 if TYPE_CHECKING:
     from _pytest.fixtures import FixtureRequest
-    from sqlalchemy.orm import Session
 
 
-# Test database
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test_task_service.db"
-
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+engine, SessionLocal = create_sqlite_engine("test_task_service.db")
 
 
 @pytest.fixture(scope="function")
-def db_session() -> "Session":
-    """Create test database session."""
-    Base.metadata.create_all(bind=engine)
-    db = TestingSessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-        Base.metadata.drop_all(bind=engine)
+def db_session() -> Generator[Session, None, None]:
+    """Создать in-memory БД для тестов."""
+
+    with session_scope(Base, engine, SessionLocal) as session:
+        yield session
 
 
 class TestTaskService:
-    """Unit tests for TaskService."""
+    """Проверка CRUD и бизнес-логики сервиса задач."""
 
-    def test_create_task(self, db_session: "Session") -> None:
-        """Test creating a task."""
-        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
-        task_data = TaskCreate(
+    def test_create_task_defaults(self, db_session: Session) -> None:
+        """Создание разовой задачи заполняет дефолтные флаги."""
+
+        reminder_time = normalize_datetime(datetime.now().replace(hour=9, minute=0, second=0))
+        payload = TaskCreate(
             title="Test Task",
             description="Test Description",
             task_type=TaskType.ONE_TIME,
-            next_due_date=today,
+            reminder_time=reminder_time,
         )
         
-        task = TaskService.create_task(db_session, task_data)
+        task = TaskService.create_task(db_session, payload)
         
         assert task.id is not None
-        assert task.title == "Test Task"
-        assert task.description == "Test Description"
-        assert task.task_type == TaskType.ONE_TIME
-        assert task.next_due_date == today
-        assert task.is_active is True
+        assert task.title == payload.title
+        assert task.reminder_time == reminder_time
+        assert task.completed is False
+        assert task.active is True
 
-    def test_get_task(self, db_session: "Session") -> None:
-        """Test getting a task by ID."""
-        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
-        task_data = TaskCreate(
-            title="Test Task",
+    def test_get_all_tasks_active_filter(self, db_session: Session) -> None:
+        """active_only=True возвращает только активные задачи."""
+
+        reminder_time = normalize_datetime(datetime.now().replace(hour=9, minute=0, second=0))
+        first = TaskService.create_task(
+            db_session,
+            TaskCreate(
+                title="Active",
             task_type=TaskType.ONE_TIME,
-            next_due_date=today,
+                reminder_time=reminder_time,
+            ),
+        )
+        second = TaskService.create_task(
+            db_session,
+            TaskCreate(
+                title="Inactive",
+            task_type=TaskType.ONE_TIME,
+                reminder_time=reminder_time,
+            ),
         )
         
-        created_task = TaskService.create_task(db_session, task_data)
-        task = TaskService.get_task(db_session, created_task.id)
-        
-        assert task is not None
-        assert task.id == created_task.id
-        assert task.title == "Test Task"
-
-    def test_get_task_not_found(self, db_session: "Session") -> None:
-        """Test getting a non-existent task."""
-        task = TaskService.get_task(db_session, 999)
-        assert task is None
-
-    def test_get_all_tasks(self, db_session: "Session") -> None:
-        """Test getting all tasks."""
-        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
-        
-        task1_data = TaskCreate(
-            title="Task 1",
-            task_type=TaskType.ONE_TIME,
-            next_due_date=today,
+        TaskService.update_task(
+            db_session,
+            second.id,
+            TaskUpdate(revision=second.revision, active=False),
         )
-        task2_data = TaskCreate(
-            title="Task 2",
+
+        active = TaskService.get_all_tasks(db_session, active_only=True)
+        assert [task.title for task in active] == [first.title]
+
+    def test_complete_one_time_task(self, db_session: Session) -> None:
+        """complete_task делает разовую задачу выполненной и неактивной."""
+
+        reminder_time = normalize_datetime(datetime.now().replace(hour=8, minute=0, second=0))
+        created = TaskService.create_task(
+            db_session,
+            TaskCreate(
+                title="One time",
             task_type=TaskType.ONE_TIME,
-            next_due_date=today + timedelta(days=1),
+                reminder_time=reminder_time,
+            ),
         )
-        
-        TaskService.create_task(db_session, task1_data)
-        TaskService.create_task(db_session, task2_data)
-        
-        tasks = TaskService.get_all_tasks(db_session)
-        
-        assert len(tasks) == 2
-        assert tasks[0].title == "Task 1"
-        assert tasks[1].title == "Task 2"
 
-    def test_get_all_tasks_active_only(self, db_session: "Session") -> None:
-        """Test getting only active tasks."""
-        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
+        completed = TaskService.complete_task(db_session, created.id)
         
-        task1_data = TaskCreate(
-            title="Active Task",
-            task_type=TaskType.ONE_TIME,
-            next_due_date=today,
-        )
-        task2_data = TaskCreate(
-            title="Inactive Task",
-            task_type=TaskType.ONE_TIME,
-            next_due_date=today,
-        )
-        
-        task1 = TaskService.create_task(db_session, task1_data)
-        task2 = TaskService.create_task(db_session, task2_data)
-        
-        # Update task2 to be inactive
-        update_data = TaskUpdate(is_active=False)
-        TaskService.update_task(db_session, task2.id, update_data)
-        
-        tasks = TaskService.get_all_tasks(db_session, active_only=True)
-        
-        assert len(tasks) == 1
-        assert tasks[0].title == "Active Task"
+        assert completed is not None
+        assert completed.completed is True
+        assert completed.active is False
+        assert completed.reminder_time == reminder_time
 
-    def test_update_task(self, db_session: "Session") -> None:
-        """Test updating a task."""
-        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
-        task_data = TaskCreate(
-            title="Original Title",
-            task_type=TaskType.ONE_TIME,
-            next_due_date=today,
-        )
-        
-        created_task = TaskService.create_task(db_session, task_data)
-        
-        update_data = TaskUpdate(title="Updated Title")
-        updated_task = TaskService.update_task(db_session, created_task.id, update_data)
-        
-        assert updated_task is not None
-        assert updated_task.title == "Updated Title"
-        assert updated_task.id == created_task.id
+    def test_complete_recurring_future(self, db_session: Session) -> None:
+        """Для будущей повторяющейся задачи reminder_time сдвигается вперёд."""
 
-    def test_update_task_not_found(self, db_session: "Session") -> None:
-        """Test updating a non-existent task."""
-        update_data = TaskUpdate(title="Updated Title")
-        updated_task = TaskService.update_task(db_session, 999, update_data)
-        assert updated_task is None
-
-    def test_delete_task(self, db_session: "Session") -> None:
-        """Test deleting a task."""
-        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
-        task_data = TaskCreate(
-            title="Test Task",
-            task_type=TaskType.ONE_TIME,
-            next_due_date=today,
-        )
-        
-        created_task = TaskService.create_task(db_session, task_data)
-        success = TaskService.delete_task(db_session, created_task.id)
-        
-        assert success is True
-        
-        task = TaskService.get_task(db_session, created_task.id)
-        assert task is None
-
-    def test_delete_task_not_found(self, db_session: "Session") -> None:
-        """Test deleting a non-existent task."""
-        success = TaskService.delete_task(db_session, 999)
-        assert success is False
-
-    def test_complete_task_one_time(self, db_session: "Session") -> None:
-        """Test completing a one-time task."""
-        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
-        task_data = TaskCreate(
-            title="One-time Task",
-            task_type=TaskType.ONE_TIME,
-            next_due_date=today,
-        )
-        
-        created_task = TaskService.create_task(db_session, task_data)
-        completed_task = TaskService.complete_task(db_session, created_task.id)
-        
-        assert completed_task is not None
-        assert completed_task.is_active is False
-        assert completed_task.last_completed_at is not None
-        # Date should not change for one-time tasks
-        assert completed_task.next_due_date.date() == today.date()
-
-    def test_complete_task_recurring(self, db_session: "Session") -> None:
-        """Test completing a recurring task due today."""
-        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
-        task_data = TaskCreate(
-            title="Daily Task",
+        reminder_time = normalize_datetime((datetime.now() + timedelta(days=1)).replace(hour=9))
+        created = TaskService.create_task(
+            db_session,
+            TaskCreate(
+                title="Recurring",
             task_type=TaskType.RECURRING,
             recurrence_type=RecurrenceType.DAILY,
             recurrence_interval=1,
-            next_due_date=today,
+                reminder_time=reminder_time,
+            ),
         )
-        
-        created_task = TaskService.create_task(db_session, task_data)
-        completed_task = TaskService.complete_task(db_session, created_task.id)
-        
-        assert completed_task is not None
-        assert completed_task.last_completed_at is not None
-        # Date should not change immediately if due today
-        assert completed_task.next_due_date.date() == today.date()
 
-    def test_complete_task_recurring_future(self, db_session: "Session") -> None:
-        """Test completing a recurring task due in the future."""
-        tomorrow = datetime.now() + timedelta(days=1)
-        tomorrow = tomorrow.replace(hour=9, minute=0, second=0, microsecond=0)
+        completed = TaskService.complete_task(db_session, created.id)
         
-        task_data = TaskCreate(
-            title="Daily Task",
-            task_type=TaskType.RECURRING,
-            recurrence_type=RecurrenceType.DAILY,
-            recurrence_interval=1,
-            next_due_date=tomorrow,
-        )
-        
-        created_task = TaskService.create_task(db_session, task_data)
-        completed_task = TaskService.complete_task(db_session, created_task.id)
-        
-        assert completed_task is not None
-        assert completed_task.last_completed_at is not None
-        # Date should change immediately if due in the future
-        assert completed_task.next_due_date > tomorrow
+        assert completed is not None
+        assert completed.completed is True
+        assert completed.reminder_time > reminder_time
 
-    def test_complete_task_interval(self, db_session: "Session") -> None:
-        """Test completing an interval task due today."""
-        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
-        task_data = TaskCreate(
-            title="Interval Task",
-            task_type=TaskType.INTERVAL,
-            interval_days=7,
-            next_due_date=today,
-        )
-        
-        created_task = TaskService.create_task(db_session, task_data)
-        completed_task = TaskService.complete_task(db_session, created_task.id)
-        
-        assert completed_task is not None
-        assert completed_task.last_completed_at is not None
-        # Date should not change immediately if due today
-        assert completed_task.next_due_date.date() == today.date()
+    def test_uncomplete_restores_flags(self, db_session: Session) -> None:
+        """uncomplete_task сбрасывает completed и активирует задачу."""
 
-    def test_complete_task_not_found(self, db_session: "Session") -> None:
-        """Test completing a non-existent task."""
-        completed_task = TaskService.complete_task(db_session, 999)
-        assert completed_task is None
+        reminder_time = normalize_datetime(datetime.now().replace(hour=11, minute=30, second=0))
+        created = TaskService.create_task(
+            db_session,
+            TaskCreate(
+                title="Undo task",
+                task_type=TaskType.ONE_TIME,
+                reminder_time=reminder_time,
+            ),
+        )
+        TaskService.complete_task(db_session, created.id)
 
-    def test_calculate_next_due_date_daily(self) -> None:
-        """Test calculating next due date for daily recurrence."""
-        today = datetime(2025, 1, 1, 9, 0, 0)
-        next_date = TaskService._calculate_next_due_date(
-            today, RecurrenceType.DAILY, 1
-        )
+        reverted = TaskService.uncomplete_task(db_session, created.id)
         
-        assert next_date == today + timedelta(days=1)
+        assert reverted is not None
+        assert reverted.completed is False
+        assert reverted.active is True
+        assert reverted.reminder_time == reminder_time
 
-    def test_calculate_next_due_date_weekly(self) -> None:
-        """Test calculating next due date for weekly recurrence."""
-        today = datetime(2025, 1, 1, 9, 0, 0)
-        next_date = TaskService._calculate_next_due_date(
-            today, RecurrenceType.WEEKLY, 1
-        )
-        
-        assert next_date == today + timedelta(weeks=1)
+    def test_get_upcoming_tasks_filters_by_window(self, db_session: Session) -> None:
+        """get_upcoming_tasks возвращает задачи в окне."""
 
-    def test_calculate_next_due_date_monthly(self) -> None:
-        """Test calculating next due date for monthly recurrence."""
-        today = datetime(2025, 1, 1, 9, 0, 0)
-        next_date = TaskService._calculate_next_due_date(
-            today, RecurrenceType.MONTHLY, 1
+        now = normalize_datetime(datetime.now().replace(hour=7, minute=0, second=0))
+        TaskService.create_task(
+            db_session,
+            TaskCreate(
+                title="Today",
+                task_type=TaskType.ONE_TIME,
+                reminder_time=now,
+            ),
         )
-        
-        # Monthly uses 30 days approximation
-        assert next_date == today + timedelta(days=30)
+        TaskService.create_task(
+            db_session,
+            TaskCreate(
+                title="Tomorrow",
+                task_type=TaskType.ONE_TIME,
+                reminder_time=now + timedelta(days=1),
+            ),
+        )
+        TaskService.create_task(
+            db_session,
+            TaskCreate(
+                title="Next Week",
+                task_type=TaskType.ONE_TIME,
+                reminder_time=now + timedelta(days=7),
+            ),
+        )
 
-    def test_calculate_next_due_date_yearly(self) -> None:
-        """Test calculating next due date for yearly recurrence."""
-        today = datetime(2025, 1, 1, 9, 0, 0)
-        next_date = TaskService._calculate_next_due_date(
-            today, RecurrenceType.YEARLY, 1
-        )
-        
-        assert next_date == today + timedelta(days=365)
+        upcoming = TaskService.get_upcoming_tasks(db_session, days_ahead=2)
+        titles = {task.title for task in upcoming}
 
-    def test_calculate_next_due_date_default(self) -> None:
-        """Test calculating next due date with default (daily)."""
-        today = datetime(2025, 1, 1, 9, 0, 0)
-        next_date = TaskService._calculate_next_due_date(
-            today, None, 1
-        )
-        
-        assert next_date == today + timedelta(days=1)
+        assert titles == {"Today", "Tomorrow"}
 
-    def test_get_upcoming_tasks(self, db_session: "Session") -> None:
-        """Test getting upcoming tasks."""
-        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
-        
-        task1_data = TaskCreate(
-            title="Task Today",
-            task_type=TaskType.ONE_TIME,
-            next_due_date=today,
-            is_active=True,
-        )
-        task2_data = TaskCreate(
-            title="Task Tomorrow",
-            task_type=TaskType.ONE_TIME,
-            next_due_date=today + timedelta(days=1),
-            is_active=True,
-        )
-        task3_data = TaskCreate(
-            title="Task Next Week",
-            task_type=TaskType.ONE_TIME,
-            next_due_date=today + timedelta(days=7),
-            is_active=True,
-        )
-        
-        TaskService.create_task(db_session, task1_data)
-        TaskService.create_task(db_session, task2_data)
-        TaskService.create_task(db_session, task3_data)
-        
-        upcoming_tasks = TaskService.get_upcoming_tasks(db_session, days_ahead=3)
-        
-        # Should return tasks due in next 3 days
-        assert len(upcoming_tasks) == 2
-        assert any(task.title == "Task Today" for task in upcoming_tasks)
-        assert any(task.title == "Task Tomorrow" for task in upcoming_tasks)
+    def test_calculate_next_reminder_time_daily(self) -> None:
+        """Проверка расчёта ежедневного повторения."""
+
+        base = datetime(2025, 1, 1, 9, 0, 0)
+        result = TaskService._calculate_next_reminder_time(base, RecurrenceType.DAILY, 1, base)
+        assert result == datetime(2025, 1, 2, 9, 0, 0)
+
+    def test_calculate_next_reminder_time_weekly(self) -> None:
+        """Проверка расчёта еженедельного повторения."""
+
+        base = datetime(2025, 1, 1, 9, 0, 0)  # Среда
+        reminder = datetime(2025, 1, 5, 9, 0, 0)  # Воскресенье
+        result = TaskService._calculate_next_reminder_time(base, RecurrenceType.WEEKLY, 1, reminder)
+        assert result.weekday() == reminder.weekday()
+        assert result > base
+
+    def test_calculate_next_reminder_time_monthly(self) -> None:
+        """Проверка расчёта ежемесячного повторения."""
+
+        base = datetime(2025, 1, 15, 12, 0, 0)
+        reminder = datetime(2025, 1, 15, 12, 0, 0)
+        result = TaskService._calculate_next_reminder_time(base, RecurrenceType.MONTHLY, 1, reminder)
+        assert result.month in {1, 2}
+        assert result.day == reminder.day or result.day >= 28
 

@@ -63,7 +63,7 @@ router = APIRouter()
 manager = ConnectionManager()
 
 
-@router.websocket("/ws")
+@router.websocket("/tasks/stream")
 async def websocket_endpoint(websocket: WebSocket) -> None:
     """WebSocket endpoint for realtime updates.
 
@@ -80,7 +80,7 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
 
 
 
-@router.get("/ws/status")
+@router.get("/tasks/stream/status")
 def websocket_status() -> dict[str, Any]:
     """HTTP endpoint to introspect current WS connections (for debugging)."""
     return manager.status()

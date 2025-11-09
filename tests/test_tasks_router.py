@@ -1,258 +1,271 @@
-"""Unit tests for tasks API router."""
+"""Интеграционные тесты FastAPI-роутера задач."""
 
+from __future__ import annotations
+
+from collections.abc import Generator
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session
 
 from backend.database import Base, get_db
 from backend.main import app
 from backend.models.task import RecurrenceType, TaskType
+from tests.utils import (
+    api_path,
+    create_sqlite_engine,
+    isoformat,
+    session_scope,
+    test_client_with_session,
+)
 
 if TYPE_CHECKING:
     from _pytest.fixtures import FixtureRequest
-    from sqlalchemy.orm import Session
 
 
-# Test database
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test_tasks_router.db"
-
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+engine, SessionLocal = create_sqlite_engine("test_tasks_router.db")
 
 
 @pytest.fixture(scope="function")
-def db_session() -> "Session":
-    """Create test database session."""
-    Base.metadata.create_all(bind=engine)
-    db = TestingSessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-        Base.metadata.drop_all(bind=engine)
+def db_session() -> Generator[Session, None, None]:
+    """Создать и очистить тестовую БД."""
+
+    with session_scope(Base, engine, SessionLocal) as session:
+        yield session
 
 
 @pytest.fixture(scope="function")
-def client(db_session: "Session") -> TestClient:
-    """Create test client with test database."""
+def client(db_session: Session) -> Generator[TestClient, None, None]:
+    """Вернуть тестовый клиент с подменённой БД."""
 
-    def override_get_db():
-        try:
-            yield db_session
-        finally:
-            pass
-
-    app.dependency_overrides[get_db] = override_get_db
-    with TestClient(app) as test_client:
+    with test_client_with_session(app, get_db, db_session) as test_client:
         yield test_client
-    app.dependency_overrides.clear()
 
 
 class TestTasksRouter:
-    """Unit tests for tasks API router."""
+    """Набор тестов REST-роутов задач."""
 
     def test_create_task(self, client: TestClient) -> None:
-        """Test creating a task via API."""
-        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
+        """Создание задачи возвращает корректные поля."""
+
+        reminder_time = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
         task_data = {
             "title": "Test Task",
             "description": "Test Description",
             "task_type": TaskType.ONE_TIME.value,
-            "next_due_date": today.isoformat(),
+            "reminder_time": isoformat(reminder_time),
         }
         
-        response = client.post("/api/v1/tasks/", json=task_data)
+        response = client.post(api_path("/tasks/"), json=task_data)
         
         assert response.status_code == 201
         data = response.json()
         assert data["title"] == "Test Task"
         assert data["description"] == "Test Description"
         assert data["task_type"] == TaskType.ONE_TIME.value
-        assert "id" in data
+        assert data["reminder_time"] == isoformat(reminder_time)
+        assert data["completed"] is False
+        assert data["active"] is True
 
     def test_get_tasks(self, client: TestClient) -> None:
-        """Test getting all tasks via API."""
-        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
+        """Получение всех задач возвращает созданные элементы."""
+
+        reminder_time = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
         
-        task1_data = {
+        client.post(
+            api_path("/tasks/"),
+            json={
             "title": "Task 1",
             "task_type": TaskType.ONE_TIME.value,
-            "next_due_date": today.isoformat(),
-        }
-        task2_data = {
+                "reminder_time": isoformat(reminder_time),
+            },
+        )
+        client.post(
+            api_path("/tasks/"),
+            json={
             "title": "Task 2",
             "task_type": TaskType.ONE_TIME.value,
-            "next_due_date": (today + timedelta(days=1)).isoformat(),
-        }
+                "reminder_time": isoformat(reminder_time + timedelta(days=1)),
+            },
+        )
         
-        client.post("/api/v1/tasks/", json=task1_data)
-        client.post("/api/v1/tasks/", json=task2_data)
-        
-        response = client.get("/api/v1/tasks/")
+        response = client.get(api_path("/tasks/"))
         
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 2
 
     def test_get_tasks_active_only(self, client: TestClient) -> None:
-        """Test getting only active tasks via API."""
-        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
+        """Фильтр active_only возвращает только активные задачи."""
+
+        reminder_time = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
         
-        task1_data = {
+        active = client.post(
+            api_path("/tasks/"),
+            json={
             "title": "Active Task",
             "task_type": TaskType.ONE_TIME.value,
-            "next_due_date": today.isoformat(),
-        }
-        task2_data = {
+                "reminder_time": isoformat(reminder_time),
+            },
+        ).json()
+        inactive = client.post(
+            api_path("/tasks/"),
+            json={
             "title": "Inactive Task",
             "task_type": TaskType.ONE_TIME.value,
-            "next_due_date": today.isoformat(),
-        }
+                "reminder_time": isoformat(reminder_time),
+            },
+        ).json()
+
+        client.put(
+            api_path(f"/tasks/{inactive['id']}"),
+            json={"revision": inactive["revision"], "active": False},
+        )
         
-        create_response1 = client.post("/api/v1/tasks/", json=task1_data)
-        create_response2 = client.post("/api/v1/tasks/", json=task2_data)
-        
-        # Update task2 to be inactive
-        task2_id = create_response2.json()["id"]
-        client.put(f"/api/v1/tasks/{task2_id}", json={"is_active": False})
-        
-        response = client.get("/api/v1/tasks/?active_only=true")
+        response = client.get(f"{api_path('/tasks/')}?active_only=true")
         
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
-        assert data[0]["title"] == "Active Task"
+        assert data[0]["title"] == active["title"]
 
     def test_get_task(self, client: TestClient) -> None:
-        """Test getting a specific task via API."""
-        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
-        task_data = {
+        """Получение задачи по ID возвращает созданный объект."""
+
+        reminder_time = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
+        created = client.post(
+            api_path("/tasks/"),
+            json={
             "title": "Test Task",
             "task_type": TaskType.ONE_TIME.value,
-            "next_due_date": today.isoformat(),
-        }
+                "reminder_time": isoformat(reminder_time),
+            },
+        ).json()
         
-        create_response = client.post("/api/v1/tasks/", json=task_data)
-        task_id = create_response.json()["id"]
-        
-        response = client.get(f"/api/v1/tasks/{task_id}")
+        response = client.get(api_path(f"/tasks/{created['id']}"))
         
         assert response.status_code == 200
         data = response.json()
-        assert data["id"] == task_id
-        assert data["title"] == "Test Task"
+        assert data["id"] == created["id"]
+        assert data["title"] == created["title"]
 
     def test_get_task_not_found(self, client: TestClient) -> None:
-        """Test getting a non-existent task via API."""
-        response = client.get("/api/v1/tasks/999")
+        """404 при запросе несуществующей задачи."""
+
+        response = client.get(api_path("/tasks/999"))
         
         assert response.status_code == 404
 
     def test_update_task(self, client: TestClient) -> None:
-        """Test updating a task via API."""
-        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
-        task_data = {
+        """Обновление задачи меняет поля и ревизию."""
+
+        reminder_time = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
+        created = client.post(
+            api_path("/tasks/"),
+            json={
             "title": "Original Title",
             "task_type": TaskType.ONE_TIME.value,
-            "next_due_date": today.isoformat(),
-        }
+                "reminder_time": isoformat(reminder_time),
+            },
+        ).json()
         
-        create_response = client.post("/api/v1/tasks/", json=task_data)
-        task_id = create_response.json()["id"]
-        
-        update_data = {"title": "Updated Title"}
-        response = client.put(f"/api/v1/tasks/{task_id}", json=update_data)
+        update_data = {"revision": created["revision"], "title": "Updated Title"}
+        response = client.put(api_path(f"/tasks/{created['id']}"), json=update_data)
         
         assert response.status_code == 200
         data = response.json()
         assert data["title"] == "Updated Title"
+        assert data["revision"] == created["revision"] + 1
 
     def test_update_task_not_found(self, client: TestClient) -> None:
-        """Test updating a non-existent task via API."""
-        update_data = {"title": "Updated Title"}
-        response = client.put("/api/v1/tasks/999", json=update_data)
+        """Обновление несуществующей задачи возвращает 404."""
+
+        update_data = {"revision": 0, "title": "Updated Title"}
+        response = client.put(api_path("/tasks/999"), json=update_data)
         
         assert response.status_code == 404
 
     def test_delete_task(self, client: TestClient) -> None:
-        """Test deleting a task via API."""
-        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
-        task_data = {
+        """Удаление задачи доступно по REST."""
+
+        reminder_time = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
+        created = client.post(
+            api_path("/tasks/"),
+            json={
             "title": "Test Task",
             "task_type": TaskType.ONE_TIME.value,
-            "next_due_date": today.isoformat(),
-        }
+                "reminder_time": isoformat(reminder_time),
+            },
+        ).json()
         
-        create_response = client.post("/api/v1/tasks/", json=task_data)
-        task_id = create_response.json()["id"]
-        
-        response = client.delete(f"/api/v1/tasks/{task_id}")
+        response = client.delete(api_path(f"/tasks/{created['id']}"))
         
         assert response.status_code == 204
-        
-        # Verify task is deleted
-        get_response = client.get(f"/api/v1/tasks/{task_id}")
-        assert get_response.status_code == 404
+        assert client.get(api_path(f"/tasks/{created['id']}")).status_code == 404
 
     def test_delete_task_not_found(self, client: TestClient) -> None:
-        """Test deleting a non-existent task via API."""
-        response = client.delete("/api/v1/tasks/999")
+        """Удаление несуществующей задачи возвращает 404."""
+
+        response = client.delete(api_path("/tasks/999"))
         
         assert response.status_code == 404
 
     def test_complete_task(self, client: TestClient) -> None:
-        """Test completing a task via API."""
-        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
-        task_data = {
+        """Выполнение задачи проставляет флаг completed."""
+
+        reminder_time = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
+        created = client.post(
+            api_path("/tasks/"),
+            json={
             "title": "Test Task",
             "task_type": TaskType.ONE_TIME.value,
-            "next_due_date": today.isoformat(),
-        }
+                "reminder_time": isoformat(reminder_time),
+            },
+        ).json()
         
-        create_response = client.post("/api/v1/tasks/", json=task_data)
-        task_id = create_response.json()["id"]
-        
-        response = client.post(f"/api/v1/tasks/{task_id}/complete")
+        response = client.post(api_path(f"/tasks/{created['id']}/complete"))
         
         assert response.status_code == 200
         data = response.json()
-        assert data["last_completed_at"] is not None
+        assert data["completed"] is True
+        assert data["active"] is False
 
     def test_complete_task_not_found(self, client: TestClient) -> None:
-        """Test completing a non-existent task via API."""
-        response = client.post("/api/v1/tasks/999/complete")
+        """404 при выполнении несуществующей задачи."""
+
+        response = client.post(api_path("/tasks/999/complete"))
         
         assert response.status_code == 404
 
     def test_get_upcoming_tasks(self, client: TestClient) -> None:
-        """Test getting upcoming tasks via API."""
-        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
+        """Параметр days_ahead возвращает задачи в окне по времени."""
         
-        task1_data = {
+        now = datetime.now().replace(microsecond=0)
+        client.post(
+            api_path("/tasks/"),
+            json={
             "title": "Task Today",
             "task_type": TaskType.ONE_TIME.value,
-            "next_due_date": today.isoformat(),
-            "is_active": True,
-        }
-        task2_data = {
+                "reminder_time": isoformat(now),
+                "active": True,
+            },
+        )
+        client.post(
+            api_path("/tasks/"),
+            json={
             "title": "Task Tomorrow",
             "task_type": TaskType.ONE_TIME.value,
-            "next_due_date": (today + timedelta(days=1)).isoformat(),
-            "is_active": True,
-        }
+                "reminder_time": isoformat(now + timedelta(days=1)),
+                "active": True,
+            },
+        )
         
-        client.post("/api/v1/tasks/", json=task1_data)
-        client.post("/api/v1/tasks/", json=task2_data)
-        
-        response = client.get("/api/v1/tasks/?days_ahead=3")
+        response = client.get(f"{api_path('/tasks/')}?days_ahead=3")
         
         assert response.status_code == 200
         data = response.json()
-        assert len(data) >= 1  # At least tasks due in next 3 days
+        titles = {task["title"] for task in data}
+        assert "Task Today" in titles
 

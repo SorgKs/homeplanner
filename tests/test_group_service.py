@@ -1,14 +1,14 @@
 """Unit tests for GroupService."""
 
+from collections.abc import Generator
 from typing import TYPE_CHECKING
 
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
 from backend.database import Base
 from backend.schemas.group import GroupCreate, GroupUpdate
 from backend.services.group_service import GroupService
+from tests.utils import create_sqlite_engine, session_scope
 
 if TYPE_CHECKING:
     from _pytest.fixtures import FixtureRequest
@@ -16,24 +16,14 @@ if TYPE_CHECKING:
 
 
 # Test database
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test_group_service.db"
-
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+engine, SessionLocal = create_sqlite_engine("test_group_service.db")
 
 
 @pytest.fixture(scope="function")
-def db_session() -> "Session":
+def db_session() -> Generator["Session", None, None]:
     """Create test database session."""
-    Base.metadata.create_all(bind=engine)
-    db = TestingSessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-        Base.metadata.drop_all(bind=engine)
+    with session_scope(Base, engine, SessionLocal) as session:
+        yield session
 
 
 class TestGroupService:
