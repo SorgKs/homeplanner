@@ -40,7 +40,7 @@ android {
         }
         val apiBaseUrlFromLocal = localProps?.getProperty("apiBaseUrl")
         val apiBaseUrlFromEnv = System.getenv("HP_API_BASE_URL")
-        val resolvedApiBaseUrl = (apiBaseUrlFromLocal ?: apiBaseUrlFromEnv) ?: "http://192.168.1.2:8000/api/v1"
+        val resolvedApiBaseUrl = (apiBaseUrlFromLocal ?: apiBaseUrlFromEnv) ?: "http://192.168.1.2:8000/api/v0.2"
         buildConfigField("String", "API_BASE_URL", "\"$resolvedApiBaseUrl\"")
         buildConfigField("String", "VERSION_NAME", "\"$versionNameStr\"")
     }
@@ -60,7 +60,7 @@ android {
             }
             val apiBaseUrlFromLocal = localProps?.getProperty("apiBaseUrl")
             val apiBaseUrlFromEnv = System.getenv("HP_API_BASE_URL")
-            val resolvedApiBaseUrl = (apiBaseUrlFromLocal ?: apiBaseUrlFromEnv) ?: "http://192.168.1.2:8000/api/v1"
+            val resolvedApiBaseUrl = (apiBaseUrlFromLocal ?: apiBaseUrlFromEnv) ?: "http://192.168.1.2:8000/api/v0.2"
             buildConfigField("String", "API_BASE_URL", "\"$resolvedApiBaseUrl\"")
             buildConfigField("String", "VERSION_NAME", "\"$versionNameStr\"")
         }

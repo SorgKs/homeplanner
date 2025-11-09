@@ -292,13 +292,14 @@ fun TasksScreen() {
 
     // Helper to parse Task from JSON
     fun parseTaskFromJson(json: JSONObject): Task {
-        // Normalize empty last_completed_at to null
-        val lastCompletedAtValue = if (json.isNull("last_completed_at")) {
-            null
+        val reminderTimeValue = json.optString("reminder_time", null)?.takeIf { it.isNotBlank() }
+        val nextDueDateValue = if (json.has("next_due_date") && !json.isNull("next_due_date")) {
+            json.getString("next_due_date")
         } else {
-            val v = json.optString("last_completed_at", null)
-            if (v.isNullOrEmpty()) null else v
+            reminderTimeValue
         }
+        val activeValue = if (json.isNull("active")) true else json.getBoolean("active")
+        val completedValue = if (json.isNull("completed")) false else json.getBoolean("completed")
         return Task(
             id = json.getInt("id"),
             title = json.getString("title"),
@@ -307,11 +308,11 @@ fun TasksScreen() {
             recurrenceType = json.optString("recurrence_type", null),
             recurrenceInterval = if (json.isNull("recurrence_interval")) null else json.getInt("recurrence_interval"),
             intervalDays = if (json.isNull("interval_days")) null else json.getInt("interval_days"),
-            nextDueDate = json.getString("next_due_date"),
-            reminderTime = json.optString("reminder_time", null),
+            nextDueDate = nextDueDateValue,
+            reminderTime = reminderTimeValue,
             groupId = if (json.isNull("group_id")) null else json.getInt("group_id"),
-            isCompleted = lastCompletedAtValue != null,
-            lastCompletedAt = lastCompletedAtValue
+            active = activeValue,
+            completed = completedValue,
         )
     }
 
@@ -608,15 +609,8 @@ fun TasksScreen() {
                         Text(text = "No tasks")
                     }
                 } else {
-                    // Для вкладки "Все задачи": сначала активные, затем неактивные
-                    val activeTasks = visibleTasks.filter { it.isCompleted == false || it.lastCompletedAt == null }.filter { true }
-                    val inactiveTasks = visibleTasks.filter { it.isCompleted == true && false } // placeholder; будет переопределено ниже
-                    val activeList = visibleTasks.filter { true }.filter { task ->
-                        // Активность определяется сервером (active флаг может быть добавлен позже в модель)
-                        // Пока считаем активной, если lastCompletedAt == null (для визуального отделения)
-                        task.lastCompletedAt == null
-                    }
-                    val inactiveList = visibleTasks.filter { task -> task.lastCompletedAt != null }
+                    val activeList = visibleTasks.filter { it.active }
+                    val inactiveList = visibleTasks.filter { !it.active }
 
                     LazyColumn(modifier = Modifier.weight(1f)) {
                         // Активные
@@ -693,7 +687,7 @@ fun TasksScreen() {
                                     )
                                 }
 
-                                val checked = task.lastCompletedAt != null
+                                val checked = task.completed
                                 Checkbox(checked = checked, onCheckedChange = { isChecked ->
                                     Log.d("TasksScreen", "Checkbox clicked: task.id=${task.id}, currentChecked=$checked, newChecked=$isChecked")
                                     if (isChecked && !checked) {
@@ -701,7 +695,7 @@ fun TasksScreen() {
                                             try {
                                                 appendLog("HTTP->", "POST /tasks/${task.id}/complete")
                                                 val updated = withContext(Dispatchers.IO) { TasksApi().completeTask(task.id) }
-                                                Log.d("TasksScreen", "Task completed: id=${updated.id}, lastCompletedAt=${updated.lastCompletedAt}")
+                                                Log.d("TasksScreen", "Task completed: id=${updated.id}, completed=${updated.completed}")
                                                 val newList = tasks.map { if (it.id == updated.id) updated else it }
                                                 tasks = newList
                                                 Log.d("TasksScreen", "Tasks list updated, new size=${newList.size}")
@@ -716,7 +710,7 @@ fun TasksScreen() {
                                             try {
                                                 appendLog("HTTP->", "POST /tasks/${task.id}/uncomplete")
                                                 val updated = withContext(Dispatchers.IO) { TasksApi().uncompleteTask(task.id) }
-                                                Log.d("TasksScreen", "Task uncompleted: id=${updated.id}, lastCompletedAt=${updated.lastCompletedAt}")
+                                                Log.d("TasksScreen", "Task uncompleted: id=${updated.id}, completed=${updated.completed}")
                                                 val newList = tasks.map { if (it.id == updated.id) updated else it }
                                                 tasks = newList
                                                 Log.d("TasksScreen", "Tasks list updated, new size=${newList.size}")
@@ -811,7 +805,7 @@ fun TasksScreen() {
                                         )
                                     }
 
-                                    val checked = task.lastCompletedAt != null
+                                    val checked = task.completed
                                     Checkbox(checked = checked, onCheckedChange = { isChecked ->
                                         Log.d("TasksScreen", "Checkbox clicked: task.id=${task.id}, currentChecked=$checked, newChecked=$isChecked")
                                         if (isChecked && !checked) {
@@ -819,7 +813,7 @@ fun TasksScreen() {
                                                 try {
                                                     appendLog("HTTP->", "POST /tasks/${task.id}/complete")
                                                     val updated = withContext(Dispatchers.IO) { TasksApi().completeTask(task.id) }
-                                                    Log.d("TasksScreen", "Task completed: id=${updated.id}, lastCompletedAt=${updated.lastCompletedAt}")
+                                                    Log.d("TasksScreen", "Task completed: id=${updated.id}, completed=${updated.completed}")
                                                     val newList = tasks.map { if (it.id == updated.id) updated else it }
                                                     tasks = newList
                                                     Log.d("TasksScreen", "Tasks list updated, new size=${newList.size}")
@@ -834,7 +828,7 @@ fun TasksScreen() {
                                                 try {
                                                     appendLog("HTTP->", "POST /tasks/${task.id}/uncomplete")
                                                     val updated = withContext(Dispatchers.IO) { TasksApi().uncompleteTask(task.id) }
-                                                    Log.d("TasksScreen", "Task uncompleted: id=${updated.id}, lastCompletedAt=${updated.lastCompletedAt}")
+                                                    Log.d("TasksScreen", "Task uncompleted: id=${updated.id}, completed=${updated.completed}")
                                                     val newList = tasks.map { if (it.id == updated.id) updated else it }
                                                     tasks = newList
                                                     Log.d("TasksScreen", "Tasks list updated, new size=${newList.size}")
@@ -880,8 +874,8 @@ fun TasksScreen() {
                                         nextDueDate = if (editNextDueDate.isNotBlank()) editNextDueDate else LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
                                         reminderTime = reminderForCreate,
                                         groupId = editGroupId,
-                                        isCompleted = false,
-                                        lastCompletedAt = null
+                                        active = true,
+                                        completed = false,
                                     )
                                     // Validation
                                     titleError = if (template.title.isBlank()) "Укажите название" else null
@@ -910,7 +904,9 @@ fun TasksScreen() {
                                         intervalDays = editIntervalDays.toIntOrNull(),
                                         nextDueDate = if (editNextDueDate.isNotBlank()) editNextDueDate else base.nextDueDate,
                                         reminderTime = reminderForUpdate,
-                                        groupId = editGroupId
+                                        groupId = editGroupId,
+                                        active = base.active,
+                                        completed = base.completed,
                                     )
                                     titleError = if (updatedPayload.title.isBlank()) "Укажите название" else null
                                     nextDateError = if (parseIsoOrNull(updatedPayload.nextDueDate) == null) "Неверный формат даты-времени" else null

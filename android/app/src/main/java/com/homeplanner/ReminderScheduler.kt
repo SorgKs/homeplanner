@@ -63,8 +63,11 @@ class ReminderScheduler(private val context: Context) {
     }
 
     fun scheduleForTaskIfUpcoming(task: Task) {
-        val isActive = task.isActive()
-        Log.d("ReminderScheduler", "scheduleForTaskIfUpcoming: task=${task.id} (${task.title}), isActive=$isActive, reminderTime=${task.reminderTime}, nextDueDate=${task.nextDueDate}, lastCompletedAt=${task.lastCompletedAt}")
+        val isEligible = task.shouldScheduleReminder()
+        Log.d(
+            "ReminderScheduler",
+            "scheduleForTaskIfUpcoming: task=${task.id} (${task.title}), active=${task.active}, completed=${task.completed}, eligible=$isEligible, reminderTime=${task.reminderTime}, nextDueDate=${task.nextDueDate}"
+        )
         
         // For reminders, we want to schedule if:
         // 1. Task is not completed (not active but not completed yet), OR
@@ -95,7 +98,7 @@ class ReminderScheduler(private val context: Context) {
         
         // Only schedule if task is not completed (active)
         // Completed tasks shouldn't show reminders
-        if (!isActive) {
+        if (!isEligible) {
             Log.d("ReminderScheduler", "Task ${task.id} is completed, skipping reminder registration")
             return
         }
@@ -114,24 +117,11 @@ class ReminderScheduler(private val context: Context) {
     }
 }
 
-private fun Task.isActive(): Boolean {
-    // For reminders, consider task active if:
-    // 1. Not completed (lastCompletedAt == null), OR
-    // 2. One-time task (can show even if completed)
-    // For recurring/interval tasks, if completed today, we still want to show reminder
-    // But we can't check "today" here easily, so we'll be more permissive:
-    // Schedule reminders for all active tasks (not completed) or one-time tasks
-    val isNotCompleted = this.lastCompletedAt == null
-    val isOneTime = this.taskType == "one_time"
-    
-    // For scheduling reminders, we want to schedule if task is not completed
-    // or if it's a one-time task (which might still show in "today" view)
-    // Actually, for reminders, we should schedule if the reminder time hasn't passed yet
-    // and the task is not completed. But we can't check time here, so we'll schedule
-    // for all non-completed tasks and one-time tasks.
-    val result = isNotCompleted || isOneTime
-    android.util.Log.d("ReminderScheduler", "isActive for task ${this.id}: lastCompletedAt=${this.lastCompletedAt}, taskType=${this.taskType}, result=$result")
-    return result
+private fun Task.shouldScheduleReminder(): Boolean {
+    if (!active) {
+        return false
+    }
+    return !completed
 }
 
 
