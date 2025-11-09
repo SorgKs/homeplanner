@@ -1,9 +1,27 @@
 """Configuration management using Pydantic settings."""
 
-import zoneinfo
+from __future__ import annotations
+
 from datetime import datetime
+from pathlib import Path
+import zoneinfo
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from common.versioning import (
+    compose_component_version,
+    get_project_version,
+    get_component_patch,
+    get_api_prefix,
+    get_api_version,
+)
+
+
+BACKEND_ROOT: Path = Path(__file__).resolve().parent
+DEFAULT_DB_DIR: Path = BACKEND_ROOT / "db"
+DEFAULT_LOG_DIR: Path = BACKEND_ROOT / "logs"
+DEFAULT_DB_PATH: Path = DEFAULT_DB_DIR / "homeplanner.db"
+DEFAULT_DB_URL: str = f"sqlite:///{DEFAULT_DB_PATH.resolve().as_posix()}"
 
 
 def get_system_timezone() -> str:
@@ -33,7 +51,11 @@ class Settings(BaseSettings):
     """Application settings."""
 
     # Database
-    database_url: str = "sqlite:///./homeplanner.db"
+    database_url: str = DEFAULT_DB_URL
+    db_directory: str = str(DEFAULT_DB_DIR)
+    log_directory: str = str(DEFAULT_LOG_DIR)
+    database_filename: str = DEFAULT_DB_PATH.name
+    backend_patch_version: int = get_component_patch("backend")
 
     # Security
     secret_key: str = "change-me-in-production"
@@ -67,6 +89,60 @@ class Settings(BaseSettings):
             return [origin.strip() for origin in self.cors_origins.split(",")]
         return list(self.cors_origins) if isinstance(self.cors_origins, list) else []
 
+    @property
+    def project_version(self) -> str:
+        """Return проектную версию (major.minor)."""
+
+        return get_project_version()
+
+    @property
+    def backend_version(self) -> str:
+        """Return backend-версию (major.minor.patch)."""
+
+        return compose_component_version("backend", self.backend_patch_version)
+
+    @property
+    def api_version(self) -> str:
+        """Return версию API в формате v<MAJOR>.<MINOR>."""
+
+        return get_api_version()
+
+    @property
+    def api_prefix(self) -> str:
+        """Return prefix REST API `/api/v<MAJOR>.<MINOR>`."""
+
+        return get_api_prefix()
+
+    @property
+    def db_directory_path(self) -> Path:
+        """Return путь к каталогу БД."""
+
+        return Path(self.db_directory)
+
+    @property
+    def log_directory_path(self) -> Path:
+        """Return путь к каталогу логов backend."""
+
+        return Path(self.log_directory)
+
+    @property
+    def database_path(self) -> Path:
+        """Return полный путь к файлу базы данных."""
+
+        return self.db_directory_path / self.database_filename
+
+    @property
+    def backend_log_file(self) -> Path:
+        """Return путь к основному файлу логов backend."""
+
+        return self.log_directory_path / "backend.log"
+
+    def ensure_directories(self) -> None:
+        """Создать необходимые каталоги (БД, логи) при необходимости."""
+
+        self.db_directory_path.mkdir(parents=True, exist_ok=True)
+        self.log_directory_path.mkdir(parents=True, exist_ok=True)
+
 
 _settings: Settings | None = None
 
@@ -78,5 +154,6 @@ def get_settings() -> Settings:
         # Initialize .env file on first run
         init_env_file()
         _settings = Settings()
+        _settings.ensure_directories()
     return _settings
 

@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from backend.database import get_db
 from backend.schemas.task import TaskCreate, TaskResponse, TaskUpdate
-from backend.services.task_service import TaskService
+from backend.services.task_service import TaskRevisionConflictError, TaskService
 from backend.routers.realtime import manager as ws_manager
 
 if TYPE_CHECKING:
@@ -124,6 +124,17 @@ def update_task(
     """Update a task."""
     try:
         updated_task = TaskService.update_task(db, task_id, task_update)
+    except TaskRevisionConflictError as exc:
+        server_payload = TaskResponse.model_validate(exc.task).model_dump(mode="json")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "code": "conflict_revision",
+                "message": "Конфликт ревизий. Обновите данные и повторите попытку.",
+                "server_revision": exc.expected_revision,
+                "server_payload": server_payload,
+            },
+        ) from exc
     except ValueError as exc:
         # Validation inside service may raise ValueError; convert to HTTP 422
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
@@ -169,7 +180,7 @@ def complete_task(
     task_id: int,
     db: Session = Depends(get_db),
 ) -> TaskResponse:
-    """Mark a task as completed and update next due date."""
+    """Отметить задачу выполненной и обновить состояние напоминания."""
     completed_task = TaskService.complete_task(db, task_id)
     if not completed_task:
         raise HTTPException(

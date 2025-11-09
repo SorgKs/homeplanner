@@ -30,7 +30,7 @@
 ### Получить историю задачи
 
 ```http
-GET /api/v1/tasks/{task_id}/history
+GET /api/v0.2/tasks/{task_id}/history
 ```
 
 Возвращает список всех записей истории для задачи, отсортированных по времени (новые сначала).
@@ -38,7 +38,7 @@ GET /api/v1/tasks/{task_id}/history
 ### Отметить задачу как показанную
 
 ```http
-POST /api/v1/tasks/{task_id}/mark-shown
+POST /api/v0.2/tasks/{task_id}/mark-shown
 ```
 
 Обновляет `last_shown_at` и логирует `FIRST_SHOWN` если это первая демонстрация данной итерации.
@@ -84,7 +84,7 @@ POST /api/v1/tasks/{task_id}/mark-shown
 ### Удаление записи истории
 
 ```http
-DELETE /api/v1/history/{history_id}
+DELETE /api/v0.2/history/{history_id}
 ```
 
 Удаляет указанную запись истории. Доступно только в режиме администратора.

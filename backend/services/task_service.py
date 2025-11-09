@@ -5,10 +5,25 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy.orm import Session
 
-from backend.models.task import RecurrenceType, Task
+from backend.models.task import RecurrenceType, Task, TaskNotification, TaskRecurrence
 
 if TYPE_CHECKING:
     from backend.schemas.task import TaskCreate, TaskUpdate
+
+
+class TaskRevisionConflictError(Exception):
+    """Raised when optimistic lock revision mismatch occurs."""
+
+    def __init__(self, expected_revision: int, actual_revision: int, task: Task) -> None:
+        """Store revision details and server payload."""
+
+        self.expected_revision = expected_revision
+        self.actual_revision = actual_revision
+        self.task = task
+        message = (
+            f"Revision conflict: expected {expected_revision}, got {actual_revision}"
+        )
+        super().__init__(message)
 
 
 class TaskService:
@@ -17,18 +32,34 @@ class TaskService:
     @staticmethod
     def create_task(db: Session, task_data: "TaskCreate") -> Task:
         """Create a new recurring task."""
-        from backend.models.task import RecurrenceType, TaskType
-        
-        task = Task(**task_data.model_dump())
-        
-        # Ensure reminder_time is set (TaskBase.ensure_reminder_time should have set it, but double-check)
-        if task.reminder_time is None:
-            task.reminder_time = task.next_due_date
-        
+        from backend.models.task import TaskType
+
+        payload = task_data.model_dump()
+        recurrence_payload = payload.pop("recurrence", None)
+        notifications_payload = payload.pop("notifications", [])
+
+        task = Task(**payload)
+
+        if recurrence_payload:
+            task.recurrence = TaskRecurrence(
+                rrule=recurrence_payload["rrule"],
+                end_at=recurrence_payload.get("end_at"),
+            )
+
+        if notifications_payload:
+            task.notifications = [
+                TaskNotification(
+                    notification_type=notification["notification_type"],
+                    channel=notification["channel"],
+                    offset_minutes=notification["offset_minutes"],
+                )
+                for notification in notifications_payload
+            ]
+
         db.add(task)
         db.commit()
         db.refresh(task)
-        
+
         # Log creation to history
         from backend.services.task_history_service import TaskHistoryService
         import json
@@ -55,116 +86,17 @@ class TaskService:
 
     @staticmethod
     def get_all_tasks(db: Session, active_only: bool = False) -> list[Task]:
-        """Get all tasks, optionally filtering by active status.
-        
-        Also updates dates for completed tasks if they were completed before today
-        and their date is in the past (i.e., after midnight).
-        """
-        from backend.models.task import TaskType
-        
-        # Update dates for tasks that were completed before today and have date in the past
-        now = datetime.now()
-        today = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        
-        # Find tasks that need date update:
-        # - Have last_completed_at set (were completed)
-        # - last_completed_at is before today (completed yesterday or earlier)
-        # - next_due_date is before today (date is in the past)
-        tasks_to_update = (
-            db.query(Task)
-            .filter(Task.last_completed_at.isnot(None))
-            .filter(Task.last_completed_at < today)
-            .filter(Task.next_due_date < today)
-            .all()
-        )
-        
-        for task in tasks_to_update:
-            # Task date is in the past and task was completed before today
-            # Update the date based on task type
-            if task.task_type == TaskType.ONE_TIME:
-                # One-time tasks stay as they are (already inactive)
-                pass
-            elif task.task_type == TaskType.INTERVAL:
-                # Calculate next date from last completion + interval
-                if task.interval_days:
-                    # Calculate how many full cycles have passed since completion
-                    last_completion_date = task.last_completed_at.replace(hour=0, minute=0, second=0, microsecond=0)
-                    days_since_completion = (today - last_completion_date).days
-                    # Calculate next cycle start date
-                    cycles_to_add = (days_since_completion // task.interval_days) + 1
-                    next_date = last_completion_date + timedelta(days=cycles_to_add * task.interval_days)
-                    # Ensure it's at least today
-                    if next_date < today:
-                        next_date = today + timedelta(days=task.interval_days)
-                    task.next_due_date = next_date
-                else:
-                    task.next_due_date = today + timedelta(days=1)
-            else:
-                # Recurring tasks: calculate next date from today
-                task.next_due_date = TaskService._calculate_next_due_date(
-                    today,
-                    task.recurrence_type,
-                    task.recurrence_interval,
-                    task.reminder_time,
-                )
-        
-        if tasks_to_update:
-            db.commit()
-        
-        # Now get all tasks (with updated dates)
+        """Получить все задачи с опциональной фильтрацией по активности."""
         query = db.query(Task)
         if active_only:
-            query = query.filter(Task.is_active == True)
-        return query.order_by(Task.next_due_date).all()
+            query = query.filter(Task.active.is_(True))
+        return query.order_by(Task.reminder_time).all()
 
     @staticmethod
     def get_tasks_for_today(db: Session) -> list[Task]:
-        """Return tasks visible in 'today' view per unified rules.
+        """Совместимость: обёртка над get_today_tasks()."""
 
-        Rules:
-        - one_time: if inactive (completed) — visible only if due date is today;
-          if active — visible if due today or overdue.
-        - recurring/interval: if completed — visible only if completed today;
-          if not completed — visible if due today or overdue.
-        """
-        from backend.models.task import TaskType
-
-        now = datetime.now()
-        today = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        tomorrow = today + timedelta(days=1)
-
-        tasks = db.query(Task).order_by(Task.next_due_date).all()
-
-        result: list[Task] = []
-        for task in tasks:
-            task_date = task.next_due_date.replace(hour=0, minute=0, second=0, microsecond=0)
-            is_due_today_or_overdue = task_date < tomorrow
-
-            if task.task_type == TaskType.ONE_TIME:
-                if not task.is_active:
-                    # Completed one-time task visible only if due today
-                    if task_date == today:
-                        result.append(task)
-                else:
-                    if is_due_today_or_overdue:
-                        result.append(task)
-            else:
-                # recurring or interval
-                completed_today = False
-                if task.last_completed_at is not None:
-                    lcd = task.last_completed_at.replace(hour=0, minute=0, second=0, microsecond=0)
-                    completed_today = lcd == today
-
-                if task.last_completed_at is not None:
-                    # Completed task visible only if completed today
-                    if completed_today:
-                        result.append(task)
-                else:
-                    # Not completed — visible if due today or overdue
-                    if is_due_today_or_overdue:
-                        result.append(task)
-
-        return result
+        return TaskService.get_today_tasks(db)
 
     @staticmethod
     def update_task(db: Session, task_id: int, task_data: "TaskUpdate") -> Task | None:
@@ -173,16 +105,27 @@ class TaskService:
         if not task:
             return None
 
+        if task.revision != task_data.revision:
+            raise TaskRevisionConflictError(
+                expected_revision=task.revision,
+                actual_revision=task_data.revision,
+                task=task,
+            )
+
         update_data = task_data.model_dump(exclude_unset=True)
-        
+        update_data.pop("revision", None)
+        recurrence_payload = update_data.pop("recurrence", None)
+        notifications_payload = update_data.pop("notifications", None)
+
         # Save old task state for history comments (before applying changes)
         old_task_state = {
             "task_type": task.task_type,
             "reminder_time": task.reminder_time,
-            "next_due_date": task.next_due_date,
             "recurrence_type": task.recurrence_type,
             "recurrence_interval": task.recurrence_interval,
             "interval_days": task.interval_days,
+            "completed": task.completed,
+            "active": task.active,
         }
         
         # Calculate changes and save old values
@@ -219,12 +162,31 @@ class TaskService:
         # Apply changes
         for key, value in update_data.items():
             setattr(task, key, value)
-        
-        # Ensure reminder_time is always set after update
-        # If reminder_time was explicitly set to None in update, use next_due_date as fallback
-        # (TaskBase.ensure_reminder_time will handle this in schema validation, but we ensure it here too)
-        if task.reminder_time is None:
-            task.reminder_time = task.next_due_date
+
+        if recurrence_payload is not None:
+            if recurrence_payload:
+                if task.recurrence is None:
+                    task.recurrence = TaskRecurrence(
+                        rrule=recurrence_payload["rrule"],
+                        end_at=recurrence_payload.get("end_at"),
+                    )
+                else:
+                    task.recurrence.rrule = recurrence_payload["rrule"]
+                    task.recurrence.end_at = recurrence_payload.get("end_at")
+            else:
+                task.recurrence = None
+
+        if notifications_payload is not None:
+            task.notifications = [
+                TaskNotification(
+                    notification_type=notification["notification_type"],
+                    channel=notification["channel"],
+                    offset_minutes=notification["offset_minutes"],
+                )
+                for notification in notifications_payload
+            ]
+
+        task.revision += 1
 
         db.commit()
         db.refresh(task)
@@ -251,9 +213,10 @@ class TaskService:
                     "recurrence_type": "периодичность",
                     "recurrence_interval": "интервал повторения",
                     "interval_days": "интервал в днях",
-                    "next_due_date": "дата выполнения",
                     "reminder_time": "напоминание",
                     "group_id": "группа",
+                    "completed": "выполнено сегодня",
+                    "active": "активность",
                 }
                 return field_names.get(key, key)
             
@@ -282,9 +245,7 @@ class TaskService:
                         RecurrenceType.WEEKENDS: "выходные",
                         RecurrenceType.WEEKLY: "еженедельно",
                         RecurrenceType.MONTHLY: "ежемесячно",
-                        RecurrenceType.MONTHLY_WEEKDAY: "ежемесячно (по дню недели)",
                         RecurrenceType.YEARLY: "ежегодно",
-                        RecurrenceType.YEARLY_WEEKDAY: "ежегодно (по дню недели)",
                         RecurrenceType.CUSTOM: "произвольно",
                         RecurrenceType.INTERVAL: "интервал",
                     }
@@ -297,17 +258,6 @@ class TaskService:
                     return TaskService._format_datetime_for_history(val)
                 
                 return str(val)
-            
-            # Determine which fields are relevant based on final task type
-            def is_field_relevant(key: str, final_task_type: str) -> bool:
-                """Check if field is relevant for the final task type."""
-                # Check current task type (after update)
-                relevant_fields = {
-                    "one_time": {"title", "description", "next_due_date", "reminder_time", "group_id"},
-                    "recurring": {"title", "description", "task_type", "recurrence_type", "recurrence_interval", "next_due_date", "reminder_time", "group_id"},
-                    "interval": {"title", "description", "task_type", "interval_days", "next_due_date", "reminder_time", "group_id"},
-                }
-                return key in relevant_fields.get(final_task_type, set())
             
             # Generate comment based on whether task_type changed
             comment = None
@@ -332,7 +282,15 @@ class TaskService:
                 # Always use old_task_state for task_type to get correct old type
                 old_state_for_formatting = {}
                 # Get all relevant fields for the old task type
-                relevant_fields = ["task_type", "recurrence_type", "recurrence_interval", "reminder_time", "next_due_date", "interval_days"]
+                relevant_fields = [
+                    "task_type",
+                    "recurrence_type",
+                    "recurrence_interval",
+                    "reminder_time",
+                    "interval_days",
+                    "completed",
+                    "active",
+                ]
                 for key in relevant_fields:
                     if key == "task_type":
                         # Always use old task type from old_task_state
@@ -353,8 +311,9 @@ class TaskService:
                     "recurrence_type": task.recurrence_type,
                     "recurrence_interval": task.recurrence_interval,
                     "reminder_time": task.reminder_time,
-                    "next_due_date": task.next_due_date,
                     "interval_days": task.interval_days,
+                    "completed": task.completed,
+                    "active": task.active,
                 }
                 
                 # Format old and new settings using full configuration description
@@ -425,79 +384,51 @@ class TaskService:
 
     @staticmethod
     def complete_task(db: Session, task_id: int) -> Task | None:
-        """Mark a task as completed and update next due date.
-        
-        If task is due today or overdue, the date is not updated immediately.
-        Date will be updated only after midnight (next day) via get_all_tasks.
-        """
+        """Отметить задачу выполненной и при необходимости пересчитать напоминание."""
         from backend.models.task import TaskType
 
         task = db.query(Task).filter(Task.id == task_id).first()
         if not task:
             return None
 
-        task.last_completed_at = datetime.now()
+        task.completed = True
         now = datetime.now()
-        
-        # Store iteration date for history logging
-        iteration_date = task.next_due_date
-        
-        # Check if task is due today or overdue (within current day or before)
-        task_date = task.next_due_date.replace(hour=0, minute=0, second=0, microsecond=0)
-        today = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        is_due_today_or_overdue = task_date <= today
+        iteration_time = task.reminder_time
 
-        # Calculate next due date based on task type
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        iteration_day = iteration_time.replace(hour=0, minute=0, second=0, microsecond=0)
+        is_due_today_or_overdue = iteration_day <= today_start
+
         if task.task_type == TaskType.ONE_TIME:
-            # For one-time tasks: just mark as inactive (completed)
-            # Don't change the date - keep it so it stays visible
-            task.is_active = False
+            task.active = False
         elif task.task_type == TaskType.INTERVAL:
-            # For interval tasks: don't update date immediately if task is due today or overdue
-            # Date will be updated only after midnight (next day) via get_all_tasks
-            # This ensures that completed tasks remain visible until next day
             if not is_due_today_or_overdue:
-                # Task is due in the future (not today or overdue), update the date immediately
-                if task.interval_days:
-                    next_date = now + timedelta(days=task.interval_days)
-                else:
-                    next_date = now + timedelta(days=1)
-                task.next_due_date = next_date
-            # If due today or overdue, keep the date as is - it will be updated after midnight
-            # The frontend will handle updating tasks at the start of a new day
+                interval = task.interval_days or 1
+                base = iteration_time if iteration_time > now else now
+                task.reminder_time = base + timedelta(days=interval)
         else:
-            # For recurring tasks: don't update date immediately if task is due today or overdue
-            # Date will be updated only after midnight (next day) via get_all_tasks
-            # This ensures that completed tasks remain visible until next day
             if not is_due_today_or_overdue:
-                # Task is due in the future (not today or overdue), update the date immediately
-                next_date = TaskService._calculate_next_due_date(
-                    task.next_due_date,
+                interval = task.recurrence_interval or 1
+                task.reminder_time = TaskService._calculate_next_reminder_time(
+                    iteration_time,
                     task.recurrence_type,
-                    task.recurrence_interval,
+                    interval,
                     task.reminder_time,
                 )
-                task.next_due_date = next_date
-            # If due today or overdue, keep the date as is - it will be updated after midnight
-            # The frontend will handle updating tasks at the start of a new day
+
+        task.revision += 1
 
         db.commit()
         db.refresh(task)
         
-        # Log confirmation to history
         from backend.services.task_history_service import TaskHistoryService
-        TaskHistoryService.log_task_confirmed(db, task.id, iteration_date)
+        TaskHistoryService.log_task_confirmed(db, task.id, iteration_time)
         
         return task
 
     @staticmethod
     def uncomplete_task(db: Session, task_id: int) -> Task | None:
-        """Revert task completion (cancel confirmation).
-
-        For one-time tasks, mark task as active again.
-        For recurring and interval tasks, clear last_completed_at.
-        Restores next_due_date to the original date from history (iteration_date of last confirmed action).
-        """
+        """Отменить выполнение задачи и восстановить предыдущее время напоминания."""
         from backend.models.task import TaskType
         from backend.models.task_history import TaskHistory, TaskHistoryAction
 
@@ -505,8 +436,6 @@ class TaskService:
         if not task:
             return None
 
-        # Get original iteration date from last confirmed action in history
-        # This allows us to restore next_due_date to the date it had when task was completed
         last_confirmed = (
             db.query(TaskHistory)
             .filter(TaskHistory.task_id == task_id)
@@ -515,24 +444,21 @@ class TaskService:
             .first()
         )
         
-        # Clear completion timestamp
-        task.last_completed_at = None
+        task.completed = False
         
-        # Restore next_due_date to original date from history if available
         if last_confirmed and last_confirmed.iteration_date:
-            task.next_due_date = last_confirmed.iteration_date
-        # If no history found, keep current next_due_date (shouldn't happen in normal flow)
+            task.reminder_time = last_confirmed.iteration_date
 
         if task.task_type == TaskType.ONE_TIME:
-            # Make one-time task active again
-            task.is_active = True
+            task.active = True
+
+        task.revision += 1
 
         db.commit()
         db.refresh(task)
 
-        # Log unconfirmation to history
         from backend.services.task_history_service import TaskHistoryService
-        TaskHistoryService.log_task_unconfirmed(db, task.id, task.next_due_date)
+        TaskHistoryService.log_task_unconfirmed(db, task.id, task.reminder_time)
 
         return task
 
@@ -641,38 +567,27 @@ class TaskService:
         return min(occurrence, 4)
     
     @staticmethod
-    def _calculate_next_due_date(
+    def _calculate_next_reminder_time(
         current_date: datetime,
         recurrence_type: RecurrenceType | None,
         interval: int,
         reminder_time: datetime | None = None,
     ) -> datetime:
-        """Calculate next due date based on recurrence type and interval.
-        
-        For recurring tasks with reminder_time, respects the time of day and day of week.
-        """
+        """Рассчитать следующее время напоминания исходя из правил повторяемости."""
         from backend.models.task import RecurrenceType
         
         # For WEEKLY recurring tasks, reminder_time is required
         if recurrence_type == RecurrenceType.WEEKLY and not reminder_time:
             # For WEEKLY tasks, reminder_time is required to know day of week and time
-            # If not provided, use next_due_date as fallback (should not happen in practice)
             raise ValueError("reminder_time is required for weekly recurring tasks (день недели и время обязательны для еженедельных задач)")
         
         if not reminder_time:
             # Old behavior without reminder_time (for other recurrence types)
-            # Note: MONTHLY_WEEKDAY and YEARLY_WEEKDAY require reminder_time
             if recurrence_type == RecurrenceType.DAILY:
                 return current_date + timedelta(days=interval)
             elif recurrence_type == RecurrenceType.MONTHLY:
                 return current_date + timedelta(days=30 * interval)
             elif recurrence_type == RecurrenceType.YEARLY:
-                return current_date + timedelta(days=365 * interval)
-            elif recurrence_type == RecurrenceType.MONTHLY_WEEKDAY:
-                # Fallback: treat like monthly
-                return current_date + timedelta(days=30 * interval)
-            elif recurrence_type == RecurrenceType.YEARLY_WEEKDAY:
-                # Fallback: treat like yearly
                 return current_date + timedelta(days=365 * interval)
             else:
                 return current_date + timedelta(days=interval)
@@ -787,37 +702,6 @@ class TaskService:
                 next_date = next_date.replace(hour=reminder_hour, minute=reminder_minute, second=0, microsecond=0)
             return next_date
         
-        elif recurrence_type == RecurrenceType.MONTHLY_WEEKDAY:
-            # Monthly by weekday: e.g., 2nd Tuesday of each month
-            # reminder_time should contain a date with the target weekday
-            # We need to determine which occurrence (1st, 2nd, 3rd, 4th, or last)
-            reminder_weekday = reminder_time.weekday()
-            reminder_day = reminder_time.day
-            reminder_month = reminder_time.month
-            reminder_year = reminder_time.year
-            # Determine which occurrence this is (1-4 or -1 for last)
-            n = TaskService._determine_weekday_occurrence(reminder_day, reminder_weekday, reminder_year, reminder_month)
-            
-            # Start from current month
-            target_month = current_date.month
-            target_year = current_date.year
-            
-            # Find the N-th weekday in current month
-            candidate = TaskService._find_nth_weekday_in_month(target_year, target_month, reminder_weekday, n)
-            candidate = candidate.replace(hour=reminder_hour, minute=reminder_minute, second=0, microsecond=0)
-            
-            if candidate <= current_date:
-                # Current month's occurrence has passed, move to next month(s)
-                months_to_add = interval
-                target_month += months_to_add
-                while target_month > 12:
-                    target_month -= 12
-                    target_year += 1
-                candidate = TaskService._find_nth_weekday_in_month(target_year, target_month, reminder_weekday, n)
-                candidate = candidate.replace(hour=reminder_hour, minute=reminder_minute, second=0, microsecond=0)
-            
-            return candidate
-        
         elif recurrence_type == RecurrenceType.YEARLY:
             # Yearly: same month, day, and time
             reminder_month = reminder_time.month
@@ -827,30 +711,6 @@ class TaskService:
             if next_date <= current_date:
                 next_date = next_date.replace(year=current_date.year + interval)
             return next_date
-        
-        elif recurrence_type == RecurrenceType.YEARLY_WEEKDAY:
-            # Yearly by weekday: e.g., 1st Monday of January each year
-            reminder_month = reminder_time.month
-            reminder_weekday = reminder_time.weekday()
-            reminder_day = reminder_time.day
-            reminder_year = reminder_time.year
-            # Determine which occurrence this is (1-4 or -1 for last)
-            n = TaskService._determine_weekday_occurrence(reminder_day, reminder_weekday, reminder_year, reminder_month)
-            
-            # Start from current year
-            target_year = current_date.year
-            
-            # Find the N-th weekday in target month of current year
-            candidate = TaskService._find_nth_weekday_in_month(target_year, reminder_month, reminder_weekday, n)
-            candidate = candidate.replace(hour=reminder_hour, minute=reminder_minute, second=0, microsecond=0)
-            
-            if candidate <= current_date:
-                # Current year's occurrence has passed, move forward by interval years
-                target_year += interval
-                candidate = TaskService._find_nth_weekday_in_month(target_year, reminder_month, reminder_weekday, n)
-                candidate = candidate.replace(hour=reminder_hour, minute=reminder_minute, second=0, microsecond=0)
-            
-            return candidate
         
         else:
             # Default to daily
@@ -989,36 +849,6 @@ class TaskService:
                     else:
                         return f"каждые {recurrence_interval} месяца"
             
-            elif recurrence_type == RecurrenceType.MONTHLY_WEEKDAY:
-                if reminder_time:
-                    time_str = reminder_time.strftime("%H:%M")
-                    weekday_num = reminder_time.weekday()
-                    day_of_month = reminder_time.day
-                    weekdays_ru = [
-                        "понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье"
-                    ]
-                    weekday_ru = weekdays_ru[weekday_num]
-                    # Determine which occurrence (1st, 2nd, 3rd, 4th, or last)
-                    # Use a more accurate method by checking the actual date
-                    year = reminder_time.year if hasattr(reminder_time, 'year') else datetime.now().year
-                    month = reminder_time.month
-                    n = TaskService._determine_weekday_occurrence(day_of_month, weekday_num, year, month)
-                    if n == -1:
-                        nth_str = "последний"
-                    else:
-                        nth_words = {1: "первый", 2: "второй", 3: "третий", 4: "четвертый"}
-                        nth_str = nth_words.get(n, f"{n}-й")
-                    
-                    if recurrence_interval == 1:
-                        return f"{nth_str} {weekday_ru} месяца в {time_str}"
-                    else:
-                        return f"{nth_str} {weekday_ru} месяца в {time_str} каждые {recurrence_interval} месяца"
-                else:
-                    if recurrence_interval == 1:
-                        return "ежемесячно (по дню недели)"
-                    else:
-                        return f"каждые {recurrence_interval} месяца (по дню недели)"
-            
             elif recurrence_type == RecurrenceType.YEARLY:
                 if reminder_time:
                     time_str = reminder_time.strftime("%H:%M")
@@ -1039,40 +869,6 @@ class TaskService:
                         return "ежегодно"
                     else:
                         return f"каждые {recurrence_interval} года"
-            
-            elif recurrence_type == RecurrenceType.YEARLY_WEEKDAY:
-                if reminder_time:
-                    time_str = reminder_time.strftime("%H:%M")
-                    weekday_num = reminder_time.weekday()
-                    day_of_month = reminder_time.day
-                    month_num = reminder_time.month
-                    weekdays_ru = [
-                        "понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье"
-                    ]
-                    weekday_ru = weekdays_ru[weekday_num]
-                    months_ru = {
-                        1: "января", 2: "февраля", 3: "марта", 4: "апреля",
-                        5: "мая", 6: "июня", 7: "июля", 8: "августа",
-                        9: "сентября", 10: "октября", 11: "ноября", 12: "декабря"
-                    }
-                    month_ru = months_ru.get(month_num, f"{month_num} месяца")
-                    # Determine which occurrence (1st, 2nd, 3rd, 4th, or last)
-                    week_of_month = (day_of_month - 1) // 7 + 1
-                    if week_of_month > 4:
-                        nth_str = "последний"
-                    else:
-                        nth_words = {1: "первый", 2: "второй", 3: "третий", 4: "четвертый"}
-                        nth_str = nth_words.get(week_of_month, f"{week_of_month}-й")
-                    
-                    if recurrence_interval == 1:
-                        return f"{nth_str} {weekday_ru} {month_ru} в {time_str} ежегодно"
-                    else:
-                        return f"{nth_str} {weekday_ru} {month_ru} в {time_str} каждые {recurrence_interval} года"
-                else:
-                    if recurrence_interval == 1:
-                        return "ежегодно (по дню недели)"
-                    else:
-                        return f"каждые {recurrence_interval} года (по дню недели)"
             
             else:
                 return "расписание"
@@ -1110,20 +906,23 @@ class TaskService:
         cutoff_date = datetime.now() + timedelta(days=days_ahead)
         return (
             db.query(Task)
-            .filter(Task.is_active == True)
-            .filter(Task.next_due_date <= cutoff_date)
-            .order_by(Task.next_due_date)
+            .filter(Task.active.is_(True))
+            .filter(Task.reminder_time <= cutoff_date)
+            .order_by(Task.reminder_time)
             .all()
         )
 
     @staticmethod
     def get_today_tasks(db: Session) -> list[Task]:
-        """Get tasks visible in 'today' view.
-        
-        Видимость НЕ зависит от next_due_date.
-        - One-time tasks: visible if completed today (and due today), or active and due today/overdue
-        - Recurring/interval tasks: visible if completed today (regardless of next_due_date),
-          or active (regardless of next_due_date)
+        """Получить задачи для представления «Сегодня».
+
+        Критерии:
+        - Разовые задачи (`one_time`):
+          - если активна — показываем, когда `reminder_time` сегодня либо в прошлом;
+          - если выполнена — показываем только в тот день, когда она была запланирована.
+        - Повторяющиеся и интервальные задачи:
+          - если `completed = True`, показываем всегда до ночного сброса;
+          - если не выполнена, показываем при наступлении или просрочке (`reminder_time` сегодня/раньше).
         """
         from backend.models.task import TaskType
         
@@ -1131,47 +930,33 @@ class TaskService:
         today = now.replace(hour=0, minute=0, second=0, microsecond=0)
         tomorrow = today + timedelta(days=1)
         
-        # Get all tasks (we'll filter in memory)
-        all_tasks = db.query(Task).all()
+        tasks = db.query(Task).order_by(Task.reminder_time).all()
         
-        result = []
-        for task in all_tasks:
+        result: list[Task] = []
+        for task in tasks:
             task_type = task.task_type
-            is_completed = task.last_completed_at is not None
-            
+            reminder = task.reminder_time
+            reminder_midnight = reminder.replace(hour=0, minute=0, second=0, microsecond=0)
+            is_due_today = today <= reminder < tomorrow
+            is_overdue = reminder < today
+
             if task_type == TaskType.ONE_TIME:
-                # For one-time tasks: check if due today for completed tasks
-                task_date = task.next_due_date.replace(hour=0, minute=0, second=0, microsecond=0)
-                is_due_today = task_date.date() == today.date()
-                is_due_today_or_overdue = task_date < tomorrow
-                
-                if not task.is_active:
-                    # Completed one-time task - show only if due today
-                    if is_due_today:
+                if task.completed:
+                    if reminder_midnight == today:
                         result.append(task)
-                else:
-                    # Uncompleted one-time task - show if due today or overdue
-                    if is_due_today_or_overdue:
-                        result.append(task)
-            else:
-                # For recurring and interval tasks: visibility does NOT depend on next_due_date
-                completed_today = False
-                if is_completed and task.last_completed_at:
-                    completed_date = task.last_completed_at.replace(hour=0, minute=0, second=0, microsecond=0)
-                    completed_today = completed_date.date() == today.date()
-                
-                if is_completed:
-                    # Completed task - visible if completed today (regardless of next_due_date)
-                    if completed_today:
-                        result.append(task)
-                else:
-                    # Uncompleted task - visible if active (regardless of next_due_date)
-                    # Все активные повторяющиеся/интервальные задачи видны в "Сегодня"
-                    if task.is_active:
-                        result.append(task)
-        
-        # Sort by due date
-        result.sort(key=lambda t: t.next_due_date)
+                    continue
+
+            # For active one-time tasks and other task types
+            if task_type == TaskType.ONE_TIME:
+                if task.active and (is_due_today or is_overdue):
+                    result.append(task)
+                continue
+
+            if task.completed:
+                result.append(task)
+            elif task.active and (is_due_today or is_overdue):
+                result.append(task)
+
         return result
 
     @staticmethod
@@ -1183,18 +968,20 @@ class TaskService:
         
         now = datetime.now()
         
-        # Check if this is a new iteration (last_shown_at is before current next_due_date)
-        is_first_show = task.last_shown_at is None or task.last_shown_at < task.next_due_date
+        # Проверяем, впервые ли показываем текущую итерацию (по времени напоминания)
+        is_first_show = task.last_shown_at is None or task.last_shown_at < task.reminder_time
         
         # Update last_shown_at
         task.last_shown_at = now
+        task.revision += 1
+
         db.commit()
         db.refresh(task)
         
         # Log first shown to history only if this is the first time showing this iteration
         if is_first_show:
             from backend.services.task_history_service import TaskHistoryService
-            TaskHistoryService.log_task_first_shown(db, task.id, task.next_due_date)
+            TaskHistoryService.log_task_first_shown(db, task.id, task.reminder_time)
         
         return task
 
