@@ -22,6 +22,7 @@
 
     const projectConfig = loadJson("version.project.json", { major: 0, minor: 0 });
     const componentConfig = loadJson("version.json", { patch: 0 });
+    const networkConfig = loadJson("network.json", { host: "localhost", port: 8000 });
 
     const major = projectConfig.major ?? 0;
     const minor = projectConfig.minor ?? 0;
@@ -29,8 +30,8 @@
     const FRONTEND_VERSION = `${major}.${minor}.${FRONTEND_PATCH_VERSION}`;
     const PROJECT_VERSION = `${major}.${minor}`;
 
-    const HOST = "localhost";
-    const PORT = 8000;
+    const HOST = networkConfig.host ?? "localhost";
+    const PORT = Number(networkConfig.port ?? 8000);
     const API_VERSION_PATH = "/api/v0.2";
     const WS_PATH = `${API_VERSION_PATH}/tasks/stream`;
     const API_BASE_URL = `http://${HOST}:${PORT}${API_VERSION_PATH}`;

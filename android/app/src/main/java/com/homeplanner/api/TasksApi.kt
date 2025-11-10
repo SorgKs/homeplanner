@@ -13,9 +13,10 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /** Simple API client for tasks. */
-class TasksApi(private val httpClient: OkHttpClient = OkHttpClient()) {
-
-    private val baseUrl: String = BuildConfig.API_BASE_URL
+class TasksApi(
+    private val httpClient: OkHttpClient = OkHttpClient(),
+    private val baseUrl: String = BuildConfig.API_BASE_URL,
+) {
 
     fun getTasks(activeOnly: Boolean = true): List<Task> {
         val url = buildString {
@@ -177,10 +178,7 @@ class TasksApi(private val httpClient: OkHttpClient = OkHttpClient()) {
 
 private fun JSONObject.toTask(): Task {
     val reminderValue = optString("reminder_time", null)?.takeIf { it.isNotEmpty() }
-    val nextDueValue = when {
-        has("next_due_date") && !isNull("next_due_date") -> optString("next_due_date", null)
-        else -> reminderValue
-    }
+        ?: throw IllegalStateException("Missing reminder_time in task payload: $this")
     val activeValue = if (isNull("active")) true else getBoolean("active")
     val completedValue = if (isNull("completed")) false else getBoolean("completed")
     return Task(
@@ -191,8 +189,7 @@ private fun JSONObject.toTask(): Task {
         recurrenceType = optString("recurrence_type", null),
         recurrenceInterval = if (isNull("recurrence_interval")) null else getInt("recurrence_interval"),
         intervalDays = if (isNull("interval_days")) null else getInt("interval_days"),
-        nextDueDate = getString("next_due_date"),
-        reminderTime = optString("reminder_time", null),
+        reminderTime = reminderValue,
         groupId = if (isNull("group_id")) null else getInt("group_id"),
         active = activeValue,
         completed = completedValue,

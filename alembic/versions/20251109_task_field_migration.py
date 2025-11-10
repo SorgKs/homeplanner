@@ -63,7 +63,33 @@ def _load_tasks_columns(
             columns.append(sa.column(column_name))
 
     tasks_table = sa.table("tasks", *columns)
-    return list(connection.execute(sa.select(*columns)))
+    result = connection.execute(sa.select(*columns))
+    return [dict(row._mapping) for row in result]
+
+
+def _normalize_datetime(value: Any) -> datetime | None:
+    """Преобразовать значение в datetime, если это возможно."""
+
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value
+    if isinstance(value, str):
+        try:
+            return datetime.fromisoformat(value)
+        except ValueError:
+            formats = (
+                "%Y-%m-%d %H:%M:%S.%f",
+                "%Y-%m-%d %H:%M:%S",
+                "%Y-%m-%dT%H:%M:%S.%f",
+                "%Y-%m-%dT%H:%M:%S",
+            )
+            for fmt in formats:
+                try:
+                    return datetime.strptime(value, fmt)
+                except ValueError:
+                    continue
+    return None
 
 
 def upgrade() -> None:
@@ -83,7 +109,10 @@ def upgrade() -> None:
     # Обновляем набор колонок после добавления.
     columns = _table_columns(inspector, "tasks")
 
-    connection = bind.connect()
+    if isinstance(bind, sa.engine.Connection):
+        connection = bind
+    else:
+        connection = bind.connect()
     current_date = datetime.now().date()
     tasks_data = _load_tasks_columns(connection, columns)
     tasks_table = sa.table(
@@ -100,9 +129,9 @@ def upgrade() -> None:
     for row in tasks_data:
         updates: dict[str, Any] = {}
 
-        reminder_time = row.get("reminder_time")
-        next_due_date = row.get("next_due_date")
-        last_completed_at = row.get("last_completed_at")
+        reminder_time = _normalize_datetime(row.get("reminder_time"))
+        next_due_date = _normalize_datetime(row.get("next_due_date"))
+        last_completed_at = _normalize_datetime(row.get("last_completed_at"))
         completed = row.get("completed")
         is_active = row.get("is_active")
         active = row.get("active")

@@ -223,7 +223,17 @@ sudo systemctl start homeplanner
 
 ## База данных
 
-По умолчанию используется SQLite (`homeplanner.db`). База данных создается автоматически при первом запуске.
+По умолчанию используется SQLite, файл базы размещается в каталоге `runtime/db/homeplanner.db`. Директория `runtime/` создаётся автоматически при запуске.
+
+### Миграция со старой схемы SQLite
+
+Если ранее база находилась в корне проекта (`homeplanner.db`) или в `backend/db/homeplanner.db`, выполните перенос:
+
+```bash
+cp homeplanner.db runtime/db/homeplanner.db  # либо укажите исходный путь
+```
+
+Затем примените актуальные миграции Alembic (см. раздел ниже).
 
 Для продакшена рекомендуется использовать PostgreSQL. Измените `DATABASE_URL` в `.env`:
 
@@ -233,7 +243,7 @@ DATABASE_URL=postgresql://user:password@localhost/homeplanner
 
 ## Миграции базы данных
 
-Если в проекте есть миграции Alembic, примените их:
+Если в проекте есть миграции Alembic, примените их (после возможного переноса старой базы):
 
 ```bash
 # С uv

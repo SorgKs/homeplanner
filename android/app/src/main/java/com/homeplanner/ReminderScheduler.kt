@@ -66,7 +66,7 @@ class ReminderScheduler(private val context: Context) {
         val isEligible = task.shouldScheduleReminder()
         Log.d(
             "ReminderScheduler",
-            "scheduleForTaskIfUpcoming: task=${task.id} (${task.title}), active=${task.active}, completed=${task.completed}, eligible=$isEligible, reminderTime=${task.reminderTime}, nextDueDate=${task.nextDueDate}"
+            "scheduleForTaskIfUpcoming: task=${task.id} (${task.title}), active=${task.active}, completed=${task.completed}, eligible=$isEligible, reminderTime=${task.reminderTime}"
         )
         
         // For reminders, we want to schedule if:
@@ -75,7 +75,7 @@ class ReminderScheduler(private val context: Context) {
         // But we'll be more permissive: schedule if reminder time is in future, regardless of completion status
         // (completed tasks shouldn't show reminders, but we'll let the time check handle it)
         
-        val reminderTimeStr = task.reminderTime ?: task.nextDueDate
+        val reminderTimeStr = task.reminderTime
         Log.d("ReminderScheduler", "Using reminderTimeStr=$reminderTimeStr for task ${task.id}")
         
         val whenMs = parseDateTime(reminderTimeStr)

@@ -17,28 +17,45 @@ from common.versioning import (
     get_project_version,
     get_version_config,
 )
+from common.networking import get_network_config
+
+
+def _write_if_changed(path: Path, content: str) -> None:
+    """Write content to file only if it has changed."""
+
+    if path.exists():
+        current = path.read_text(encoding="utf-8")
+        if current == content:
+            return
+    path.write_text(content, encoding="utf-8")
 
 
 def _ensure_frontend_version_assets() -> None:
-    """Generate project version json for frontend."""
+    """Generate project version assets for frontend without triggering reload loops."""
 
     frontend_dir = Path(__file__).resolve().parent.parent / "frontend"
     project_json = frontend_dir / "version.project.json"
-    project_json.write_text(
-        json.dumps(get_version_config(), ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
+    project_content = json.dumps(get_version_config(), ensure_ascii=False, indent=2) + "\n"
+    _write_if_changed(project_json, project_content)
+
     component_json = frontend_dir / "version.json"
     if not component_json.exists():
-        component_json.write_text(
-            json.dumps(
-                {"patch": get_component_patch("frontend")},
-                ensure_ascii=False,
-                indent=2,
-            )
-            + "\n",
-            encoding="utf-8",
+        component_content = json.dumps(
+            {"patch": get_component_patch("frontend")},
+            ensure_ascii=False,
+            indent=2,
         )
+        _write_if_changed(component_json, component_content + "\n")
+
+    version_js = frontend_dir / "version.js"
+    frontend_version = compose_component_version("frontend", get_component_patch("frontend"))
+    version_js_content = (
+        "(function(){\n"
+        f"  window.HP_PROJECT_VERSION = '{get_project_version()}';\n"
+        f"  window.HP_FRONTEND_VERSION = '{frontend_version}';\n"
+        "})();\n"
+    )
+    _write_if_changed(version_js, version_js_content)
 
 from backend.database import engine, init_db
 from backend.models import Event, Group, Task, TaskHistory  # noqa: F401
@@ -118,10 +135,23 @@ if __name__ == "__main__":
     import uvicorn
 
     settings = get_settings()
+    uvicorn_kwargs = {
+        "host": settings.host,
+        "port": settings.port,
+    }
+    if settings.debug:
+        uvicorn_kwargs["reload"] = True
+        uvicorn_kwargs["reload_dirs"] = ["backend", "common"]
+        uvicorn_kwargs["reload_excludes"] = [
+            "frontend/*",
+            "frontend/**/*",
+            "runtime/logs/*",
+            "runtime/logs/**/*",
+            "runtime/db/*",
+            "runtime/db/**/*",
+        ]
     uvicorn.run(
         "backend.main:app",
-        host=settings.host,
-        port=settings.port,
-        reload=settings.debug,
+        **uvicorn_kwargs,
     )
 

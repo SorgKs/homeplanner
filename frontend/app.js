@@ -2,7 +2,9 @@
  * Main application logic for HomePlanner frontend.
  */
 
-let allTasks = []; // Все задачи
+let allTasks = []; // Все задачи (для текущего вида)
+let todayTasksCache = []; // Кэш задач для вида "Сегодня"
+let allTasksCache = []; // Кэш всех задач
 let groups = []; // Список групп
 let filteredTasks = [];
 let searchQuery = '';
@@ -350,44 +352,49 @@ function setupEventListeners() {
     });
 }
 
+function mapTaskResponse(task) {
+    const reminderTime = task.reminder_time ?? null;
+    const activeFlag = task.active ?? true;
+    const completedFlag = Boolean(task.completed);
+    return {
+        ...task,
+        type: 'task',
+        is_recurring: task.task_type === 'recurring',
+        task_type: task.task_type || 'one_time',
+        reminder_time: reminderTime,
+        active: activeFlag,
+        completed: completedFlag,
+    };
+}
+
+function applyCurrentViewData() {
+    if (currentView === 'today') {
+        allTasks = [...todayTasksCache];
+    } else if (currentView === 'all') {
+        allTasks = [...allTasksCache];
+    } else {
+        allTasks = [...allTasksCache];
+    }
+    filterAndRenderTasks();
+}
+
 /**
  * Load all data from API.
  */
 async function loadData() {
     try {
         showLoading('tasks-list');
-        // Load tasks based on current view: use /today endpoint for today view
-        const tasksPromise = currentView === 'today' 
-            ? tasksAPI.getToday()
-            : tasksAPI.getAll(true);
-        const [tasks, groupsData] = await Promise.all([
-            tasksPromise,
-            groupsAPI.getAll()
+        const [todayTasks, allTasksResponse, groupsData] = await Promise.all([
+            tasksAPI.getToday(),
+            tasksAPI.getAll(),
+            groupsAPI.getAll(),
         ]);
         
         groups = groupsData;
+        todayTasksCache = todayTasks.map(mapTaskResponse);
+        allTasksCache = allTasksResponse.map(mapTaskResponse);
         
-        allTasks = tasks.map(t => {
-            const reminderTime = t.reminder_time ?? null;
-            const activeFlag = t.active ?? true;
-            const completedFlag = Boolean(t.completed);
-            return {
-                ...t,
-                type: 'task',
-                is_recurring: t.task_type === 'recurring',
-                task_type: t.task_type || 'one_time',
-                reminder_time: reminderTime,
-                active: activeFlag,
-                completed: completedFlag,
-            };
-        });
-        
-        // Устанавливаем активный вид по умолчанию только при первой загрузке
-        if (!document.getElementById('view-today-btn').classList.contains('active') && 
-            !document.getElementById('view-all-btn').classList.contains('active')) {
-            switchView('today');
-        }
-        filterAndRenderTasks();
+        switchView(currentView);
         updateGroupSelect();
     } catch (error) {
         console.error('Failed to load data:', error);
@@ -441,12 +448,16 @@ function switchView(view) {
         tasksFilters.style.display = 'block';
         if (settingsView) settingsView.style.display = 'none';
         if (tasksList) tasksList.style.display = 'block';
+        applyCurrentViewData();
+        return;
     } else if (view === 'all') {
         allBtn.classList.add('active');
         historyFilters.style.display = 'none';
         tasksFilters.style.display = 'block';
         if (settingsView) settingsView.style.display = 'none';
         if (tasksList) tasksList.style.display = 'block';
+        applyCurrentViewData();
+        return;
     } else if (view === 'history') {
         historyBtn.classList.add('active');
         historyFilters.style.display = 'block';

@@ -8,6 +8,7 @@ import zoneinfo
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from common.networking import get_backend_host, get_backend_port
 from common.versioning import (
     compose_component_version,
     get_project_version,
@@ -18,8 +19,10 @@ from common.versioning import (
 
 
 BACKEND_ROOT: Path = Path(__file__).resolve().parent
-DEFAULT_DB_DIR: Path = BACKEND_ROOT / "db"
-DEFAULT_LOG_DIR: Path = BACKEND_ROOT / "logs"
+PROJECT_ROOT: Path = BACKEND_ROOT.parent
+DEFAULT_RUNTIME_DIR: Path = PROJECT_ROOT / "runtime"
+DEFAULT_DB_DIR: Path = DEFAULT_RUNTIME_DIR / "db"
+DEFAULT_LOG_DIR: Path = DEFAULT_RUNTIME_DIR / "logs"
 DEFAULT_DB_PATH: Path = DEFAULT_DB_DIR / "homeplanner.db"
 DEFAULT_DB_URL: str = f"sqlite:///{DEFAULT_DB_PATH.resolve().as_posix()}"
 
@@ -63,14 +66,18 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
 
     # Server
-    host: str = "0.0.0.0"
-    port: int = 8000
+    host: str = get_backend_host()
+    port: int = get_backend_port()
     debug: bool = True
 
     # CORS
-    cors_origins: str = (
-        "http://localhost:3000,http://localhost:8080,http://localhost:8081,"
-        "http://192.168.1.2:8080"
+    cors_origins: str = ",".join(
+        [
+            f"http://{get_backend_host()}:{get_backend_port()}",
+            f"http://{get_backend_host()}:8080",
+            "http://localhost:8080",
+            "http://localhost:8000",
+        ]
     )
     
     # Timezone

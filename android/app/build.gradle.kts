@@ -3,6 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+import groovy.json.JsonSlurper
 import java.util.Properties
 
 // Read and increment build number
@@ -21,6 +22,11 @@ buildNumberFile.writeText(buildNumber.toString())
 val baseVersion = "0.1.0"
 val versionNameStr = "$baseVersion.$buildNumber"
 
+val networkConfigFile = rootProject.file("config/network.json")
+val networkConfig = JsonSlurper().parse(networkConfigFile) as Map<*, *>
+val networkHost = networkConfig["host"].toString()
+val networkPort = (networkConfig["port"] as Number).toInt()
+
 android {
     namespace = "com.homeplanner"
     compileSdk = 34
@@ -34,13 +40,14 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Resolve API base URL from local.properties or environment to keep Android and Web on the same backend
+        // Resolve API base URL from shared config with optional local overrides
         val localProps = project.rootProject.file("local.properties").takeIf { it.exists() }?.reader()?.use {
             Properties().apply { load(it) }
         }
         val apiBaseUrlFromLocal = localProps?.getProperty("apiBaseUrl")
         val apiBaseUrlFromEnv = System.getenv("HP_API_BASE_URL")
-        val resolvedApiBaseUrl = (apiBaseUrlFromLocal ?: apiBaseUrlFromEnv) ?: "http://192.168.1.2:8000/api/v0.2"
+        val resolvedApiBaseUrl = (apiBaseUrlFromLocal ?: apiBaseUrlFromEnv)
+            ?: "http://$networkHost:$networkPort/api/v0.2"
         buildConfigField("String", "API_BASE_URL", "\"$resolvedApiBaseUrl\"")
         buildConfigField("String", "VERSION_NAME", "\"$versionNameStr\"")
     }
@@ -52,15 +59,16 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("debug")
         }
         debug {
-            // Use same resolved API base URL in debug
             val localProps = project.rootProject.file("local.properties").takeIf { it.exists() }?.reader()?.use {
                 Properties().apply { load(it) }
             }
             val apiBaseUrlFromLocal = localProps?.getProperty("apiBaseUrl")
             val apiBaseUrlFromEnv = System.getenv("HP_API_BASE_URL")
-            val resolvedApiBaseUrl = (apiBaseUrlFromLocal ?: apiBaseUrlFromEnv) ?: "http://192.168.1.2:8000/api/v0.2"
+            val resolvedApiBaseUrl = (apiBaseUrlFromLocal ?: apiBaseUrlFromEnv)
+                ?: "http://$networkHost:$networkPort/api/v0.2"
             buildConfigField("String", "API_BASE_URL", "\"$resolvedApiBaseUrl\"")
             buildConfigField("String", "VERSION_NAME", "\"$versionNameStr\"")
         }
@@ -113,5 +121,6 @@ dependencies {
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    androidTestImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
 }
 

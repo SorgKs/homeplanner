@@ -52,6 +52,7 @@ frontend/logs/*
 !frontend/logs/.gitkeep
 android/logs/*
 !android/logs/.gitkeep
+runtime/
 backend/db/*.db
 !backend/db/.gitkeep
 
