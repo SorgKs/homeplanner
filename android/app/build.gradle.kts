@@ -5,6 +5,7 @@ plugins {
 
 import groovy.json.JsonSlurper
 import java.util.Properties
+import org.gradle.api.GradleException
 
 // Read and increment build number
 val buildNumberFile = file("build_number.txt")
@@ -22,7 +23,13 @@ buildNumberFile.writeText(buildNumber.toString())
 val baseVersion = "0.1.0"
 val versionNameStr = "$baseVersion.$buildNumber"
 
-val networkConfigFile = rootProject.file("config/network.json")
+val networkConfigFile = listOfNotNull(
+    rootProject.file("config/network.json").takeIf { it.exists() },
+    rootProject.projectDir.parentFile?.resolve("config/network.json")?.takeIf { it.exists() }
+).firstOrNull() ?: throw GradleException(
+    "config/network.json not found. Expected at ${rootProject.file("config/network.json").absolutePath} " +
+        "or ${rootProject.projectDir.parentFile?.resolve("config/network.json")?.absolutePath}"
+)
 val networkConfig = JsonSlurper().parse(networkConfigFile) as Map<*, *>
 val networkHost = networkConfig["host"].toString()
 val networkPort = (networkConfig["port"] as Number).toInt()

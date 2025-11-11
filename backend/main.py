@@ -123,7 +123,22 @@ def create_app() -> FastAPI:
 
     # Serve frontend static files
     # Mounts the 'frontend' directory at root, serving index.html by default
-    app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
+    class LoggedStaticFiles(StaticFiles):
+        async def __call__(self, scope, receive, send):  # type: ignore[override]
+            if scope.get("type") != "http":
+                logging.getLogger("homeplanner").warning(
+                    "StaticFiles received non-http scope: type=%s path=%s", scope.get("type"), scope.get("path")
+                )
+                await send(
+                    {
+                        "type": "websocket.close",
+                        "code": 1002,
+                    }
+                )
+                return
+            await super().__call__(scope, receive, send)
+
+    app.mount("/", LoggedStaticFiles(directory="frontend", html=True), name="frontend")
 
     return app
 

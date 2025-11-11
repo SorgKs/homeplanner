@@ -158,6 +158,21 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+private fun resolveWebSocketUrl(): String {
+    val rawBase = BuildConfig.API_BASE_URL.trimEnd('/')
+    val wsBase = when {
+        rawBase.startsWith("https://", ignoreCase = true) -> "wss://" + rawBase.substring(8)
+        rawBase.startsWith("http://", ignoreCase = true) -> "ws://" + rawBase.substring(7)
+        else -> {
+            Log.w("MainActivity", "resolveWebSocketUrl: unexpected scheme in '$rawBase', using fallback")
+            return "ws://192.168.1.2:8000/api/v0.2/tasks/stream"
+        }
+    }
+    val resolved = "$wsBase/tasks/stream"
+    Log.d("MainActivity", "resolveWebSocketUrl resolved=$resolved")
+    return resolved
+}
+
 @Composable
 @OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class)
 fun TasksScreen() {
@@ -398,6 +413,8 @@ fun TasksScreen() {
         }
     }
 
+    val webSocketUrl = remember { resolveWebSocketUrl() }
+
     // WebSocket auto-refresh with reconnection
     LaunchedEffect(Unit) {
         val client = OkHttpClient()
@@ -408,7 +425,7 @@ fun TasksScreen() {
             try {
                 wsConnecting = true
                 val request = Request.Builder()
-                    .url("ws://192.168.1.2:8000/ws")
+                    .url(webSocketUrl)
                     .build()
                 val listener = object : WebSocketListener() {
                     override fun onMessage(webSocket: WebSocket, text: String) {
