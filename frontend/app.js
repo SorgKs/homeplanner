@@ -3,6 +3,7 @@
  */
 
 let allTasks = []; // Все задачи
+let todayTaskIds = new Set(); // Идентификаторы задач для вида "Сегодня"
 let groups = []; // Список групп
 let filteredTasks = [];
 let searchQuery = '';
@@ -10,6 +11,7 @@ let filterState = null;
 let currentView = 'today'; // 'today', 'all', 'history', 'settings'
 let adminMode = false; // Режим администратора
 let ws = null; // WebSocket connection
+let timeControlState = null; // Состояние панели управления временем
 
 function getWsUrl() {
     const host = (typeof window !== 'undefined' && window.location && window.location.hostname) ? window.location.hostname : '192.168.1.2';
@@ -161,6 +163,7 @@ function findNthWeekdayInMonth(year, month, weekday, n) {
  */
 async function init() {
     setupEventListeners();
+    updateTimePanelVisibility();
     await loadData();
     connectWebSocket();
 }
@@ -262,6 +265,7 @@ function setupEventListeners() {
     
     // Admin mode toggle
     document.getElementById('toggle-admin-btn').addEventListener('click', toggleAdminMode);
+    setupTimeControlButtons();
     
     // History filters
     document.getElementById('history-group-filter').addEventListener('change', () => {
@@ -358,15 +362,14 @@ function setupEventListeners() {
 async function loadData() {
     try {
         showLoading('tasks-list');
-        // Load tasks based on current view: use /today endpoint for today view
-        const tasksPromise = currentView === 'today' 
-            ? tasksAPI.getToday()
-            : tasksAPI.getAll(true);
-        const [tasks, groupsData] = await Promise.all([
-            tasksPromise,
+        // Загружаем полный список задач и отдельный список для вида "Сегодня"
+        const [tasks, todayTaskIdsList, groupsData] = await Promise.all([
+            tasksAPI.getAll(),
+            tasksAPI.getTodayIds(),
             groupsAPI.getAll()
         ]);
         
+        todayTaskIds = new Set(todayTaskIdsList || []);
         groups = groupsData;
         
         // Все теперь задачи
@@ -508,6 +511,141 @@ function toggleAdminMode() {
     } else {
         filterAndRenderTasks();
     }
+
+    updateTimePanelVisibility();
+    if (adminMode) {
+        fetchAndRenderTimeState(false);
+    }
+}
+
+function updateTimePanelVisibility() {
+    const panel = document.getElementById('time-controls');
+    if (!panel) return;
+    panel.style.display = adminMode ? 'block' : 'none';
+}
+
+function setupTimeControlButtons() {
+    const panel = document.getElementById('time-controls');
+    if (!panel) return;
+
+    panel.querySelectorAll('[data-time-shift-days]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const days = Number(btn.getAttribute('data-time-shift-days')) || 0;
+            handleTimeShift({ days });
+        });
+    });
+    panel.querySelectorAll('[data-time-shift-hours]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const hours = Number(btn.getAttribute('data-time-shift-hours')) || 0;
+            handleTimeShift({ hours });
+        });
+    });
+
+    const setBtn = document.getElementById('time-set-btn');
+    if (setBtn) {
+        setBtn.addEventListener('click', handleTimeSet);
+    }
+
+    const resetBtn = document.getElementById('time-reset-btn');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', handleTimeReset);
+    }
+}
+
+function formatTimeDisplay(isoString) {
+    if (!isoString) return '—';
+    try {
+        const date = new Date(isoString);
+        return date.toLocaleString('ru-RU', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+    } catch (e) {
+        return isoString;
+    }
+}
+
+function renderTimeState(state) {
+    timeControlState = state;
+    const panel = document.getElementById('time-controls');
+    if (!panel) return;
+
+    const virtualEl = document.getElementById('time-virtual-value');
+    const realEl = document.getElementById('time-real-value');
+    const statusEl = document.getElementById('time-override-status');
+    const input = document.getElementById('time-set-input');
+
+    if (virtualEl) virtualEl.textContent = formatTimeDisplay(state?.virtual_now);
+    if (realEl) realEl.textContent = formatTimeDisplay(state?.real_now);
+    if (statusEl) {
+        const isOverride = !!state?.override_enabled;
+        statusEl.textContent = isOverride ? 'Переопределено' : 'Системное время';
+        statusEl.classList.toggle('override-on', isOverride);
+    }
+    if (input && state?.virtual_now && typeof formatDatetimeLocal === 'function') {
+        input.value = formatDatetimeLocal(state.virtual_now);
+    }
+}
+
+async function fetchAndRenderTimeState(showErrors = true) {
+    try {
+        const state = await timeAPI.getState();
+        renderTimeState(state);
+    } catch (error) {
+        console.error('Failed to fetch time state', error);
+        if (showErrors) showToast('Не удалось получить время с сервера', 'error');
+    }
+}
+
+async function handleTimeShift({ days = 0, hours = 0, minutes = 0 }) {
+    if (!adminMode) return;
+    try {
+        const state = await timeAPI.shift({ days, hours, minutes });
+        renderTimeState(state);
+        const deltaText =
+            days !== 0 ? `${days > 0 ? '+' : ''}${days}д` :
+            hours !== 0 ? `${hours > 0 ? '+' : ''}${hours}ч` :
+            `${minutes > 0 ? '+' : ''}${minutes}м`;
+        showToast(`Текущее время сдвинуто (${deltaText})`, 'success');
+        loadData();
+    } catch (error) {
+        console.error('Failed to shift time', error);
+        showToast(error.message || 'Не удалось сдвинуть время', 'error');
+    }
+}
+
+async function handleTimeSet() {
+    if (!adminMode) return;
+    const input = document.getElementById('time-set-input');
+    if (!input || !input.value) {
+        showToast('Выберите дату и время', 'warning');
+        return;
+    }
+    try {
+        const state = await timeAPI.set(input.value);
+        renderTimeState(state);
+        showToast('Текущее время обновлено', 'success');
+        loadData();
+    } catch (error) {
+        console.error('Failed to set time', error);
+        showToast(error.message || 'Не удалось установить время', 'error');
+    }
+}
+
+async function handleTimeReset() {
+    if (!adminMode) return;
+    try {
+        const state = await timeAPI.reset();
+        renderTimeState(state);
+        showToast('Возврат к системному времени', 'info');
+        loadData();
+    } catch (error) {
+        console.error('Failed to reset time', error);
+        showToast('Не удалось сбросить время', 'error');
+    }
 }
 
 /**
@@ -515,12 +653,9 @@ function toggleAdminMode() {
  */
 function filterAndRenderTasks() {
     filteredTasks = allTasks.filter(task => {
-        // Применяем фильтр по виду
-        if (currentView === 'today') {
-            // Для вида "Сегодня" используем данные уже отфильтрованные бэкендом
-            // Логика фильтрации теперь на бэкенде, здесь просто используем все задачи
-            // (они уже отфильтрованы при загрузке для вида today)
-            // Никакой дополнительной фильтрации не требуется
+        // Ограничиваем задачи для вида "Сегодня" списком, полученным с бэкенда
+        if (currentView === 'today' && !todayTaskIds.has(task.id)) {
+            return false;
         }
         
         const matchesSearch = !searchQuery || 
@@ -575,15 +710,151 @@ function renderTasks() {
  */
 function renderTodayView() {
     const container = document.getElementById('tasks-list');
-    const now = new Date();
-    
-    // Группируем задачи по группам
+    const referenceDate = getReferenceDate();
+    const categorizedTasks = categorizeTasksByTime(filteredTasks, referenceDate);
+
+    // Объединяем все задачи в правильном порядке: просроченные -> текущие -> планируемые
+    const allTasks = [
+        ...categorizedTasks.overdue,
+        ...categorizedTasks.current,
+        ...categorizedTasks.planned
+    ];
+
+    if (allTasks.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">📋</div>
+                <div class="empty-state-text">Нет задач на сегодня и просроченных задач</div>
+                <div class="empty-state-hint">Добавьте первую задачу</div>
+            </div>
+        `;
+        return;
+    }
+
+    const html = `
+        <div class="today-tasks-list">
+            ${renderTodayTasksCollection(allTasks, referenceDate)}
+        </div>
+    `;
+
+    container.innerHTML = html;
+}
+
+function categorizeTasksByTime(tasks, referenceDate) {
+    const overdue = [];
+    const current = [];
+    const planned = [];
+
+    // Получаем начало сегодняшнего дня
+    const todayStart = new Date(
+        referenceDate.getFullYear(),
+        referenceDate.getMonth(),
+        referenceDate.getDate()
+    );
+    // Получаем начало вчерашнего дня
+    const yesterdayStart = new Date(todayStart);
+    yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+
+    tasks.forEach(task => {
+        const category = getTaskTimeCategory(task, referenceDate, todayStart, yesterdayStart);
+        if (category === 'overdue') {
+            overdue.push(task);
+        } else if (category === 'current') {
+            current.push(task);
+        } else {
+            planned.push(task);
+        }
+    });
+
+    return {
+        overdue: sortTasksByReminderTime(overdue),
+        current: sortTasksByReminderTime(current),
+        planned: sortTasksByReminderTime(planned),
+    };
+}
+
+function getTaskTimeCategory(task, referenceDate, todayStart, yesterdayStart) {
+    const timeSource = task.reminder_time || task.due_date;
+
+    if (!timeSource) {
+        // Если нет времени, считаем просроченной
+        return 'overdue';
+    }
+
+    const taskTime = new Date(timeSource);
+    if (Number.isNaN(taskTime.getTime())) {
+        return 'overdue';
+    }
+
+    // Если задача раньше начала вчерашнего дня - просрочена
+    if (taskTime < yesterdayStart) {
+        return 'overdue';
+    }
+
+    // Если задача между началом вчера и началом сегодня - просрочена (вчера)
+    if (taskTime < todayStart) {
+        return 'overdue';
+    }
+
+    // Если задача сегодня, но время уже прошло - текущая
+    if (taskTime <= referenceDate) {
+        return 'current';
+    }
+
+    // Если задача сегодня, но время еще не наступило - планируемая
+    return 'planned';
+}
+
+function getReferenceDate() {
+    const virtualNow = timeControlState?.virtual_now;
+    const realNow = timeControlState?.real_now;
+    const useVirtual = timeControlState?.override_enabled && virtualNow;
+    const source = useVirtual ? virtualNow : (realNow || virtualNow);
+
+    if (source) {
+        const date = new Date(source);
+        if (!Number.isNaN(date.getTime())) {
+            return date;
+        }
+    }
+
+    return new Date();
+}
+
+function getTaskTimestamp(task) {
+    const timeSource = task.reminder_time || task.due_date;
+    if (!timeSource) {
+        return Number.POSITIVE_INFINITY;
+    }
+    const timestamp = new Date(timeSource).getTime();
+    return Number.isNaN(timestamp) ? Number.POSITIVE_INFINITY : timestamp;
+}
+
+function sortTasksByReminderTime(tasks) {
+    return [...tasks].sort((a, b) => getTaskTimestamp(a) - getTaskTimestamp(b));
+}
+
+function renderTodayTasksCollection(tasks, referenceDate) {
+    if (!tasks.length) {
+        return '';
+    }
+
     const tasksByGroup = {};
     const tasksWithoutGroup = [];
-    
-    filteredTasks.forEach(task => {
+    const knownGroupIds = new Set(groups.map(group => group.id));
+
+    // Получаем границы для определения категорий
+    const todayStart = new Date(
+        referenceDate.getFullYear(),
+        referenceDate.getMonth(),
+        referenceDate.getDate()
+    );
+    const yesterdayStart = new Date(todayStart);
+    yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+
+    tasks.forEach(task => {
         const groupId = task.group_id;
-        if (groupId) {
+        if (groupId && knownGroupIds.has(groupId)) {
             if (!tasksByGroup[groupId]) {
                 tasksByGroup[groupId] = [];
             }
@@ -593,32 +864,29 @@ function renderTodayView() {
         }
     });
 
-    // NOTE: Removed automatic markShown calls to prevent request floods and resource exhaustion
-    
-    let html = '<div class="today-tasks-list">';
-    
-    // Отображаем задачи по группам
+    let html = '';
+
     groups.forEach(group => {
         if (tasksByGroup[group.id] && tasksByGroup[group.id].length > 0) {
             tasksByGroup[group.id].forEach(task => {
-                html += renderTodayTaskItem(task, group);
+                const category = getTaskTimeCategory(task, referenceDate, todayStart, yesterdayStart);
+                html += renderTodayTaskItem(task, group, category);
             });
         }
     });
 
-    // Отображаем задачи без группы
     tasksWithoutGroup.forEach(task => {
-        html += renderTodayTaskItem(task, null);
+        const category = getTaskTimeCategory(task, referenceDate, todayStart, yesterdayStart);
+        html += renderTodayTaskItem(task, null, category);
     });
-    
-    html += '</div>';
-    container.innerHTML = html;
+
+    return html;
 }
 
 /**
  * Render single task item for today view.
  */
-function renderTodayTaskItem(task, group) {
+function renderTodayTaskItem(task, group, category) {
     // Используем is_completed из данных задачи (уже правильно вычислен в loadData)
     const isCompleted = task.is_completed;
     const fullTitle = group ? `${group.name}: ${task.title}` : task.title;
@@ -630,8 +898,13 @@ function renderTodayTaskItem(task, group) {
         minute: '2-digit'
     }) : '';
     
+    // Определяем класс стиля в зависимости от категории
+    const categoryClass = category === 'overdue' ? 'task-overdue' : 
+                         category === 'current' ? 'task-current' : 
+                         'task-planned';
+    
     return `
-        <div class="today-task-item ${isCompleted ? 'completed' : ''}">
+        <div class="today-task-item ${categoryClass} ${isCompleted ? 'completed' : ''}">
             <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
                 <span style="min-width: 60px; text-align: left; font-weight: 600; color: var(--text-secondary);">${timeStr}</span>
                 <span class="task-title" style="flex: 1;">${escapeHtml(fullTitle)}</span>
@@ -654,6 +927,7 @@ function renderAllTasksView() {
     // Разделяем активные и неактивные, далее группируем каждый набор по группам
     const activeTasks = filteredTasks.filter(t => t.is_active);
     const inactiveTasks = filteredTasks.filter(t => !t.is_active);
+    const headerRow = renderAllTasksHeader();
 
     const activeByGroup = {};
     const activeWithoutGroup = [];
@@ -687,17 +961,18 @@ function renderAllTasksView() {
         if (activeByGroup[group.id] && activeByGroup[group.id].length > 0) {
             html += `
                 <div class="task-group">
-                    <div class="task-group-header">
-                        <div class="task-group-header-info">
-                            <h3 class="task-group-title">${escapeHtml(group.name)}</h3>
-                            ${group.description ? `<p class="task-group-description">${escapeHtml(group.description)}</p>` : ''}
+                    <div class="task-group-bar">
+                        <div class="task-group-caption">
+                            <span class="task-group-title-text">${escapeHtml(group.name)}</span>
+                            ${group.description ? `<span class="task-group-desc">${escapeHtml(group.description)}</span>` : ''}
                         </div>
-                        <div class="task-group-header-actions">
+                        <div class="task-group-actions">
                             <button class="btn btn-secondary btn-sm" onclick="editGroup(${group.id})" title="Редактировать">✎</button>
                             <button class="btn btn-danger btn-sm" onclick="deleteGroup(${group.id})" title="Удалить">✕</button>
                         </div>
                     </div>
-                    <div class="task-group-items">
+                <div class="task-group-items task-table">
+                    ${headerRow}
                         ${activeByGroup[group.id].map(task => renderAllTasksCard(task, now)).join('')}
                     </div>
                 </div>
@@ -709,10 +984,13 @@ function renderAllTasksView() {
     if (activeWithoutGroup.length > 0) {
         html += `
             <div class="task-group">
-                <div class="task-group-header">
-                    <h3 class="task-group-title">Без группы</h3>
+                <div class="task-group-bar">
+                    <div class="task-group-caption">
+                        <span class="task-group-title-text">Без группы</span>
+                    </div>
                 </div>
-                <div class="task-group-items">
+                <div class="task-group-items task-table">
+                    ${headerRow}
                     ${activeWithoutGroup.map(task => renderAllTasksCard(task, now)).join('')}
                 </div>
             </div>
@@ -723,10 +1001,13 @@ function renderAllTasksView() {
     if (inactiveTasks.length > 0) {
         html += `
             <div class="task-group">
-                <div class="task-group-header">
-                    <h3 class="task-group-title">Неактивные</h3>
+                <div class="task-group-bar">
+                    <div class="task-group-caption">
+                        <span class="task-group-title-text">Неактивные</span>
+                    </div>
                 </div>
-                <div class="task-group-items">
+                <div class="task-group-items task-table">
+                    ${headerRow}
         `;
 
         // Неактивные по группам
@@ -761,48 +1042,64 @@ function renderAllTasksView() {
 }
 
 /**
+ * Render header row for all tasks table layout.
+ */
+function renderAllTasksHeader() {
+    return `
+        <div class="task-table-header">
+            <div class="task-row-cell task-row-title">Задача</div>
+            <div class="task-row-cell task-row-config">Конфигурация</div>
+            <div class="task-row-cell task-row-date">Следующая дата</div>
+            <div class="task-row-cell task-row-status">Статус</div>
+            <div class="task-row-cell task-row-actions">Действия</div>
+        </div>
+    `;
+}
+
+/**
  * Render task card for all tasks view with details.
  */
 function renderAllTasksCard(task, now) {
-    const taskDate = new Date(task.due_date);
-    const isUrgent = taskDate <= new Date(now.getTime() + 24 * 60 * 60 * 1000) && 
-                    !task.is_completed && 
-                    task.is_active;
-    const isPast = taskDate < now && !task.is_completed && 
-                  task.is_active;
-    
-    // Статус активности
-    const activeStatus = task.is_active ? '✅ Активна' : '❌ Неактивна';
-    
-    // Используем is_completed из данных задачи (уже правильно вычислен в loadData)
-    const isCompleted = task.is_completed;
-    
-    // Используем человекочитаемое описание конфигурации из бэкенда
+    const taskDate = task.due_date ? new Date(task.due_date) : null;
+    const isCompleted = Boolean(task.is_completed);
+    const isActive = Boolean(task.is_active);
+    const isUrgent = taskDate !== null &&
+        taskDate <= new Date(now.getTime() + 24 * 60 * 60 * 1000) &&
+        !isCompleted &&
+        isActive;
+
+    const statusText = isActive
+        ? (isCompleted ? 'Выполнена' : 'Активна')
+        : 'Выключена';
+
     const configText = task.readable_config || 'Не указано';
-    
+    const dueDateText = task.due_date ? formatDateTime(task.due_date) : '—';
+    const rowClasses = [
+        'task-row',
+        isCompleted ? 'completed' : '',
+        isUrgent ? 'urgent' : '',
+        !isActive ? 'inactive' : '',
+    ].filter(Boolean).join(' ');
+
     return `
-        <div class="item-card ${isCompleted ? 'completed' : ''} ${isUrgent ? 'urgent' : ''}">
-            <div class="item-info" style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <label class="task-checkbox-label" style="cursor: pointer; display: flex; align-items: center;">
-                        <input type="checkbox" ${isCompleted ? 'checked' : ''} 
-                               onchange="toggleTaskComplete(${task.id}, this.checked)"
-                               class="task-checkbox"
-                               title="${isCompleted ? 'Отметить как невыполненную' : 'Отметить как выполненную'}">
-                        <span class="task-title" style="font-size: 18px; font-weight: 600;">${escapeHtml(task.title)}</span>
-                    </label>
-                </div>
-                ${task.description ? `<div class="item-description">${escapeHtml(task.description)}</div>` : ''}
-                <div class="item-meta" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
-                    <div style="display: flex; gap: 16px; flex-wrap: wrap;">
-                        <span><strong>Конфигурация:</strong> ${escapeHtml(configText)}</span>
-                        <span><strong>Статус:</strong> ${activeStatus}</span>
-                    </div>
-                </div>
+        <div class="${rowClasses}">
+            <label class="task-row-cell task-row-title">
+                <input type="checkbox"
+                       ${isCompleted ? 'checked' : ''}
+                       onchange="toggleTaskComplete(${task.id}, this.checked)"
+                       class="task-row-checkbox"
+                       title="${isCompleted ? 'Отметить как невыполненную' : 'Отметить как выполненную'}">
+                <span class="task-row-title-text">${escapeHtml(task.title)}</span>
+            </label>
+            <div class="task-row-cell task-row-config">${escapeHtml(configText)}</div>
+            <div class="task-row-cell task-row-date">${dueDateText}</div>
+            <div class="task-row-cell task-row-status">
+                <span class="status-indicator ${isCompleted ? 'status-completed' : isActive ? 'status-active' : 'status-inactive'}"></span>
+                <span>${statusText}</span>
             </div>
-            <div class="item-actions">
-                <button class="btn btn-secondary" onclick="editTask(${task.id})" title="Редактировать">✎</button>
-                <button class="btn btn-danger" onclick="deleteTask(${task.id})" title="Удалить">✕</button>
+            <div class="task-row-cell task-row-actions">
+                <button class="btn btn-secondary btn-icon" onclick="editTask(${task.id})" title="Редактировать">✎</button>
+                <button class="btn btn-danger btn-icon" onclick="deleteTask(${task.id})" title="Удалить">✕</button>
             </div>
         </div>
     `;
