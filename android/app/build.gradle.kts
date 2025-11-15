@@ -7,6 +7,41 @@ import com.android.build.gradle.internal.api.ApkVariantOutputImpl
 
 import java.util.Properties
 
+// Read version from config files (single source of truth)
+val projectVersionFile = project.rootProject.file("common/config/version.json")
+val androidVersionFile = file("version.json")
+
+fun loadJsonFile(file: File, fallback: Map<String, Int>): Map<String, Int> {
+    if (!file.exists()) return fallback
+    return try {
+        val content = file.readText()
+        // Simple JSON parsing for version files (format: {"major": 0, "minor": 2})
+        val majorMatch = Regex("\"major\"\\s*:\\s*(\\d+)").find(content)
+        val minorMatch = Regex("\"minor\"\\s*:\\s*(\\d+)").find(content)
+        val patchMatch = Regex("\"patch\"\\s*:\\s*(\\d+)").find(content)
+        
+        val result = mutableMapOf<String, Int>()
+        if (majorMatch != null) result["major"] = majorMatch.groupValues[1].toInt()
+        if (minorMatch != null) result["minor"] = minorMatch.groupValues[1].toInt()
+        if (patchMatch != null) result["patch"] = patchMatch.groupValues[1].toInt()
+        
+        // Merge with fallback for missing values
+        fallback.forEach { (key, value) ->
+            if (!result.containsKey(key)) result[key] = value
+        }
+        result
+    } catch (e: Exception) {
+        fallback
+    }
+}
+
+val projectVersion = loadJsonFile(projectVersionFile, mapOf("major" to 0, "minor" to 0))
+val androidVersion = loadJsonFile(androidVersionFile, mapOf("patch" to 0))
+
+val major = projectVersion["major"] ?: 0
+val minor = projectVersion["minor"] ?: 0
+val patch = androidVersion["patch"] ?: 0
+
 // Read and increment build number
 val buildNumberFile = file("build_number.txt")
 var buildNumber = 1
@@ -19,9 +54,8 @@ if (buildNumberFile.exists()) {
 buildNumber++
 buildNumberFile.writeText(buildNumber.toString())
 
-// Base version (major.minor.patch.build)
-val baseVersion = "0.1.0"
-val versionNameStr = "$baseVersion.$buildNumber"
+// Compose version: MAJOR.MINOR.PATCH.BUILD
+val versionNameStr = "$major.$minor.$patch.$buildNumber"
 
 android {
     namespace = "com.homeplanner"

@@ -1,4 +1,4 @@
-"""Configuration management that reads exclusively from `config/settings.toml`."""
+"""Configuration management that reads exclusively from `common/config/settings.toml`."""
 
 from __future__ import annotations
 
@@ -7,8 +7,10 @@ from pathlib import Path
 import tomllib
 from typing import Any
 
+from common.versioning import compose_component_version, validate_api_version
 
-CONFIG_PATH = Path(__file__).resolve().parent.parent / "config" / "settings.toml"
+
+CONFIG_PATH = Path(__file__).resolve().parent.parent / "common" / "config" / "settings.toml"
 
 
 class SettingsError(RuntimeError):
@@ -20,7 +22,7 @@ def _load_config_file(path: Path) -> dict[str, Any]:
     if not path.exists():
         raise SettingsError(
             f"Configuration file '{path}' is missing. "
-            "Copy and adjust 'config/settings.toml' before launching the backend."
+            "Copy and adjust 'common/config/settings.toml' before launching the backend."
         )
     with path.open("rb") as fp:
         return tomllib.load(fp)
@@ -52,6 +54,7 @@ def _extract_settings(raw: dict[str, Any]) -> dict[str, Any]:
     server = _require_section(raw, "server")
     cors = _require_section(raw, "cors")
     app = _require_section(raw, "app")
+    api = _require_section(raw, "api")
 
     return {
         "database_url": _require_value(database, "url", section_name="database"),
@@ -67,6 +70,8 @@ def _extract_settings(raw: dict[str, Any]) -> dict[str, Any]:
         "debug": _require_value(server, "debug", section_name="server"),
         "cors_origins": _require_value(cors, "origins", section_name="cors"),
         "timezone": _require_value(app, "timezone", section_name="app"),
+        "day_start_hour": _require_value(app, "day_start_hour", section_name="app"),
+        "api_version": _require_value(api, "version", section_name="api"),
     }
 
 
@@ -83,11 +88,23 @@ class Settings:
     debug: bool
     cors_origins: list[str]
     timezone: str
+    day_start_hour: int  # Час начала новых суток (0-23)
+    api_version: str
 
     @property
     def cors_origins_list(self) -> list[str]:
         """Return the list of configured CORS origins."""
         return self.cors_origins
+
+    @property
+    def backend_version(self) -> str:
+        """Return the backend component version (MAJOR.MINOR.PATCH)."""
+        return compose_component_version("backend")
+
+    @property
+    def api_version_path(self) -> str:
+        """Return the API version path (e.g., '/api/v0.2')."""
+        return f"/api/v{self.api_version}"
 
 
 _settings: Settings | None = None
@@ -99,6 +116,17 @@ def get_settings() -> Settings:
     if _settings is None:
         raw = _load_config_file(CONFIG_PATH)
         extracted = _extract_settings(raw)
+        api_version = extracted["api_version"]
+        
+        # Validate API version against supported versions in pyproject.toml
+        try:
+            validate_api_version(api_version)
+        except ValueError as e:
+            raise SettingsError(
+                f"Invalid API version in '{CONFIG_PATH}': {e}. "
+                "Please update api.version to a supported version."
+            ) from e
+        
         _settings = Settings(**extracted)
     return _settings
 

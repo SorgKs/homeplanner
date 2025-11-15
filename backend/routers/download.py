@@ -5,31 +5,21 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException, Response
 from fastapi.responses import FileResponse, JSONResponse
 
+from common.versioning import compose_component_version
+
 
 router = APIRouter()
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 APK_BUILD_PATH = REPO_ROOT / "android/app/build/outputs/apk/debug/app-debug.apk"
-VERSION_FILE = REPO_ROOT / "VERSION"
 
 
 def _resolve_version_string() -> str:
-    """Read project VERSION file and return sanitized string for filenames."""
-    try:
-        raw = VERSION_FILE.read_text(encoding="utf-8").strip()
-    except FileNotFoundError:
-        raw = ""
-
-    if not raw:
-        return "unknown"
-
-    sanitized = "".join(ch if ch.isalnum() else "_" for ch in raw)
-    # Collapse consecutive underscores and strip
-    while "__" in sanitized:
-        sanitized = sanitized.replace("__", "_")
-    sanitized = sanitized.strip("_")
-
-    return sanitized or "unknown"
+    """Get Android component version and return sanitized string for filenames."""
+    version = compose_component_version("android")
+    # Sanitize version string for filename (replace dots with underscores)
+    sanitized = version.replace(".", "_")
+    return sanitized
 
 
 APK_DOWNLOAD_FILENAME = f"homeplanner_v{_resolve_version_string()}.apk"

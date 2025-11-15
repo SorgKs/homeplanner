@@ -20,16 +20,8 @@ class TaskBase(BaseModel):
     )
     recurrence_interval: int | None = Field(None, ge=1, description="Recurrence interval (every N periods, for recurring tasks)")
     interval_days: int | None = Field(None, ge=1, description="Interval in days (for interval tasks)")
-    next_due_date: datetime = Field(..., description="Next due date for the task")
-    reminder_time: datetime | None = Field(None, description="Reminder date and time (required for all tasks, defaults to next_due_date)")
+    reminder_time: datetime = Field(..., description="Reminder date and time (required for all tasks)")
     group_id: int | None = Field(None, description="Group ID")
-    
-    @model_validator(mode="after")
-    def ensure_reminder_time(self) -> "TaskBase":
-        """Ensure reminder_time is always set (use next_due_date as fallback)."""
-        if self.reminder_time is None:
-            self.reminder_time = self.next_due_date
-        return self
 
 
 class TaskCreate(TaskBase):
@@ -47,10 +39,9 @@ class TaskUpdate(BaseModel):
     recurrence_type: RecurrenceType | None = None
     recurrence_interval: int | None = Field(None, description="Recurrence interval (for recurring tasks only)")
     interval_days: int | None = Field(None, description="Interval in days (for interval tasks only)")
-    next_due_date: datetime | None = None
     reminder_time: datetime | None = None
-    is_active: bool | None = None
-    last_completed_at: datetime | None = None
+    active: bool | None = None  # Task is active (replaces is_active)
+    completed: bool | None = None  # Task is completed (replaces last_completed_at)
     last_shown_at: datetime | None = None
     group_id: int | None = None
     assigned_user_ids: list[int] | None = Field(
@@ -100,11 +91,11 @@ class TaskResponse(TaskBase):
     """Schema for task response."""
 
     id: int
-    is_active: bool
+    active: bool  # Task is active (replaces is_active)
+    completed: bool  # Task is completed (replaces last_completed_at)
     task_type: TaskType
     group_id: int | None
     interval_days: int | None
-    last_completed_at: datetime | None
     last_shown_at: datetime | None
     created_at: datetime
     updated_at: datetime
@@ -123,7 +114,7 @@ class TaskResponse(TaskBase):
         from backend.services.task_service import TaskService
         from backend.models.task import TaskType, RecurrenceType
         
-        # Create instance from object (TaskBase.ensure_reminder_time will set reminder_time if None)
+        # Create instance from object
         instance = super().model_validate(obj, strict=strict, from_attributes=from_attributes, context=context)
         
         # Calculate readable_config using TaskService
@@ -149,7 +140,6 @@ class TaskResponse(TaskBase):
             "recurrence_interval": instance.recurrence_interval,
             "interval_days": instance.interval_days,
             "reminder_time": instance.reminder_time,
-            "next_due_date": instance.next_due_date,
         }
         instance.readable_config = TaskService._format_task_settings(task_type_str, task_dict)
 

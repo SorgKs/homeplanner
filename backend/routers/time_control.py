@@ -13,7 +13,7 @@ from backend.services.time_manager import (
 )
 
 
-router = APIRouter(prefix="/api/v1/time", tags=["time"])
+router = APIRouter()
 
 
 class TimeStateResponse(BaseModel):

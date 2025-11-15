@@ -2,9 +2,23 @@
 
 ## Базовый URL
 
+Базовый URL API формируется из конфигурации сервера и версии API:
+
+```
+http://<host>:<port>/api/v<version>
+```
+
+Где:
+- `<host>` — адрес сервера (по умолчанию `localhost`, настраивается в `common/config/settings.toml`)
+- `<port>` — порт сервера (по умолчанию `8000`, настраивается в `common/config/settings.toml`)
+- `<version>` — версия API (настраивается в `common/config/settings.toml` в секции `[api].version`)
+
+**Пример**: При настройках по умолчанию базовый URL будет:
 ```
 http://localhost:8000/api/v0.2
 ```
+
+**Важно**: Версия API не захардкожена и должна соответствовать одной из поддерживаемых версий, указанных в `pyproject.toml` в секции `[tool.homeplanner.api].supported_versions`. Подробнее о версионировании API см. в [VERSIONING.md](VERSIONING.md).
 
 ## Формат данных
 

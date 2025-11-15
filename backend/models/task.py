@@ -50,11 +50,10 @@ class Task(Base):
     recurrence_type = Column(SQLEnum(RecurrenceType), nullable=True)  # For recurring tasks only
     recurrence_interval = Column(Integer, nullable=True, default=None)  # Every N days/weeks/etc (for recurring tasks only)
     interval_days = Column(Integer, nullable=True)  # For interval tasks: days between completions
-    next_due_date = Column(DateTime, nullable=False, index=True)
-    reminder_time = Column(DateTime, nullable=True, index=True)
-    is_active = Column(Boolean, default=True, nullable=False)
+    reminder_time = Column(DateTime, nullable=False, index=True)  # Reminder date and time (required for all tasks)
+    active = Column(Boolean, default=True, nullable=False)  # Task is active (replaces is_active)
+    completed = Column(Boolean, default=False, nullable=False)  # Task is completed (replaces last_completed_at)
     group_id = Column(Integer, ForeignKey("groups.id"), nullable=True, index=True)
-    last_completed_at = Column(DateTime, nullable=True)
     last_shown_at = Column(DateTime, nullable=True)  # Last time this iteration was shown
     created_at = Column(DateTime, default=get_current_time, nullable=False)
     updated_at = Column(DateTime, default=get_current_time, onupdate=get_current_time, nullable=False)

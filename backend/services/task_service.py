@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy.orm import Session, selectinload
 
+from backend.config import get_settings
 from backend.models.task import RecurrenceType, Task
 from backend.models.user import User
 from backend.services.time_manager import get_current_time
@@ -13,8 +14,115 @@ if TYPE_CHECKING:
     from backend.schemas.task import TaskCreate, TaskUpdate
 
 
+class TaskRevisionConflictError(Exception):
+    """Raised when task revision conflict occurs during update.
+    
+    Attributes:
+        task: The task object with current server state.
+        expected_revision: The expected revision number that client should use.
+    """
+    
+    def __init__(self, task: Task, expected_revision: int, message: str | None = None) -> None:
+        """Initialize revision conflict error.
+        
+        Args:
+            task: The task object with current server state.
+            expected_revision: The expected revision number.
+            message: Optional error message.
+        """
+        self.task = task
+        self.expected_revision = expected_revision
+        super().__init__(message or f"Task revision conflict. Expected revision: {expected_revision}")
+
+
 class TaskService:
     """Service for managing recurring tasks."""
+    
+    # Key for storing last task update timestamp in AppMetadata
+    LAST_UPDATE_KEY = "last_task_update"
+
+    @staticmethod
+    def _get_day_start(dt: datetime) -> datetime:
+        """Get the start of day for given datetime using day_start_hour from config.
+        
+        Args:
+            dt: Datetime to get day start for.
+            
+        Returns:
+            Datetime representing start of current day (at day_start_hour).
+        """
+        settings = get_settings()
+        day_start_hour = settings.day_start_hour
+        
+        # If current hour >= day_start_hour, day started today at day_start_hour
+        # If current hour < day_start_hour, day started yesterday at day_start_hour
+        if dt.hour >= day_start_hour:
+            return dt.replace(hour=day_start_hour, minute=0, second=0, microsecond=0)
+        else:
+            # Day started yesterday at day_start_hour
+            yesterday = dt - timedelta(days=1)
+            return yesterday.replace(hour=day_start_hour, minute=0, second=0, microsecond=0)
+
+    @staticmethod
+    def _get_last_update(db: Session) -> datetime | None:
+        """Get last task update timestamp from metadata.
+        
+        Args:
+            db: Database session.
+            
+        Returns:
+            Last update timestamp or None if not set.
+        """
+        from backend.models.app_metadata import AppMetadata
+        
+        metadata = db.query(AppMetadata).filter(AppMetadata.key == TaskService.LAST_UPDATE_KEY).first()
+        if metadata:
+            return metadata.value
+        return None
+    
+    @staticmethod
+    def _set_last_update(db: Session, timestamp: datetime, commit: bool = False) -> None:
+        """Set last task update timestamp in metadata.
+        
+        Args:
+            db: Database session.
+            timestamp: Timestamp to set.
+            commit: If True, commit the transaction. If False, caller should commit.
+        """
+        from backend.models.app_metadata import AppMetadata
+        
+        metadata = db.query(AppMetadata).filter(AppMetadata.key == TaskService.LAST_UPDATE_KEY).first()
+        if metadata:
+            metadata.value = timestamp
+        else:
+            metadata = AppMetadata(key=TaskService.LAST_UPDATE_KEY, value=timestamp)
+            db.add(metadata)
+        
+        if commit:
+            db.commit()
+    
+    @staticmethod
+    def _is_new_day(db: Session) -> bool:
+        """Check if a new day has started since last update.
+        
+        Uses day_start_hour from config to determine day boundaries.
+        
+        Args:
+            db: Database session.
+            
+        Returns:
+            True if new day has started, False otherwise.
+        """
+        last_update = TaskService._get_last_update(db)
+        if last_update is None:
+            # First time - consider it a new day
+            return True
+        
+        now = get_current_time()
+        last_update_day_start = TaskService._get_day_start(last_update)
+        current_day_start = TaskService._get_day_start(now)
+        
+        return last_update_day_start < current_day_start
 
     @staticmethod
     def _get_users_by_ids(db: Session, user_ids: list[int]) -> list[User]:
@@ -41,9 +149,7 @@ class TaskService:
         if task_data.assigned_user_ids:
             task.assignees = TaskService._get_users_by_ids(db, task_data.assigned_user_ids)
         
-        # Ensure reminder_time is set (TaskBase.ensure_reminder_time should have set it, but double-check)
-        if task.reminder_time is None:
-            task.reminder_time = task.next_due_date
+        # reminder_time is now required (set in schema)
         
         db.add(task)
         db.commit()
@@ -82,66 +188,69 @@ class TaskService:
     def get_all_tasks(db: Session, active_only: bool = False) -> list[Task]:
         """Get all tasks, optionally filtering by active status.
         
-        Also updates dates for completed tasks if they were completed before today
-        and their date is in the past (i.e., after midnight).
+        Also updates dates for completed tasks if a new day has started
+        since last update. Uses last_update metadata to determine if it's a new day.
         """
         from backend.models.task import TaskType
         
-        # Update dates for tasks that were completed before today and have date in the past
-        now = get_current_time()
-        today = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        
-        # Find tasks that need date update:
-        # - Have last_completed_at set (were completed)
-        # - last_completed_at is before today (completed yesterday or earlier)
-        # - next_due_date is before today (date is in the past)
-        tasks_to_update = (
-            db.query(Task)
-            .options(selectinload(Task.assignees))
-            .filter(Task.last_completed_at.isnot(None))
-            .filter(Task.last_completed_at < today)
-            .filter(Task.next_due_date < today)
-            .all()
-        )
-        
-        for task in tasks_to_update:
-            # Task date is in the past and task was completed before today
-            # Update the date based on task type
-            if task.task_type == TaskType.ONE_TIME:
-                # One-time tasks stay as they are (already inactive)
-                pass
-            elif task.task_type == TaskType.INTERVAL:
-                # Calculate next date from last completion + interval
-                if task.interval_days:
-                    # Calculate how many full cycles have passed since completion
-                    last_completion_date = task.last_completed_at.replace(hour=0, minute=0, second=0, microsecond=0)
-                    days_since_completion = (today - last_completion_date).days
-                    # Calculate next cycle start date
-                    cycles_to_add = (days_since_completion // task.interval_days) + 1
-                    next_date = last_completion_date + timedelta(days=cycles_to_add * task.interval_days)
-                    # Ensure it's at least today
-                    if next_date < today:
+        # Check if new day has started using last_update metadata
+        if TaskService._is_new_day(db):
+            # New day - update tasks that need updating
+            # All operations happen in a single transaction to ensure atomicity
+            now = get_current_time()
+            today = TaskService._get_day_start(now)
+            
+            # Find tasks that need date update:
+            # - Are completed (completed = True)
+            # - reminder_time is before today (date is in the past)
+            tasks_to_update = (
+                db.query(Task)
+                .options(selectinload(Task.assignees))
+                .filter(Task.completed == True)
+                .filter(Task.reminder_time < today)
+                .all()
+            )
+            
+            # Update all tasks in memory (no commit yet)
+            for task in tasks_to_update:
+                # Task date is in the past and task was completed
+                # Update the date based on task type and reset completed flag for recurring/interval tasks
+                if task.task_type == TaskType.ONE_TIME:
+                    # One-time tasks stay as they are (already inactive)
+                    pass
+                elif task.task_type == TaskType.INTERVAL:
+                    # Calculate next date from last completion + interval
+                    if task.interval_days:
+                        # Calculate next cycle start date from today
                         next_date = today + timedelta(days=task.interval_days)
-                    task.next_due_date = next_date
+                        task.reminder_time = next_date
+                    else:
+                        task.reminder_time = today + timedelta(days=1)
+                    # Reset completed flag - task should be active again
+                    task.completed = False
                 else:
-                    task.next_due_date = today + timedelta(days=1)
-            else:
-                # Recurring tasks: calculate next date from today
-                task.next_due_date = TaskService._calculate_next_due_date(
-                    today,
-                    task.recurrence_type,
-                    task.recurrence_interval,
-                    task.reminder_time,
-                )
-        
-        if tasks_to_update:
+                    # Recurring tasks: calculate next date from today
+                    task.reminder_time = TaskService._calculate_next_due_date(
+                        today,
+                        task.recurrence_type,
+                        task.recurrence_interval,
+                        task.reminder_time,
+                    )
+                    # Reset completed flag - task should be active again
+                    task.completed = False
+            
+            # Update last_update timestamp to current time (in same transaction)
+            # This happens even if no tasks were updated, to mark that we checked
+            TaskService._set_last_update(db, now, commit=False)
+            
+            # Commit all changes atomically: tasks updates + last_update
             db.commit()
         
         # Now get all tasks (with updated dates)
         query = db.query(Task).options(selectinload(Task.assignees))
         if active_only:
-            query = query.filter(Task.is_active == True)
-        return query.order_by(Task.next_due_date).all()
+            query = query.filter(Task.active == True)
+        return query.order_by(Task.reminder_time).all()
 
     @staticmethod
     def get_tasks_for_today(db: Session) -> list[Task]:
@@ -152,8 +261,15 @@ class TaskService:
           if active — visible if due today or overdue.
         - recurring/interval: if completed — visible only if completed today;
           if not completed — visible if due today or overdue.
+        
+        Also ensures tasks are updated if new day has started.
         """
         from backend.models.task import TaskType
+
+        # Ensure tasks are updated if new day started (using last_update check)
+        if TaskService._is_new_day(db):
+            # Trigger update by calling get_all_tasks (it handles the update and sets last_update)
+            TaskService.get_all_tasks(db, active_only=False)
 
         now = get_current_time()
         today = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -162,17 +278,17 @@ class TaskService:
         tasks = (
             db.query(Task)
             .options(selectinload(Task.assignees))
-            .order_by(Task.next_due_date)
+            .order_by(Task.reminder_time)
             .all()
         )
 
         result: list[Task] = []
         for task in tasks:
-            task_date = task.next_due_date.replace(hour=0, minute=0, second=0, microsecond=0)
+            task_date = TaskService._get_day_start(task.reminder_time)
             is_due_today_or_overdue = task_date < tomorrow
 
             if task.task_type == TaskType.ONE_TIME:
-                if not task.is_active:
+                if not task.active:
                     # Completed one-time task visible only if due today
                     if task_date == today:
                         result.append(task)
@@ -181,14 +297,12 @@ class TaskService:
                         result.append(task)
             else:
                 # recurring or interval
-                completed_today = False
-                if task.last_completed_at is not None:
-                    lcd = task.last_completed_at.replace(hour=0, minute=0, second=0, microsecond=0)
-                    completed_today = lcd == today
-
-                if task.last_completed_at is not None:
-                    # Completed task visible only if completed today
-                    if completed_today:
+                # completed flag indicates if task was completed today
+                # (get_all_tasks resets completed flag at day_start_hour)
+                if task.completed:
+                    # Completed task visible if reminder_time is today or overdue (completed today)
+                    # This ensures completed tasks remain visible until next day
+                    if is_due_today_or_overdue:
                         result.append(task)
                 else:
                     # Not completed — visible if due today or overdue
@@ -215,7 +329,6 @@ class TaskService:
         old_task_state = {
             "task_type": task.task_type,
             "reminder_time": task.reminder_time,
-            "next_due_date": task.next_due_date,
             "recurrence_type": task.recurrence_type,
             "recurrence_interval": task.recurrence_interval,
             "interval_days": task.interval_days,
@@ -266,11 +379,7 @@ class TaskService:
                 changes["assigned_user_ids"] = new_ids
                 old_values["assigned_user_ids"] = old_ids
         
-        # Ensure reminder_time is always set after update
-        # If reminder_time was explicitly set to None in update, use next_due_date as fallback
-        # (TaskBase.ensure_reminder_time will handle this in schema validation, but we ensure it here too)
-        if task.reminder_time is None:
-            task.reminder_time = task.next_due_date
+        # reminder_time is now required (set in schema)
 
         db.commit()
         db.refresh(task)
@@ -297,8 +406,7 @@ class TaskService:
                     "recurrence_type": "периодичность",
                     "recurrence_interval": "интервал повторения",
                     "interval_days": "интервал в днях",
-                    "next_due_date": "дата выполнения",
-                    "reminder_time": "напоминание",
+                    "reminder_time": "время напоминания",
                     "group_id": "группа",
                 }
                 return field_names.get(key, key)
@@ -349,9 +457,9 @@ class TaskService:
                 """Check if field is relevant for the final task type."""
                 # Check current task type (after update)
                 relevant_fields = {
-                    "one_time": {"title", "description", "next_due_date", "reminder_time", "group_id"},
-                    "recurring": {"title", "description", "task_type", "recurrence_type", "recurrence_interval", "next_due_date", "reminder_time", "group_id"},
-                    "interval": {"title", "description", "task_type", "interval_days", "next_due_date", "reminder_time", "group_id"},
+                    "one_time": {"title", "description", "reminder_time", "group_id"},
+                    "recurring": {"title", "description", "task_type", "recurrence_type", "recurrence_interval", "reminder_time", "group_id"},
+                    "interval": {"title", "description", "task_type", "interval_days", "reminder_time", "group_id"},
                 }
                 return key in relevant_fields.get(final_task_type, set())
             
@@ -378,7 +486,7 @@ class TaskService:
                 # Always use old_task_state for task_type to get correct old type
                 old_state_for_formatting = {}
                 # Get all relevant fields for the old task type
-                relevant_fields = ["task_type", "recurrence_type", "recurrence_interval", "reminder_time", "next_due_date", "interval_days"]
+                relevant_fields = ["task_type", "recurrence_type", "recurrence_interval", "reminder_time", "interval_days"]
                 for key in relevant_fields:
                     if key == "task_type":
                         # Always use old task type from old_task_state
@@ -391,7 +499,10 @@ class TaskService:
                         old_state_for_formatting[key] = old_task_state[key]
                     else:
                         # Fallback to current task value (shouldn't happen, but safety check)
-                        old_state_for_formatting[key] = getattr(task, key, None)
+                        if key == "reminder_time":
+                            old_state_for_formatting[key] = old_task_state.get("reminder_time", task.reminder_time)
+                        else:
+                            old_state_for_formatting[key] = getattr(task, key, None)
                 
                 # Build new state from current task
                 new_state_for_formatting = {
@@ -399,7 +510,6 @@ class TaskService:
                     "recurrence_type": task.recurrence_type,
                     "recurrence_interval": task.recurrence_interval,
                     "reminder_time": task.reminder_time,
-                    "next_due_date": task.next_due_date,
                     "interval_days": task.interval_days,
                 }
                 
@@ -479,7 +589,7 @@ class TaskService:
         """Mark a task as completed and update next due date.
         
         If task is due today or overdue, the date is not updated immediately.
-        Date will be updated only after midnight (next day) via get_all_tasks.
+        Date will be updated only after day_start_hour (next day) via get_all_tasks.
         """
         from backend.models.task import TaskType
 
@@ -492,50 +602,31 @@ class TaskService:
         if not task:
             return None
 
-        task.last_completed_at = get_current_time()
-        now = task.last_completed_at
+        now = get_current_time()
         
         # Store iteration date for history logging
-        iteration_date = task.next_due_date
-        
-        # Check if task is due today or overdue (within current day or before)
-        task_date = task.next_due_date.replace(hour=0, minute=0, second=0, microsecond=0)
-        today = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        is_due_today_or_overdue = task_date <= today
+        iteration_date = task.reminder_time
+
+        # Mark task as completed
+        task.completed = True
 
         # Calculate next due date based on task type
         if task.task_type == TaskType.ONE_TIME:
             # For one-time tasks: just mark as inactive (completed)
             # Don't change the date - keep it so it stays visible
-            task.is_active = False
+            task.active = False
         elif task.task_type == TaskType.INTERVAL:
-            # For interval tasks: don't update date immediately if task is due today or overdue
-            # Date will be updated only after midnight (next day) via get_all_tasks
+            # For interval tasks: do not update date here
+            # Date will be updated only in get_all_tasks() when new day starts
             # This ensures that completed tasks remain visible until next day
-            if not is_due_today_or_overdue:
-                # Task is due in the future (not today or overdue), update the date immediately
-                if task.interval_days:
-                    next_date = now + timedelta(days=task.interval_days)
-                else:
-                    next_date = now + timedelta(days=1)
-                task.next_due_date = next_date
-            # If due today or overdue, keep the date as is - it will be updated after midnight
-            # The frontend will handle updating tasks at the start of a new day
+            # regardless of whether they are due today, overdue, or in the future
+            pass
         else:
-            # For recurring tasks: don't update date immediately if task is due today or overdue
-            # Date will be updated only after midnight (next day) via get_all_tasks
+            # For recurring tasks: do not update date here
+            # Date will be updated only in get_all_tasks() when new day starts
             # This ensures that completed tasks remain visible until next day
-            if not is_due_today_or_overdue:
-                # Task is due in the future (not today or overdue), update the date immediately
-                next_date = TaskService._calculate_next_due_date(
-                    task.next_due_date,
-                    task.recurrence_type,
-                    task.recurrence_interval,
-                    task.reminder_time,
-                )
-                task.next_due_date = next_date
-            # If due today or overdue, keep the date as is - it will be updated after midnight
-            # The frontend will handle updating tasks at the start of a new day
+            # regardless of whether they are due today, overdue, or in the future
+            pass
 
         db.commit()
         db.refresh(task)
@@ -551,8 +642,8 @@ class TaskService:
         """Revert task completion (cancel confirmation).
 
         For one-time tasks, mark task as active again.
-        For recurring and interval tasks, clear last_completed_at.
-        Restores next_due_date to the original date from history (iteration_date of last confirmed action).
+        For recurring and interval tasks, clear completed flag.
+        Restores reminder_time to the original date from history (iteration_date of last confirmed action).
         """
         from backend.models.task import TaskType
         from backend.models.task_history import TaskHistory, TaskHistoryAction
@@ -567,7 +658,7 @@ class TaskService:
             return None
 
         # Get original iteration date from last confirmed action in history
-        # This allows us to restore next_due_date to the date it had when task was completed
+        # This allows us to restore reminder_time to the date it had when task was completed
         last_confirmed = (
             db.query(TaskHistory)
             .filter(TaskHistory.task_id == task_id)
@@ -576,24 +667,24 @@ class TaskService:
             .first()
         )
         
-        # Clear completion timestamp
-        task.last_completed_at = None
+        # Clear completed flag
+        task.completed = False
         
-        # Restore next_due_date to original date from history if available
+        # Restore reminder_time to original date from history if available
         if last_confirmed and last_confirmed.iteration_date:
-            task.next_due_date = last_confirmed.iteration_date
-        # If no history found, keep current next_due_date (shouldn't happen in normal flow)
+            task.reminder_time = last_confirmed.iteration_date
+        # If no history found, keep current reminder_time (shouldn't happen in normal flow)
 
         if task.task_type == TaskType.ONE_TIME:
             # Make one-time task active again
-            task.is_active = True
+            task.active = True
 
         db.commit()
         db.refresh(task)
 
         # Log unconfirmation to history
         from backend.services.task_history_service import TaskHistoryService
-        TaskHistoryService.log_task_unconfirmed(db, task.id, task.next_due_date)
+        TaskHistoryService.log_task_unconfirmed(db, task.id, task.reminder_time)
 
         return task
 
@@ -717,7 +808,6 @@ class TaskService:
         # For WEEKLY recurring tasks, reminder_time is required
         if recurrence_type == RecurrenceType.WEEKLY and not reminder_time:
             # For WEEKLY tasks, reminder_time is required to know day of week and time
-            # If not provided, use next_due_date as fallback (should not happen in practice)
             raise ValueError("reminder_time is required for weekly recurring tasks (день недели и время обязательны для еженедельных задач)")
         
         if not reminder_time:
@@ -1175,9 +1265,9 @@ class TaskService:
         return (
             db.query(Task)
             .options(selectinload(Task.assignees))
-            .filter(Task.is_active == True)
-            .filter(Task.next_due_date <= cutoff_date)
-            .order_by(Task.next_due_date)
+            .filter(Task.active == True)
+            .filter(Task.reminder_time <= cutoff_date)
+            .order_by(Task.reminder_time)
             .all()
         )
 
@@ -1187,8 +1277,15 @@ class TaskService:
         
         - One-time tasks: visible if completed today (и их дата = сегодня), либо активны и просрочены/на сегодня
         - Recurring/interval tasks: видны, если подтверждены сегодня, либо активны и срок наступил (сегодня или в прошлом)
+        
+        Also ensures tasks are updated if new day has started.
         """
         from backend.models.task import TaskType
+        
+        # Ensure tasks are updated if new day started (using last_update check)
+        if TaskService._is_new_day(db):
+            # Trigger update by calling get_all_tasks (it handles the update and sets last_update)
+            TaskService.get_all_tasks(db, active_only=False)
         
         now = get_current_time()
         today = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -1200,15 +1297,14 @@ class TaskService:
         result = []
         for task in all_tasks:
             task_type = task.task_type
-            is_completed = task.last_completed_at is not None
             
             if task_type == TaskType.ONE_TIME:
                 # For one-time tasks: check if due today for completed tasks
-                task_date = task.next_due_date.replace(hour=0, minute=0, second=0, microsecond=0)
-                is_due_today = task_date.date() == today.date()
+                task_date = TaskService._get_day_start(task.reminder_time)
+                is_due_today = task_date == today
                 is_due_today_or_overdue = task_date < tomorrow
                 
-                if not task.is_active:
+                if not task.active:
                     # Completed one-time task - show only if due today
                     if is_due_today:
                         result.append(task)
@@ -1217,30 +1313,37 @@ class TaskService:
                     if is_due_today_or_overdue:
                         result.append(task)
             else:
-                # For recurring and interval tasks: visibility does NOT depend on next_due_date
-                completed_today = False
-                if is_completed and task.last_completed_at:
-                    completed_date = task.last_completed_at.replace(hour=0, minute=0, second=0, microsecond=0)
-                    completed_today = completed_date.date() == today.date()
+                # For recurring and interval tasks: visibility based on reminder_time
+                # completed flag indicates if task was completed today
+                # (get_all_tasks resets completed flag at day_start_hour)
+                task_date = TaskService._get_day_start(task.reminder_time)
+                is_due_today_or_overdue = task_date < tomorrow
                 
-                if is_completed:
-                    # Completed task - visible if completed today (regardless of next_due_date)
-                    if completed_today:
+                if task.completed:
+                    # Completed task - visible if reminder_time is today or overdue (completed today)
+                    # This ensures completed tasks remain visible until next day
+                    if is_due_today_or_overdue:
                         result.append(task)
                 else:
-                    task_date = task.next_due_date.replace(hour=0, minute=0, second=0, microsecond=0)
-                    is_due_today_or_overdue = task_date < tomorrow
                     # Uncompleted task - visible if active and already due (today or overdue)
-                    if task.is_active and is_due_today_or_overdue:
+                    if task.active and is_due_today_or_overdue:
                         result.append(task)
         
-        # Sort by due date
-        result.sort(key=lambda t: t.next_due_date)
+        # Sort by reminder_time
+        result.sort(key=lambda t: t.reminder_time)
         return result
 
     @staticmethod
     def get_today_task_ids(db: Session) -> list[int]:
-        """Get identifiers for tasks visible in 'today' view."""
+        """Get IDs of tasks visible in 'today' view.
+        
+        Also ensures tasks are updated if new day has started.
+        """
+        # Ensure tasks are updated if new day started (using last_update check)
+        if TaskService._is_new_day(db):
+            # Trigger update by calling get_all_tasks (it handles the update and sets last_update)
+            TaskService.get_all_tasks(db, active_only=False)
+        
         tasks = TaskService.get_today_tasks(db)
         return [task.id for task in tasks]
 
@@ -1258,8 +1361,8 @@ class TaskService:
         
         now = get_current_time()
         
-        # Check if this is a new iteration (last_shown_at is before current next_due_date)
-        is_first_show = task.last_shown_at is None or task.last_shown_at < task.next_due_date
+        # Check if this is a new iteration (last_shown_at is before current reminder_time)
+        is_first_show = task.last_shown_at is None or task.last_shown_at < task.reminder_time
         
         # Update last_shown_at
         task.last_shown_at = now
@@ -1269,7 +1372,7 @@ class TaskService:
         # Log first shown to history only if this is the first time showing this iteration
         if is_first_show:
             from backend.services.task_history_service import TaskHistoryService
-            TaskHistoryService.log_task_first_shown(db, task.id, task.next_due_date)
+            TaskHistoryService.log_task_first_shown(db, task.id, task.reminder_time)
         
         return task
 

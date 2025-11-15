@@ -1,0 +1,26 @@
+[database]
+url = "sqlite:///./homeplanner.db"
+
+[security]
+secret_key = "change-me-in-production"
+algorithm = "HS256"
+access_token_expire_minutes = 30
+
+[server]
+host = "0.0.0.0"
+port = 8000
+debug = true
+
+[cors]
+origins = [
+    "http://192.168.1.2:8080",
+    "http://192.168.1.2:8081",
+]
+
+[app]
+timezone = "Europe/Moscow"
+day_start_hour = 3  # Час начала новых суток (по умолчанию 3:00)
+
+[api]
+version = "0.2"
+

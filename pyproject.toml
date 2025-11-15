@@ -1,9 +1,9 @@
 [project]
 name = "homeplanner"
-version = "0.1.0"
 description = "Планировщик и напоминалка для домашнего использования"
 readme = "README.md"
 requires-python = ">=3.11"
+dynamic = ["version"]
 dependencies = [
     "fastapi>=0.104.0",
     "uvicorn[standard]>=0.24.0",
@@ -23,46 +23,40 @@ dependencies = [
     "mypy>=1.7.0",
 ]
 
+[project.optional-dependencies]
+dev = []
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatch.version]
+source = "code"
+path = "backend/__init__.py"
+
+[tool.homeplanner.versions]
+project_major = "0"
+project_minor = "2"
+
+[tool.homeplanner.package_suffixes]
+backend = ".0"
+frontend = ".0"
+android = ".0"
+common = ".0"
+
+[tool.homeplanner.api]
+# Список поддерживаемых версий API
+# Для поддерживаемых версий допустимы исправления багов, но не создание новых функций или удаление
+supported_versions = ["0.2"]
+
 [tool.hatch.build.targets.wheel]
-packages = ["backend"]
+packages = ["backend", "common"]
 
-[tool.ruff]
-line-length = 100
-target-version = "py311"
-
-[tool.ruff.lint]
-select = ["E", "F", "W", "I", "N", "UP"]
-ignore = ["E501"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = ["test_*.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]
-asyncio_mode = "auto"
-
-[tool.mypy]
-python_version = "3.11"
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = true
-ignore_missing_imports = true
-
-[tool.coverage.run]
-source = ["backend"]
-omit = ["*/tests/*", "*/__pycache__/*"]
-
-[tool.coverage.report]
-exclude_lines = [
-    "pragma: no cover",
-    "def __repr__",
-    "raise AssertionError",
-    "raise NotImplementedError",
-    "if __name__ == .__main__.:",
-    "if TYPE_CHECKING:",
+[tool.hatch.build.targets.sdist]
+include = [
+    "backend/version.json",
+    "common",
+    "config/**/*",
 ]
 
+# ... остальные настройки без изменений

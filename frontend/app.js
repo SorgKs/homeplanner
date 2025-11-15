@@ -61,23 +61,28 @@ function applyTaskEventFromWs(action, taskJson, taskId) {
     const activeFlag = t.active ?? true;
     const completedFlag = Boolean(t.completed);
     const reminderTime = t.reminder_time ?? null;
+    
+    // Определяем статус выполнения: задача выполнена если:
+    // 1. Для разовых задач: неактивна (active = false)
+    // 2. Для повторяющихся и интервальных: completed = true
+    let isCompleted = false;
+    if (t.task_type === 'one_time') {
+        isCompleted = !activeFlag;
+    } else {
+        isCompleted = completedFlag;
+    }
+    
     const mapped = {
         ...t,
         type: 'task',
         is_recurring: t.task_type === 'recurring',
         task_type: t.task_type || 'one_time',
-<<<<<<< HEAD
-        due_date: t.next_due_date,
+        due_date: t.reminder_time,  // reminder_time теперь хранит дату выполнения
         is_completed: isCompleted,
-        is_active: t.is_active,
-        last_completed_at: t.last_completed_at,
+        is_active: activeFlag,  // active заменяет is_active
         assigned_user_ids: Array.isArray(t.assigned_user_ids) ? t.assigned_user_ids.map(Number) : [],
         assignees: Array.isArray(t.assignees) ? t.assignees : [],
-=======
         reminder_time: reminderTime,
-        active: activeFlag,
-        completed: completedFlag,
->>>>>>> origin/main
     };
     const idx = allTasks.findIndex(x => x.id === mapped.id);
     if (idx >= 0) {
@@ -428,24 +433,16 @@ function applyCurrentViewData() {
 async function loadData() {
     try {
         showLoading('tasks-list');
-<<<<<<< HEAD
         // Загружаем полный список задач и отдельный список для вида "Сегодня"
         const [tasks, todayTaskIdsList, groupsData, usersData] = await Promise.all([
             tasksAPI.getAll(),
             tasksAPI.getTodayIds(),
             groupsAPI.getAll(),
             usersAPI.getAll()
-=======
-        const [todayTasks, allTasksResponse, groupsData] = await Promise.all([
-            tasksAPI.getToday(),
-            tasksAPI.getAll(),
-            groupsAPI.getAll(),
->>>>>>> origin/main
         ]);
         
         todayTaskIds = new Set(todayTaskIdsList || []);
         groups = groupsData;
-<<<<<<< HEAD
         users = usersData;
         updateUserFilterOptions();
         updateAssigneeSelect();
@@ -460,18 +457,17 @@ async function loadData() {
         
         allTasks = tasks.map(t => {
             // Определяем статус выполнения: задача выполнена если:
-            // 1. Для разовых задач: неактивна (is_active = false)
-            // 2. Для повторяющихся и интервальных: last_completed_at != null
-            // Галка подтверждения НЕ зависит от next_due_date
+            // 1. Для разовых задач: неактивна (active = false)
+            // 2. Для повторяющихся и интервальных: completed = true
+            // Галка подтверждения НЕ зависит от reminder_time
             let isCompleted = false;
             
             // Для разовых задач: выполнена если неактивна
             if (t.task_type === 'one_time') {
-                isCompleted = !t.is_active;
+                isCompleted = !t.active;
             } else {
-                // Для повторяющихся и интервальных задач: выполнена если есть last_completed_at
-                // Не зависит от next_due_date
-                isCompleted = t.last_completed_at != null;
+                // Для повторяющихся и интервальных задач: выполнена если completed = true
+                isCompleted = t.completed === true;
             }
             
             return {
@@ -479,14 +475,19 @@ async function loadData() {
                 type: 'task', 
                 is_recurring: t.task_type === 'recurring',
                 task_type: t.task_type || 'one_time',
-                due_date: t.next_due_date, 
+                due_date: t.reminder_time,  // reminder_time теперь хранит дату выполнения
                 is_completed: isCompleted,
-                is_active: t.is_active,
-                last_completed_at: t.last_completed_at,
+                is_active: t.active,  // active заменяет is_active
                 assigned_user_ids: Array.isArray(t.assigned_user_ids) ? t.assigned_user_ids.map(Number) : [],
                 assignees: Array.isArray(t.assignees) ? t.assignees : []
             };
         });
+        
+        // Сохраняем задачи в кэш для разных видов
+        allTasksCache = [...allTasks];
+        
+        // Фильтруем задачи для вида "Сегодня" по ID, полученным с бэкенда
+        todayTasksCache = allTasks.filter(t => todayTaskIds.has(t.id));
         
         // Устанавливаем активный вид по умолчанию только при первой загрузке
         if (!document.getElementById('view-today-btn').classList.contains('active') && 
@@ -494,12 +495,6 @@ async function loadData() {
             switchView('today');
         }
         filterAndRenderTasks();
-=======
-        todayTasksCache = todayTasks.map(mapTaskResponse);
-        allTasksCache = allTasksResponse.map(mapTaskResponse);
-        
-        switchView(currentView);
->>>>>>> origin/main
         updateGroupSelect();
     } catch (error) {
         console.error('Failed to load data:', error);
@@ -961,23 +956,18 @@ function filterAndRenderTasks() {
             (task.description && task.description.toLowerCase().includes(searchQuery.toLowerCase()));
         
         const matchesFilter = filterState === null || 
-<<<<<<< HEAD
             (filterState === 'completed' && (task.is_completed || !task.is_active)) ||
             (filterState === 'active' && !task.is_completed && task.is_active);
 
         const matchesUser = !selectedUserId || (task.assigned_user_ids || []).includes(selectedUserId);
-=======
-            (filterState === 'completed' && (task.completed || task.active === false)) ||
-            (filterState === 'active' && !task.completed && task.active !== false);
->>>>>>> origin/main
         
         return matchesSearch && matchesFilter && matchesUser;
     });
 
     // Sort by due date
     filteredTasks.sort((a, b) => {
-        const aTime = a.reminder_time ? new Date(a.reminder_time).getTime() : Number.MAX_SAFE_INTEGER;
-        const bTime = b.reminder_time ? new Date(b.reminder_time).getTime() : Number.MAX_SAFE_INTEGER;
+        const aTime = a.due_date ? new Date(a.due_date).getTime() : Number.MAX_SAFE_INTEGER;
+        const bTime = b.due_date ? new Date(b.due_date).getTime() : Number.MAX_SAFE_INTEGER;
         return aTime - bTime;
     });
     
@@ -1195,14 +1185,9 @@ function renderTodayTasksCollection(tasks, referenceDate) {
 /**
  * Render single task item for today view.
  */
-<<<<<<< HEAD
 function renderTodayTaskItem(task, group, category) {
     // Используем is_completed из данных задачи (уже правильно вычислен в loadData)
     const isCompleted = task.is_completed;
-=======
-function renderTodayTaskItem(task, group) {
-    const isCompleted = Boolean(task.completed);
->>>>>>> origin/main
     const fullTitle = group ? `${group.name}: ${task.title}` : task.title;
     
     // Форматируем время из reminder_time
@@ -1239,14 +1224,9 @@ function renderAllTasksView() {
     const container = document.getElementById('tasks-list');
 
     // Разделяем активные и неактивные, далее группируем каждый набор по группам
-<<<<<<< HEAD
     const activeTasks = filteredTasks.filter(t => t.is_active);
     const inactiveTasks = filteredTasks.filter(t => !t.is_active);
     const headerRow = renderAllTasksHeader();
-=======
-    const activeTasks = filteredTasks.filter(t => t.active !== false);
-    const inactiveTasks = filteredTasks.filter(t => t.active === false);
->>>>>>> origin/main
 
     const activeByGroup = {};
     const activeWithoutGroup = [];
@@ -1380,7 +1360,6 @@ function renderAllTasksHeader() {
  * Render task card for all tasks view with details.
  */
 function renderAllTasksCard(task, now) {
-<<<<<<< HEAD
     const taskDate = task.due_date ? new Date(task.due_date) : null;
     const isCompleted = Boolean(task.is_completed);
     const isActive = Boolean(task.is_active);
@@ -1422,46 +1401,6 @@ function renderAllTasksCard(task, now) {
             <div class="task-row-cell task-row-status">
                 <span class="status-indicator ${isCompleted ? 'status-completed' : isActive ? 'status-active' : 'status-inactive'}"></span>
                 <span>${statusText}</span>
-=======
-    const reminderDate = task.reminder_time ? new Date(task.reminder_time) : null;
-    const isCompleted = Boolean(task.completed);
-    const isActive = task.active !== false;
-    const isUrgent =
-        reminderDate !== null &&
-        reminderDate <= new Date(now.getTime() + 24 * 60 * 60 * 1000) &&
-        !isCompleted &&
-        isActive;
-    const isPast =
-        reminderDate !== null &&
-        reminderDate < now &&
-        !isCompleted &&
-        isActive;
-
-    const activeStatus = isActive ? '✅ Активна' : '❌ Неактивна';
-    const configText = task.readable_config || 'Не указано';
-
-    return `
-        <div class="item-card ${isCompleted ? 'completed' : ''} ${isUrgent ? 'urgent' : ''}">
-            <div class="item-info" style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <label class="task-checkbox-label" style="cursor: pointer; display: flex; align-items: center;">
-                        <input type="checkbox" ${isCompleted ? 'checked' : ''} 
-                               onchange="toggleTaskComplete(${task.id}, this.checked)"
-                               class="task-checkbox"
-                               title="${isCompleted ? 'Отметить как невыполненную' : 'Отметить как выполненную'}">
-                        <span class="task-title" style="font-size: 18px; font-weight: 600;">${escapeHtml(task.title)}</span>
-                    </label>
-                </div>
-                ${task.description ? `<div class="item-description">${escapeHtml(task.description)}</div>` : ''}
-                <div class="item-meta" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
-                    <div style="display: flex; gap: 16px; flex-wrap: wrap;">
-                        <span><strong>Конфигурация:</strong> ${escapeHtml(configText)}</span>
-                        <span><strong>Статус:</strong> ${activeStatus}</span>
-                        ${reminderDate ? `<span><strong>Напоминание:</strong> ${escapeHtml(formatDateTime(task.reminder_time))}</span>` : ''}
-                    </div>
-                    ${isPast ? '<span style="color: var(--danger-color);">⚠️ Просрочено</span>' : ''}
-                </div>
->>>>>>> origin/main
             </div>
             <div class="task-row-cell task-row-actions">
                 <button class="btn btn-secondary btn-icon" onclick="editTask(${task.id})" title="Редактировать">✎</button>

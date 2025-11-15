@@ -10,9 +10,10 @@ from backend.config import get_settings
 from backend.database import Base
 
 # Import all models to ensure they are registered
+from backend.models.app_metadata import AppMetadata  # noqa: F401
 from backend.models.event import Event  # noqa: F401
 from backend.models.group import Group  # noqa: F401
-from backend.models.task import Task, TaskNotification, TaskRecurrence  # noqa: F401
+from backend.models.task import Task  # noqa: F401
 from backend.models.task_history import TaskHistory  # noqa: F401
 
 # this is the Alembic Config object, which provides
