@@ -121,9 +121,9 @@ const tasksAPI = {
         return response.json();
     },
 
-    async getToday() {
-        const response = await fetch(`${API_BASE_URL}/tasks/today`);
-        if (!response.ok) throw new Error('Failed to fetch today tasks');
+    async getTodayIds() {
+        const response = await fetch(`${API_BASE_URL}/tasks/today/ids`);
+        if (!response.ok) throw new Error('Failed to fetch today task ids');
         return response.json();
     },
 
@@ -275,6 +275,95 @@ const groupsAPI = {
             method: 'DELETE',
         });
         if (!response.ok) throw new Error('Failed to delete group');
+    },
+};
+
+/**
+ * Users API
+ */
+const usersAPI = {
+    async getAll() {
+        const response = await fetch(`${API_BASE_URL}/users/`);
+        if (!response.ok) throw new Error('Failed to fetch users');
+        return response.json();
+    },
+
+    async get(id) {
+        const response = await fetch(`${API_BASE_URL}/users/${id}`);
+        if (!response.ok) throw new Error('Failed to fetch user');
+        return response.json();
+    },
+
+    async create(user) {
+        const response = await fetch(`${API_BASE_URL}/users/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(user),
+        });
+        if (!response.ok) throw new Error('Failed to create user');
+        return response.json();
+    },
+
+    async update(id, user) {
+        const response = await fetch(`${API_BASE_URL}/users/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(user),
+        });
+        if (!response.ok) throw new Error('Failed to update user');
+        return response.json();
+    },
+
+    async delete(id) {
+        const response = await fetch(`${API_BASE_URL}/users/${id}`, {
+            method: 'DELETE',
+        });
+        if (!response.ok) throw new Error('Failed to delete user');
+    },
+};
+
+/**
+ * Time control API
+ */
+const timeAPI = {
+    async getState() {
+        const response = await fetch(`${API_BASE_URL}/time/`);
+        if (!response.ok) throw new Error('Failed to read time state');
+        return response.json();
+    },
+
+    async shift({ days = 0, hours = 0, minutes = 0 }) {
+        const response = await fetch(`${API_BASE_URL}/time/shift`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ days, hours, minutes }),
+        });
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.detail || 'Failed to shift time');
+        }
+        return response.json();
+    },
+
+    async set(targetDatetime) {
+        const response = await fetch(`${API_BASE_URL}/time/set`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ target_datetime: targetDatetime }),
+        });
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.detail || 'Failed to set time');
+        }
+        return response.json();
+    },
+
+    async reset() {
+        const response = await fetch(`${API_BASE_URL}/time/reset`, {
+            method: 'POST',
+        });
+        if (!response.ok) throw new Error('Failed to reset time');
+        return response.json();
     },
 };
 

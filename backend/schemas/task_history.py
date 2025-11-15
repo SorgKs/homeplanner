@@ -5,6 +5,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field, field_serializer
 
 from backend.models.task_history import TaskHistoryAction
+from backend.services.time_manager import get_current_time
 
 
 class TaskHistoryBase(BaseModel):
@@ -12,7 +13,7 @@ class TaskHistoryBase(BaseModel):
 
     task_id: int | None = Field(None, description="Task ID (may be NULL for deleted tasks)")
     action: TaskHistoryAction = Field(..., description="Action type")
-    action_timestamp: datetime = Field(default_factory=datetime.now, description="Action timestamp")
+    action_timestamp: datetime = Field(default_factory=get_current_time, description="Action timestamp")
     iteration_date: datetime | None = Field(None, description="Task iteration date")
     meta_data: str | None = Field(None, description="Additional metadata (JSON string)")
     comment: str | None = Field(None, description="Comment about the action")

@@ -23,6 +23,7 @@
                             <button class="btn btn-secondary sidebar-btn" id="view-all-btn">📋 Все задачи</button>
                             <button class="btn btn-secondary sidebar-btn" id="view-history-btn">📜 История</button>
                             <button class="btn btn-secondary sidebar-btn" id="view-settings-btn">⚙️ Настройки</button>
+                            <button class="btn btn-secondary sidebar-btn" id="view-users-btn" style="display: none;">👤 Пользователи</button>
                         </div>
                     </div>
                     
@@ -43,6 +44,12 @@
                         <h3 class="sidebar-title">Поиск и фильтры</h3>
                         <div class="search-box">
                             <input type="text" id="tasks-search" placeholder="Поиск задач...">
+                        </div>
+                        <div class="search-box">
+                            <label for="user-filter" class="input-label">Пользователь</label>
+                            <select id="user-filter">
+                                <option value="">Все пользователи</option>
+                            </select>
                         </div>
                         <button class="filter-btn sidebar-btn" id="tasks-filter-btn">Фильтры</button>
                     </div>
@@ -72,6 +79,36 @@
             </aside>
 
             <main class="main-content">
+                <div id="admin-panels" class="admin-panels">
+                    <div id="time-controls" class="admin-panel" style="display: none;">
+                        <div class="admin-panel-header">
+                            <div class="admin-panel-title">
+                                <span>Текущее время приложения</span>
+                                <span id="time-override-status" class="time-status-chip">Системное время</span>
+                            </div>
+                            <div class="time-info">
+                                <div>Виртуальное: <span id="time-virtual-value">—</span></div>
+                                <div>Системное: <span id="time-real-value">—</span></div>
+                            </div>
+                        </div>
+                        <div class="time-buttons">
+                            <button class="btn btn-secondary btn-sm" data-time-shift-days="1">+ день</button>
+                            <button class="btn btn-secondary btn-sm" data-time-shift-days="-1">- день</button>
+                            <button class="btn btn-secondary btn-sm" data-time-shift-hours="1">+ час</button>
+                            <button class="btn btn-secondary btn-sm" data-time-shift-hours="-1">- час</button>
+                        </div>
+                        <div class="time-setter">
+                            <div class="time-setter-input">
+                                <label for="time-set-input">Задать дату и время:</label>
+                                <input type="datetime-local" id="time-set-input">
+                            </div>
+                            <div class="time-setter-actions">
+                                <button class="btn btn-secondary btn-sm" id="time-set-btn">Задать дату</button>
+                                <button class="btn btn-outline btn-sm" id="time-reset-btn">Сбросить</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div id="settings-view" style="display:none;">
                     <div class="card" style="margin-bottom:16px; padding:12px;">
                         <h3 style="margin-top:0;">Установить Android приложение</h3>
@@ -94,6 +131,55 @@
                         </div>
                     </div>
                 </div>
+                <div id="users-view" style="display:none;">
+                    <div class="users-view-layout">
+                        <div class="users-form-card">
+                            <div class="users-card-header">
+                                <div>
+                                    <h3 id="user-form-title">Добавить пользователя</h3>
+                                    <p class="card-subtitle">Создайте пользователя и назначьте ему роль/статус</p>
+                                </div>
+                            </div>
+                            <form id="user-form" class="user-form">
+                                <input type="hidden" id="user-id">
+                                <div class="user-form-grid">
+                                    <div class="form-group">
+                                        <label for="user-name">Имя</label>
+                                        <input type="text" id="user-name" placeholder="Например, Анна" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="user-email">Почта</label>
+                                        <input type="email" id="user-email" placeholder="user@example.com">
+                                    </div>
+                                </div>
+                                <div class="user-form-grid">
+                                    <div class="form-group">
+                                        <label for="user-role">Привилегии</label>
+                                        <select id="user-role" required>
+                                            <option value="admin">Администратор</option>
+                                            <option value="regular" selected>Обычный</option>
+                                            <option value="guest">Гость</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group checkbox-group">
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" id="user-active" checked>
+                                            <span>Активен</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="user-form-actions">
+                                    <button type="submit" class="btn btn-primary" id="user-save">Добавить</button>
+                                    <button type="button" class="btn btn-outline" id="user-cancel">Сбросить</button>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="users-list-card">
+                            <h3>Все пользователи</h3>
+                            <div id="users-list" class="users-list"></div>
+                        </div>
+                    </div>
+                </div>
                 <div id="tasks-list" class="items-list"></div>
             </main>
         </div>
@@ -113,6 +199,11 @@
                     <div class="form-group">
                         <label for="task-description">Описание:</label>
                         <textarea id="task-description" placeholder="Описание (необязательно)"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="task-assignees">Назначить пользователям:</label>
+                        <select id="task-assignees" multiple size="4"></select>
+                        <small class="form-hint">Выберите одного или нескольких пользователей. Если список пуст — создайте их во вкладке «Пользователи».</small>
                     </div>
                     <div class="form-group">
                         <label for="task-is-recurring">Тип задачи:</label>
@@ -272,9 +363,25 @@
                 return window.location.origin;
             }
 
-            function buildApkUrl() {
-                const origin = getBackendOrigin();
-                return origin.replace(/\/$/, '') + '/download/latest.apk';
+            function getBackendBase() {
+                return getBackendOrigin().replace(/\/$/, '');
+            }
+
+            async function buildApkUrl() {
+                const base = getBackendBase();
+                const fallback = base + '/download/apk';
+                try {
+                    const response = await fetch(base + '/download/apk/meta', { method: 'GET' });
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data && data.filename) {
+                            return base + '/download/' + data.filename;
+                        }
+                    }
+                } catch (err) {
+                    console.warn('Не удалось получить информацию об APK:', err);
+                }
+                return fallback;
             }
 
             // Initialize link and inputs
@@ -297,20 +404,31 @@
                 const storedApi = localStorage.getItem('apiBaseUrl');
                 apiBaseInput.value = storedApi || (typeof API_BASE_URL === 'string' ? API_BASE_URL : 'http://192.168.1.2:8000/api/v1');
             }
-            let apkUrl = buildApkUrl();
-            linkEl.href = apkUrl;
+            let apkUrl = '';
+            const setDefaultApkUrl = () => {
+                const base = getBackendBase();
+                apkUrl = base + '/download/apk';
+                if (linkEl) {
+                    linkEl.href = apkUrl;
+                }
+            };
+            setDefaultApkUrl();
+            async function refreshApkUrl() {
+                apkUrl = await buildApkUrl();
+                linkEl.href = apkUrl;
+                return apkUrl;
+            }
             const applyBtn = document.getElementById('apply-apk-host');
             if (applyBtn) applyBtn.addEventListener('click', function(){
                 const v = (hostInput && hostInput.value || '').trim();
                 if (v) localStorage.setItem('apkHost', v);
-                apkUrl = buildApkUrl();
-                linkEl.href = apkUrl;
-                // regenerate QR if visible
-                const qrBox = document.getElementById('apk-qr');
-                if (qrBox && qrBox.style.display !== 'none') {
-                    qrBox.innerHTML = '';
-                    renderQr(apkUrl, qrBox);
-                }
+                refreshApkUrl().then(function(url){
+                    const qrBox = document.getElementById('apk-qr');
+                    if (qrBox && qrBox.style.display !== 'none') {
+                        qrBox.innerHTML = '';
+                        renderQr(url, qrBox);
+                    }
+                });
             });
             const applyApiBtn = document.getElementById('apply-api-base');
             if (applyApiBtn) applyApiBtn.addEventListener('click', function(){
@@ -340,9 +458,16 @@
 
             document.getElementById('show-apk-qr-btn').addEventListener('click', function(){
                 const qrBox = document.getElementById('apk-qr');
-                qrBox.style.display = 'block';
-                qrBox.innerHTML = '';
-                renderQr(apkUrl, qrBox);
+                const render = function(url){
+                    qrBox.style.display = 'block';
+                    qrBox.innerHTML = '';
+                    renderQr(url, qrBox);
+                };
+                if (apkUrl) {
+                    render(apkUrl);
+                } else {
+                    refreshApkUrl().then(render);
+                }
             });
         })();
     </script>

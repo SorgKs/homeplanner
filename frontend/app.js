@@ -8,10 +8,21 @@ let groups = []; // Список групп
 let filteredTasks = [];
 let searchQuery = '';
 let filterState = null;
-let currentView = 'today'; // 'today', 'all', 'history', 'settings'
+let currentView = 'today'; // 'today', 'all', 'history', 'settings', 'users'
 let adminMode = false; // Режим администратора
 let ws = null; // WebSocket connection
 let timeControlState = null; // Состояние панели управления временем
+let users = []; // Пользователи для назначения
+let selectedUserId = null; // ID выбранного пользователя для фильтра
+const USER_ROLE_LABELS = {
+    admin: 'Админ',
+    regular: 'Обычный',
+    guest: 'Гость',
+};
+const USER_STATUS_LABELS = {
+    true: 'Активен',
+    false: 'Неактивен',
+};
 
 function getWsUrl() {
     const host = (typeof window !== 'undefined' && window.location && window.location.hostname) ? window.location.hostname : '192.168.1.2';
@@ -59,6 +70,8 @@ function applyTaskEventFromWs(action, taskJson, taskId) {
         is_completed: isCompleted,
         is_active: t.is_active,
         last_completed_at: t.last_completed_at,
+        assigned_user_ids: Array.isArray(t.assigned_user_ids) ? t.assigned_user_ids.map(Number) : [],
+        assignees: Array.isArray(t.assignees) ? t.assignees : [],
     };
     const idx = allTasks.findIndex(x => x.id === mapped.id);
     if (idx >= 0) {
@@ -252,6 +265,14 @@ function setupEventListeners() {
         searchQuery = e.target.value;
         filterAndRenderTasks();
     });
+    const userFilter = document.getElementById('user-filter');
+    if (userFilter) {
+        userFilter.addEventListener('change', (e) => {
+            const value = e.target.value;
+            selectedUserId = value ? parseInt(value, 10) : null;
+            filterAndRenderTasks();
+        });
+    }
 
     // Filter button
     document.getElementById('tasks-filter-btn').addEventListener('click', () => toggleTaskFilter());
@@ -262,6 +283,8 @@ function setupEventListeners() {
     document.getElementById('view-history-btn').addEventListener('click', () => switchView('history'));
     const settingsBtn = document.getElementById('view-settings-btn');
     if (settingsBtn) settingsBtn.addEventListener('click', () => switchView('settings'));
+    const usersBtn = document.getElementById('view-users-btn');
+    if (usersBtn) usersBtn.addEventListener('click', () => switchView('users'));
     
     // Admin mode toggle
     document.getElementById('toggle-admin-btn').addEventListener('click', toggleAdminMode);
@@ -279,10 +302,18 @@ function setupEventListeners() {
     // Form submissions
     document.getElementById('task-form').addEventListener('submit', handleTaskSubmit);
     document.getElementById('group-form').addEventListener('submit', handleGroupSubmit);
+    const userForm = document.getElementById('user-form');
+    if (userForm) {
+        userForm.addEventListener('submit', handleUserSubmit);
+    }
 
     // Cancel buttons
     document.getElementById('task-cancel').addEventListener('click', closeTaskModal);
     document.getElementById('group-cancel').addEventListener('click', closeGroupModal);
+    const userCancelBtn = document.getElementById('user-cancel');
+    if (userCancelBtn) {
+        userCancelBtn.addEventListener('click', resetUserForm);
+    }
 
     // Task type toggle
     document.getElementById('task-is-recurring').addEventListener('change', (e) => {
@@ -354,6 +385,9 @@ function setupEventListeners() {
             e.target.style.display = 'none';
         }
     });
+
+    resetUserForm();
+    updateAdminNavigation();
 }
 
 /**
@@ -363,14 +397,22 @@ async function loadData() {
     try {
         showLoading('tasks-list');
         // Загружаем полный список задач и отдельный список для вида "Сегодня"
-        const [tasks, todayTaskIdsList, groupsData] = await Promise.all([
+        const [tasks, todayTaskIdsList, groupsData, usersData] = await Promise.all([
             tasksAPI.getAll(),
             tasksAPI.getTodayIds(),
-            groupsAPI.getAll()
+            groupsAPI.getAll(),
+            usersAPI.getAll()
         ]);
         
         todayTaskIds = new Set(todayTaskIdsList || []);
         groups = groupsData;
+        users = usersData;
+        updateUserFilterOptions();
+        updateAssigneeSelect();
+        renderUsersList();
+        if (currentView === 'users') {
+            renderUsersView();
+        }
         
         // Все теперь задачи
         const now = new Date();
@@ -400,7 +442,9 @@ async function loadData() {
                 due_date: t.next_due_date, 
                 is_completed: isCompleted,
                 is_active: t.is_active,
-                last_completed_at: t.last_completed_at
+                last_completed_at: t.last_completed_at,
+                assigned_user_ids: Array.isArray(t.assigned_user_ids) ? t.assigned_user_ids.map(Number) : [],
+                assignees: Array.isArray(t.assignees) ? t.assignees : []
             };
         });
         
@@ -437,25 +481,206 @@ function updateGroupSelect() {
     });
 }
 
+function updateUserFilterOptions() {
+    const select = document.getElementById('user-filter');
+    if (!select) return;
+    const previousValue = select.value;
+    select.innerHTML = '<option value="">Все пользователи</option>';
+    users.forEach(user => {
+        const option = document.createElement('option');
+        option.value = user.id;
+        option.textContent = user.is_active ? user.name : `${user.name} (неактивен)`;
+        select.appendChild(option);
+    });
+    if (previousValue && Array.from(select.options).some(opt => opt.value === previousValue)) {
+        select.value = previousValue;
+    }
+    const newValue = select.value;
+    selectedUserId = newValue ? parseInt(newValue, 10) : null;
+}
+
+function updateAssigneeSelect(selectedIds = []) {
+    const select = document.getElementById('task-assignees');
+    if (!select) return;
+    const selectedSet = new Set((selectedIds || []).map(Number));
+    select.innerHTML = '';
+    const activeUsers = users.filter(user => user.is_active);
+    const forcedUsers = [];
+    selectedSet.forEach(id => {
+        if (!activeUsers.some(user => user.id === id)) {
+            const found = users.find(user => user.id === id);
+            if (found) {
+                forcedUsers.push(found);
+            }
+        }
+    });
+    const optionsList = [...activeUsers, ...forcedUsers];
+    if (!optionsList.length) {
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'Нет доступных пользователей';
+        option.disabled = true;
+        select.appendChild(option);
+        select.disabled = true;
+        return;
+    }
+    select.disabled = false;
+    optionsList.forEach(user => {
+        const option = document.createElement('option');
+        option.value = user.id;
+        option.textContent = user.is_active ? user.name : `${user.name} (неактивен)`;
+        if (selectedSet.has(user.id)) {
+            option.selected = true;
+        }
+        select.appendChild(option);
+    });
+}
+
+function setAssigneeSelection(selectedIds) {
+    updateAssigneeSelect(selectedIds);
+}
+
+function renderUsersList() {
+    const container = document.getElementById('users-list');
+    if (!container) return;
+    const sortedUsers = [...users].sort((a, b) => {
+        if (a.is_active !== b.is_active) {
+            return a.is_active ? -1 : 1;
+        }
+        return a.name.localeCompare(b.name, 'ru');
+    });
+    if (!sortedUsers.length) {
+        container.innerHTML = `
+            <div class="empty-state" style="min-height: unset; padding: 12px;">
+                <div class="empty-state-icon">👥</div>
+                <div class="empty-state-text">Нет пользователей</div>
+                <div class="empty-state-hint">Добавьте хотя бы одного пользователя, чтобы назначать задачи</div>
+            </div>
+        `;
+        return;
+    }
+    container.innerHTML = sortedUsers.map(user => `
+        <div class="user-row">
+            <div class="user-info">
+                <span class="user-name">${escapeHtml(user.name)}</span>
+                ${user.email ? `<span class="user-email">${escapeHtml(user.email)}</span>` : '<span class="user-email">Без email</span>'}
+                <div class="user-meta">
+                    <span class="user-chip">${USER_ROLE_LABELS[user.role] || user.role}</span>
+                    <span class="user-chip ${user.is_active ? 'user-chip-active' : 'user-chip-inactive'}">${USER_STATUS_LABELS[user.is_active] || ''}</span>
+                </div>
+            </div>
+            <div class="user-actions">
+                <button class="btn btn-secondary btn-sm" onclick="editUser(${user.id})" title="Редактировать">✎</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteUser(${user.id})" title="Удалить">✕</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderUsersView() {
+    renderUsersList();
+}
+
+function resetUserForm() {
+    const form = document.getElementById('user-form');
+    if (!form) return;
+    form.reset();
+    const idInput = document.getElementById('user-id');
+    if (idInput) idInput.value = '';
+    const title = document.getElementById('user-form-title');
+    if (title) title.textContent = 'Добавить пользователя';
+    const saveBtn = document.getElementById('user-save');
+    if (saveBtn) saveBtn.textContent = 'Добавить';
+    const roleSelect = document.getElementById('user-role');
+    if (roleSelect) roleSelect.value = 'regular';
+    const activeCheckbox = document.getElementById('user-active');
+    if (activeCheckbox) activeCheckbox.checked = true;
+}
+
+async function handleUserSubmit(e) {
+    e.preventDefault();
+    const id = document.getElementById('user-id').value;
+    const name = document.getElementById('user-name').value.trim();
+    const email = document.getElementById('user-email').value.trim();
+    if (!name) {
+        showToast('Имя пользователя обязательно', 'warning');
+        return;
+    }
+    const role = document.getElementById('user-role').value;
+    const isActive = document.getElementById('user-active').checked;
+    const payload = { name, email: email || null, role, is_active: isActive };
+    try {
+        if (id) {
+            await usersAPI.update(parseInt(id, 10), payload);
+            showToast('Пользователь обновлён', 'success');
+        } else {
+            await usersAPI.create(payload);
+            showToast('Пользователь создан', 'success');
+        }
+        resetUserForm();
+        await loadData();
+    } catch (error) {
+        console.error('Failed to save user', error);
+        showToast(error.message || 'Не удалось сохранить пользователя', 'error');
+    }
+}
+
+function editUser(id) {
+    const user = users.find(u => u.id === id);
+    if (!user) return;
+    const title = document.getElementById('user-form-title');
+    if (title) title.textContent = 'Редактировать пользователя';
+    document.getElementById('user-id').value = user.id;
+    document.getElementById('user-name').value = user.name;
+    document.getElementById('user-email').value = user.email || '';
+    const roleSelect = document.getElementById('user-role');
+    if (roleSelect) roleSelect.value = user.role || 'regular';
+    const activeCheckbox = document.getElementById('user-active');
+    if (activeCheckbox) activeCheckbox.checked = !!user.is_active;
+    const saveBtn = document.getElementById('user-save');
+    if (saveBtn) saveBtn.textContent = 'Сохранить';
+    switchView('users');
+}
+
+async function deleteUser(id) {
+    if (!confirm('Удалить пользователя? Назначенные задачи потеряют связь с ним.')) return;
+    try {
+        await usersAPI.delete(id);
+        showToast('Пользователь удалён', 'success');
+        resetUserForm();
+        await loadData();
+    } catch (error) {
+        console.error('Failed to delete user', error);
+        showToast(error.message || 'Не удалось удалить пользователя', 'error');
+    }
+}
+
 /**
  * Switch between views.
  */
 function switchView(view) {
+    if (view === 'users' && !adminMode) {
+        view = 'today';
+    }
     currentView = view;
     const todayBtn = document.getElementById('view-today-btn');
     const allBtn = document.getElementById('view-all-btn');
     const historyBtn = document.getElementById('view-history-btn');
     const settingsBtn = document.getElementById('view-settings-btn');
+    const usersBtn = document.getElementById('view-users-btn');
     const historyFilters = document.getElementById('history-filters-section');
     const tasksFilters = document.getElementById('tasks-filters-section');
     const settingsView = document.getElementById('settings-view');
     const tasksList = document.getElementById('tasks-list');
+    const usersView = document.getElementById('users-view');
     
     // Update button states
     todayBtn.classList.remove('active');
     allBtn.classList.remove('active');
     historyBtn.classList.remove('active');
     if (settingsBtn) settingsBtn.classList.remove('active');
+    if (usersBtn) usersBtn.classList.remove('active');
+    if (usersView) usersView.style.display = 'none';
     
     if (view === 'today') {
         todayBtn.classList.add('active');
@@ -483,6 +708,15 @@ function switchView(view) {
         tasksFilters.style.display = 'none';
         if (tasksList) tasksList.style.display = 'none';
         if (settingsView) settingsView.style.display = 'block';
+        return;
+    } else if (view === 'users') {
+        if (usersBtn) usersBtn.classList.add('active');
+        historyFilters.style.display = 'none';
+        tasksFilters.style.display = 'none';
+        if (tasksList) tasksList.style.display = 'none';
+        if (settingsView) settingsView.style.display = 'none';
+        if (usersView) usersView.style.display = 'block';
+        renderUsersView();
         return;
     }
     
@@ -513,6 +747,7 @@ function toggleAdminMode() {
     }
 
     updateTimePanelVisibility();
+    updateAdminNavigation();
     if (adminMode) {
         fetchAndRenderTimeState(false);
     }
@@ -522,6 +757,19 @@ function updateTimePanelVisibility() {
     const panel = document.getElementById('time-controls');
     if (!panel) return;
     panel.style.display = adminMode ? 'block' : 'none';
+}
+
+function updateAdminNavigation() {
+    const usersBtn = document.getElementById('view-users-btn');
+    if (!usersBtn) return;
+    if (adminMode) {
+        usersBtn.style.display = 'block';
+    } else {
+        usersBtn.style.display = 'none';
+        if (currentView === 'users') {
+            switchView('today');
+        }
+    }
 }
 
 function setupTimeControlButtons() {
@@ -665,8 +913,10 @@ function filterAndRenderTasks() {
         const matchesFilter = filterState === null || 
             (filterState === 'completed' && (task.is_completed || !task.is_active)) ||
             (filterState === 'active' && !task.is_completed && task.is_active);
+
+        const matchesUser = !selectedUserId || (task.assigned_user_ids || []).includes(selectedUserId);
         
-        return matchesSearch && matchesFilter;
+        return matchesSearch && matchesFilter && matchesUser;
     });
 
     // Sort by due date
@@ -1049,6 +1299,7 @@ function renderAllTasksHeader() {
         <div class="task-table-header">
             <div class="task-row-cell task-row-title">Задача</div>
             <div class="task-row-cell task-row-config">Конфигурация</div>
+            <div class="task-row-cell task-row-users">Пользователи</div>
             <div class="task-row-cell task-row-date">Следующая дата</div>
             <div class="task-row-cell task-row-status">Статус</div>
             <div class="task-row-cell task-row-actions">Действия</div>
@@ -1074,6 +1325,10 @@ function renderAllTasksCard(task, now) {
 
     const configText = task.readable_config || 'Не указано';
     const dueDateText = task.due_date ? formatDateTime(task.due_date) : '—';
+    const assigneesList = Array.isArray(task.assignees) ? task.assignees : [];
+    const assigneesHtml = assigneesList.length
+        ? assigneesList.map(user => `<span class="user-chip">${escapeHtml(user.name)}</span>`).join('')
+        : '<span style="color: var(--text-secondary); font-size: 0.85rem;">Не назначено</span>';
     const rowClasses = [
         'task-row',
         isCompleted ? 'completed' : '',
@@ -1092,6 +1347,7 @@ function renderAllTasksCard(task, now) {
                 <span class="task-row-title-text">${escapeHtml(task.title)}</span>
             </label>
             <div class="task-row-cell task-row-config">${escapeHtml(configText)}</div>
+            <div class="task-row-cell task-row-users">${assigneesHtml}</div>
             <div class="task-row-cell task-row-date">${dueDateText}</div>
             <div class="task-row-cell task-row-status">
                 <span class="status-indicator ${isCompleted ? 'status-completed' : isActive ? 'status-active' : 'status-inactive'}"></span>
@@ -1174,6 +1430,7 @@ function openTaskModal(taskId = null) {
     const dateInput = document.getElementById('task-due-date');
 
     updateGroupSelect();
+    updateAssigneeSelect();
     
     // Убираем ограничение min для даты (чтобы можно было ставить даты в прошлом)
     // Это нужно делать каждый раз при открытии модального окна
@@ -1188,6 +1445,7 @@ function openTaskModal(taskId = null) {
             document.getElementById('task-title').value = task.title;
             document.getElementById('task-description').value = task.description || '';
             document.getElementById('task-group-id').value = task.group_id || '';
+            setAssigneeSelection(task.assigned_user_ids || []);
             // Store original value in data attribute for comparison
             dateInput.dataset.originalValue = task.due_date;
             dateInput.value = formatDatetimeLocal(task.due_date);
@@ -1323,6 +1581,7 @@ function openTaskModal(taskId = null) {
         document.getElementById('task-id').value = '';
         document.getElementById('task-type').value = '';
         document.getElementById('task-group-id').value = '';
+        setAssigneeSelection([]);
         document.getElementById('task-is-recurring').value = 'one_time';
         document.getElementById('task-interval').value = '1';
         document.getElementById('task-interval-days').value = '7';
@@ -1424,6 +1683,13 @@ async function handleTaskSubmit(e) {
         const groupIdValue = groupId ? parseInt(groupId) : null;
         
         const taskData = {};
+        const assigneeSelect = document.getElementById('task-assignees');
+        const assignedIds = assigneeSelect && !assigneeSelect.disabled
+            ? Array.from(assigneeSelect.selectedOptions)
+                .map(opt => parseInt(opt.value, 10))
+                .filter(id => !Number.isNaN(id))
+            : [];
+        taskData.assigned_user_ids = assignedIds;
         
         // Всегда обновляем базовые поля
         taskData.title = document.getElementById('task-title').value;

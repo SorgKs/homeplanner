@@ -3,9 +3,11 @@
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from backend.models.task import RecurrenceType, Task
+from backend.models.user import User
+from backend.services.time_manager import get_current_time
 
 if TYPE_CHECKING:
     from backend.schemas.task import TaskCreate, TaskUpdate
@@ -15,11 +17,29 @@ class TaskService:
     """Service for managing recurring tasks."""
 
     @staticmethod
+    def _get_users_by_ids(db: Session, user_ids: list[int]) -> list[User]:
+        """Load users by IDs ensuring all exist."""
+        if not user_ids:
+            return []
+        unique_ids = sorted(set(user_ids))
+        users = db.query(User).filter(User.id.in_(unique_ids)).all()
+        found_ids = {user.id for user in users}
+        missing = sorted(set(unique_ids) - found_ids)
+        if missing:
+            raise ValueError(f"Users not found: {missing}")
+        user_map = {user.id: user for user in users}
+        # Preserve requested order (including duplicates if any)
+        return [user_map[user_id] for user_id in user_ids]
+
+    @staticmethod
     def create_task(db: Session, task_data: "TaskCreate") -> Task:
         """Create a new recurring task."""
         from backend.models.task import RecurrenceType, TaskType
         
-        task = Task(**task_data.model_dump())
+        payload = task_data.model_dump(exclude={"assigned_user_ids"})
+        task = Task(**payload)
+        if task_data.assigned_user_ids:
+            task.assignees = TaskService._get_users_by_ids(db, task_data.assigned_user_ids)
         
         # Ensure reminder_time is set (TaskBase.ensure_reminder_time should have set it, but double-check)
         if task.reminder_time is None:
@@ -51,7 +71,12 @@ class TaskService:
     @staticmethod
     def get_task(db: Session, task_id: int) -> Task | None:
         """Get a task by ID."""
-        return db.query(Task).filter(Task.id == task_id).first()
+        return (
+            db.query(Task)
+            .options(selectinload(Task.assignees))
+            .filter(Task.id == task_id)
+            .first()
+        )
 
     @staticmethod
     def get_all_tasks(db: Session, active_only: bool = False) -> list[Task]:
@@ -63,7 +88,7 @@ class TaskService:
         from backend.models.task import TaskType
         
         # Update dates for tasks that were completed before today and have date in the past
-        now = datetime.now()
+        now = get_current_time()
         today = now.replace(hour=0, minute=0, second=0, microsecond=0)
         
         # Find tasks that need date update:
@@ -72,6 +97,7 @@ class TaskService:
         # - next_due_date is before today (date is in the past)
         tasks_to_update = (
             db.query(Task)
+            .options(selectinload(Task.assignees))
             .filter(Task.last_completed_at.isnot(None))
             .filter(Task.last_completed_at < today)
             .filter(Task.next_due_date < today)
@@ -112,7 +138,7 @@ class TaskService:
             db.commit()
         
         # Now get all tasks (with updated dates)
-        query = db.query(Task)
+        query = db.query(Task).options(selectinload(Task.assignees))
         if active_only:
             query = query.filter(Task.is_active == True)
         return query.order_by(Task.next_due_date).all()
@@ -129,11 +155,16 @@ class TaskService:
         """
         from backend.models.task import TaskType
 
-        now = datetime.now()
+        now = get_current_time()
         today = now.replace(hour=0, minute=0, second=0, microsecond=0)
         tomorrow = today + timedelta(days=1)
 
-        tasks = db.query(Task).order_by(Task.next_due_date).all()
+        tasks = (
+            db.query(Task)
+            .options(selectinload(Task.assignees))
+            .order_by(Task.next_due_date)
+            .all()
+        )
 
         result: list[Task] = []
         for task in tasks:
@@ -169,11 +200,16 @@ class TaskService:
     @staticmethod
     def update_task(db: Session, task_id: int, task_data: "TaskUpdate") -> Task | None:
         """Update a task."""
-        task = db.query(Task).filter(Task.id == task_id).first()
+        task = (
+            db.query(Task)
+            .options(selectinload(Task.assignees))
+            .filter(Task.id == task_id)
+            .first()
+        )
         if not task:
             return None
 
-        update_data = task_data.model_dump(exclude_unset=True)
+        update_data = task_data.model_dump(exclude_unset=True, exclude={"assigned_user_ids"})
         
         # Save old task state for history comments (before applying changes)
         old_task_state = {
@@ -219,6 +255,16 @@ class TaskService:
         # Apply changes
         for key, value in update_data.items():
             setattr(task, key, value)
+
+        # Update assignees if provided
+        if task_data.assigned_user_ids is not None:
+            new_users = TaskService._get_users_by_ids(db, task_data.assigned_user_ids)
+            new_ids = [user.id for user in new_users]
+            old_ids = [user.id for user in task.assignees]
+            if set(new_ids) != set(old_ids):
+                task.assignees = new_users
+                changes["assigned_user_ids"] = new_ids
+                old_values["assigned_user_ids"] = old_ids
         
         # Ensure reminder_time is always set after update
         # If reminder_time was explicitly set to None in update, use next_due_date as fallback
@@ -379,7 +425,12 @@ class TaskService:
     @staticmethod
     def delete_task(db: Session, task_id: int) -> bool:
         """Delete a task."""
-        task = db.query(Task).filter(Task.id == task_id).first()
+        task = (
+            db.query(Task)
+            .options(selectinload(Task.assignees))
+            .filter(Task.id == task_id)
+            .first()
+        )
         if not task:
             return False
 
@@ -408,7 +459,7 @@ class TaskService:
         history_entry = TaskHistory(
             task_id=saved_task_id,
             action=TaskHistoryAction.DELETED,
-            action_timestamp=datetime.now(),
+            action_timestamp=get_current_time(),
             comment=comment,
             meta_data=metadata_json
         )
@@ -432,12 +483,17 @@ class TaskService:
         """
         from backend.models.task import TaskType
 
-        task = db.query(Task).filter(Task.id == task_id).first()
+        task = (
+            db.query(Task)
+            .options(selectinload(Task.assignees))
+            .filter(Task.id == task_id)
+            .first()
+        )
         if not task:
             return None
 
-        task.last_completed_at = datetime.now()
-        now = datetime.now()
+        task.last_completed_at = get_current_time()
+        now = task.last_completed_at
         
         # Store iteration date for history logging
         iteration_date = task.next_due_date
@@ -501,7 +557,12 @@ class TaskService:
         from backend.models.task import TaskType
         from backend.models.task_history import TaskHistory, TaskHistoryAction
 
-        task = db.query(Task).filter(Task.id == task_id).first()
+        task = (
+            db.query(Task)
+            .options(selectinload(Task.assignees))
+            .filter(Task.id == task_id)
+            .first()
+        )
         if not task:
             return None
 
@@ -1000,7 +1061,10 @@ class TaskService:
                     weekday_ru = weekdays_ru[weekday_num]
                     # Determine which occurrence (1st, 2nd, 3rd, 4th, or last)
                     # Use a more accurate method by checking the actual date
-                    year = reminder_time.year if hasattr(reminder_time, 'year') else datetime.now().year
+                    if hasattr(reminder_time, "year"):
+                        year = reminder_time.year
+                    else:
+                        year = get_current_time().year
                     month = reminder_time.month
                     n = TaskService._determine_weekday_occurrence(day_of_month, weekday_num, year, month)
                     if n == -1:
@@ -1107,9 +1171,10 @@ class TaskService:
     @staticmethod
     def get_upcoming_tasks(db: Session, days_ahead: int = 7) -> list[Task]:
         """Get tasks due in the next N days."""
-        cutoff_date = datetime.now() + timedelta(days=days_ahead)
+        cutoff_date = get_current_time() + timedelta(days=days_ahead)
         return (
             db.query(Task)
+            .options(selectinload(Task.assignees))
             .filter(Task.is_active == True)
             .filter(Task.next_due_date <= cutoff_date)
             .order_by(Task.next_due_date)
@@ -1120,19 +1185,17 @@ class TaskService:
     def get_today_tasks(db: Session) -> list[Task]:
         """Get tasks visible in 'today' view.
         
-        Видимость НЕ зависит от next_due_date.
-        - One-time tasks: visible if completed today (and due today), or active and due today/overdue
-        - Recurring/interval tasks: visible if completed today (regardless of next_due_date),
-          or active (regardless of next_due_date)
+        - One-time tasks: visible if completed today (и их дата = сегодня), либо активны и просрочены/на сегодня
+        - Recurring/interval tasks: видны, если подтверждены сегодня, либо активны и срок наступил (сегодня или в прошлом)
         """
         from backend.models.task import TaskType
         
-        now = datetime.now()
+        now = get_current_time()
         today = now.replace(hour=0, minute=0, second=0, microsecond=0)
         tomorrow = today + timedelta(days=1)
         
         # Get all tasks (we'll filter in memory)
-        all_tasks = db.query(Task).all()
+        all_tasks = db.query(Task).options(selectinload(Task.assignees)).all()
         
         result = []
         for task in all_tasks:
@@ -1165,9 +1228,10 @@ class TaskService:
                     if completed_today:
                         result.append(task)
                 else:
-                    # Uncompleted task - visible if active (regardless of next_due_date)
-                    # Все активные повторяющиеся/интервальные задачи видны в "Сегодня"
-                    if task.is_active:
+                    task_date = task.next_due_date.replace(hour=0, minute=0, second=0, microsecond=0)
+                    is_due_today_or_overdue = task_date < tomorrow
+                    # Uncompleted task - visible if active and already due (today or overdue)
+                    if task.is_active and is_due_today_or_overdue:
                         result.append(task)
         
         # Sort by due date
@@ -1175,13 +1239,24 @@ class TaskService:
         return result
 
     @staticmethod
+    def get_today_task_ids(db: Session) -> list[int]:
+        """Get identifiers for tasks visible in 'today' view."""
+        tasks = TaskService.get_today_tasks(db)
+        return [task.id for task in tasks]
+
+    @staticmethod
     def mark_task_shown(db: Session, task_id: int) -> Task | None:
         """Mark task as shown for current iteration."""
-        task = db.query(Task).filter(Task.id == task_id).first()
+        task = (
+            db.query(Task)
+            .options(selectinload(Task.assignees))
+            .filter(Task.id == task_id)
+            .first()
+        )
         if not task:
             return None
         
-        now = datetime.now()
+        now = get_current_time()
         
         # Check if this is a new iteration (last_shown_at is before current next_due_date)
         is_first_show = task.last_shown_at is None or task.last_shown_at < task.next_due_date

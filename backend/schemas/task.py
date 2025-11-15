@@ -1,11 +1,12 @@
 """Pydantic schemas for Task model."""
 
-from typing import Any
+from typing import Any, List
 from datetime import datetime
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from backend.models.task import RecurrenceType, TaskType
+from backend.schemas.user import UserSummary
 
 
 class TaskBase(BaseModel):
@@ -34,7 +35,7 @@ class TaskBase(BaseModel):
 class TaskCreate(TaskBase):
     """Schema for creating a new task."""
 
-    pass
+    assigned_user_ids: list[int] = Field(default_factory=list, description="IDs of users assigned to this task")
 
 
 class TaskUpdate(BaseModel):
@@ -52,6 +53,10 @@ class TaskUpdate(BaseModel):
     last_completed_at: datetime | None = None
     last_shown_at: datetime | None = None
     group_id: int | None = None
+    assigned_user_ids: list[int] | None = Field(
+        default=None,
+        description="Full list of user IDs assigned to task (omit to keep unchanged)",
+    )
 
     @field_validator("title")
     @classmethod
@@ -104,6 +109,8 @@ class TaskResponse(TaskBase):
     created_at: datetime
     updated_at: datetime
     readable_config: str | None = Field(None, description="Human-readable task configuration")
+    assigned_user_ids: list[int] = Field(default_factory=list, description="List of user IDs assigned to the task")
+    assignees: list[UserSummary] = Field(default_factory=list, description="Assigned user objects")
 
     class Config:
         """Pydantic config."""
@@ -145,6 +152,16 @@ class TaskResponse(TaskBase):
             "next_due_date": instance.next_due_date,
         }
         instance.readable_config = TaskService._format_task_settings(task_type_str, task_dict)
+
+        # Populate assigned_user_ids from assignees if available
+        if instance.assignees:
+            instance.assigned_user_ids = [user.id for user in instance.assignees if user.id is not None]
+        elif hasattr(obj, "assignees"):
+            assignees = getattr(obj, "assignees") or []
+            try:
+                instance.assigned_user_ids = [getattr(user, "id") for user in assignees if getattr(user, "id", None) is not None]
+            except Exception:
+                instance.assigned_user_ids = []
         
         return instance
 

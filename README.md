@@ -54,28 +54,34 @@ pip install -e .
 
 ### 3. Настройка конфигурации
 
-Создайте файл `.env` в корне проекта (можно скопировать из примера, если есть `.env.example`):
+Все параметры берутся из `config/settings.toml`. Файл уже содержит значения по умолчанию — отредактируйте его под свою среду:
 
-```bash
-# База данных
-DATABASE_URL=sqlite:///./homeplanner.db
-# Для PostgreSQL используйте: postgresql://user:password@localhost/homeplanner
+```toml
+[database]
+url = "sqlite:///./homeplanner.db"
 
-# Безопасность (измените в продакшене!)
-SECRET_KEY=your-secret-key-here
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
+[security]
+secret_key = "change-me-in-production"    # задайте собственный ключ
+algorithm = "HS256"
+access_token_expire_minutes = 30
 
-# Сервер
-HOST=0.0.0.0
-PORT=8000
-DEBUG=true
+[server]
+host = "0.0.0.0"
+port = 8000
+debug = true
 
-# CORS (указать разрешенные домены через запятую)
-CORS_ORIGINS=http://localhost:3000,http://localhost:8080,http://localhost:8081
+[cors]
+origins = [
+    "http://localhost:3000",
+    "http://localhost:8080",
+    "http://localhost:8081",
+]
+
+[app]
+timezone = "Europe/Moscow"
 ```
 
-**Важно**: В продакшене обязательно измените `SECRET_KEY` и установите `DEBUG=false`!
+**Важно**: В продакшене замените `secret_key`, используйте выделенную БД и установите `debug = false`.
 
 ### 4. Инициализация базы данных
 
@@ -114,6 +120,15 @@ uv run python -m backend.main
 ```bash
 python -m backend.main
 ```
+
+##### Полезно помнить
+
+````powershell
+.\.venv\Scripts\activate
+python -m backend.main
+````
+
+Активируйте виртуальное окружение перед запуском, иначе зависимости проекта могут не подхватиться.
 
 Сервер будет доступен по адресу `http://0.0.0.0:8000` (все сетевые интерфейсы)
 
@@ -159,10 +174,14 @@ python3 -m http.server 8080
 
 ### Настройка CORS
 
-Убедитесь, что в настройках CORS (`CORS_ORIGINS` в `.env`) указан адрес вашего веб-интерфейса:
+Убедитесь, что в `config/settings.toml` в секции `[cors]` указан адрес вашего веб-интерфейса, например:
 
-```bash
-CORS_ORIGINS=http://localhost:8080,http://192.168.1.2:8080
+```toml
+[cors]
+origins = [
+    "http://localhost:8080",
+    "http://192.168.1.2:8080",
+]
 ```
 
 Замените `192.168.1.2` на IP-адрес вашей машины в локальной сети.
@@ -175,8 +194,8 @@ CORS_ORIGINS=http://localhost:8080,http://192.168.1.2:8080
 
 ## Развертывание в продакшене
 
-1. Установите `DEBUG=false` в `.env`
-2. Измените `SECRET_KEY` на надежный случайный ключ
+1. Установите `debug = false` в `config/settings.toml`
+2. Измените `secret_key` на надежный случайный ключ
 3. Используйте PostgreSQL вместо SQLite для базы данных
 4. Настройте обратный прокси (nginx, Caddy и т.д.) для HTTPS
 5. Настройте автоматический запуск сервера через systemd, supervisor или другой процесс-менеджер
@@ -215,10 +234,11 @@ sudo systemctl start homeplanner
 
 По умолчанию используется SQLite (`homeplanner.db`). База данных создается автоматически при первом запуске.
 
-Для продакшена рекомендуется использовать PostgreSQL. Измените `DATABASE_URL` в `.env`:
+Для продакшена рекомендуется использовать PostgreSQL. Измените `url` в секции `[database]` файла `config/settings.toml`:
 
-```
-DATABASE_URL=postgresql://user:password@localhost/homeplanner
+```toml
+[database]
+url = "postgresql://user:password@localhost/homeplanner"
 ```
 
 ## Миграции базы данных
@@ -272,7 +292,7 @@ cd android
 #### Прямая ссылка
 
 Также можно скачать APK напрямую по ссылке:
-- `http://<ваш-ip>:8000/download/latest.apk`
+- `http://<ваш-ip>:8000/download/homeplanner_vX_X_X.apk` (актуальное имя можно узнать по `http://<ваш-ip>:8000/download/apk/meta`)
 - `http://<ваш-ip>:8000/download/apk`
 
 **Примечание**: APK должен быть собран перед скачиванием (см. раздел "Сборка APK")

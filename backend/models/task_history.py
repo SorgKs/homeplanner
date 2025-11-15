@@ -1,6 +1,5 @@
 """Task history model for tracking task iterations and user actions."""
 
-from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING
 
@@ -8,6 +7,7 @@ from sqlalchemy import Column, DateTime, Enum as SQLEnum, ForeignKey, Integer, S
 from sqlalchemy.orm import relationship
 
 from backend.database import Base
+from backend.services.time_manager import get_current_time
 
 if TYPE_CHECKING:
     from backend.models.task import Task
@@ -34,7 +34,7 @@ class TaskHistory(Base):
     id = Column(Integer, primary_key=True, index=True)
     task_id = Column(Integer, ForeignKey("tasks.id", ondelete="SET NULL"), nullable=True, index=True)
     action = Column(SQLEnum(TaskHistoryAction), nullable=False, index=True)
-    action_timestamp = Column(DateTime, default=datetime.now, nullable=False, index=True)
+    action_timestamp = Column(DateTime, default=get_current_time, nullable=False, index=True)
     
     # Дополнительные данные для контекста
     iteration_date = Column(DateTime, nullable=True, index=True)  # Дата итерации задачи (next_due_date на момент действия)

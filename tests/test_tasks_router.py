@@ -11,6 +11,7 @@ from sqlalchemy.orm import sessionmaker
 from backend.database import Base, get_db
 from backend.main import app
 from backend.models.task import RecurrenceType, TaskType
+from backend.models.user import UserRole
 
 if TYPE_CHECKING:
     from _pytest.fixtures import FixtureRequest
@@ -206,6 +207,68 @@ class TestTasksRouter:
         
         assert response.status_code == 404
 
+    def test_task_with_assignees(self, client: TestClient) -> None:
+        """Ensure tasks can be assigned to users."""
+        user_response = client.post(
+            "/api/v1/users/",
+            json={"name": "Assignee One", "email": "user1@example.com"},
+        )
+        assert user_response.status_code == 201
+        user_id = user_response.json()["id"]
+
+        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
+        task_data = {
+            "title": "Task with assignee",
+            "task_type": TaskType.ONE_TIME.value,
+            "next_due_date": today.isoformat(),
+            "assigned_user_ids": [user_id],
+        }
+
+        response = client.post("/api/v1/tasks/", json=task_data)
+        assert response.status_code == 201
+        created = response.json()
+        assert created["assigned_user_ids"] == [user_id]
+        assert len(created["assignees"]) == 1
+        assert created["assignees"][0]["name"] == "Assignee One"
+        assert created["assignees"][0]["role"] == UserRole.REGULAR.value
+        assert created["assignees"][0]["is_active"] is True
+
+        task_id = created["id"]
+        update_resp = client.put(f"/api/v1/tasks/{task_id}", json={"assigned_user_ids": []})
+        assert update_resp.status_code == 200
+        updated = update_resp.json()
+        assert updated["assigned_user_ids"] == []
+        assert updated["assignees"] == []
+
+    def test_user_role_and_status_crud(self, client: TestClient) -> None:
+        """Ensure user CRUD handles role and active status."""
+        create_payload = {
+            "name": "Admin User",
+            "email": "admin@example.com",
+            "role": UserRole.ADMIN.value,
+            "is_active": True,
+        }
+        create_resp = client.post("/api/v1/users/", json=create_payload)
+        assert create_resp.status_code == 201
+        created = create_resp.json()
+        assert created["role"] == UserRole.ADMIN.value
+        assert created["is_active"] is True
+        user_id = created["id"]
+
+        list_resp = client.get("/api/v1/users/")
+        assert list_resp.status_code == 200
+        data = list_resp.json()
+        assert any(u["id"] == user_id for u in data)
+
+        update_resp = client.put(
+            f"/api/v1/users/{user_id}",
+            json={"role": UserRole.GUEST.value, "is_active": False},
+        )
+        assert update_resp.status_code == 200
+        updated = update_resp.json()
+        assert updated["role"] == UserRole.GUEST.value
+        assert updated["is_active"] is False
+
     def test_complete_task(self, client: TestClient) -> None:
         """Test completing a task via API."""
         today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
@@ -255,4 +318,42 @@ class TestTasksRouter:
         assert response.status_code == 200
         data = response.json()
         assert len(data) >= 1  # At least tasks due in next 3 days
+
+    def test_get_today_task_ids(self, client: TestClient) -> None:
+        """Test retrieving IDs for tasks visible in 'today' view."""
+        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
+        yesterday = today - timedelta(days=1)
+        tomorrow = today + timedelta(days=1)
+
+        # Task due today should be included
+        task_today = {
+            "title": "Task Today",
+            "task_type": TaskType.ONE_TIME.value,
+            "next_due_date": today.isoformat(),
+            "is_active": True,
+        }
+        # Task overdue should be included
+        task_overdue = {
+            "title": "Task Overdue",
+            "task_type": TaskType.ONE_TIME.value,
+            "next_due_date": yesterday.isoformat(),
+            "is_active": True,
+        }
+        # Task due tomorrow should be excluded
+        task_future = {
+            "title": "Task Future",
+            "task_type": TaskType.ONE_TIME.value,
+            "next_due_date": tomorrow.isoformat(),
+            "is_active": True,
+        }
+
+        id_today = client.post("/api/v1/tasks/", json=task_today).json()["id"]
+        id_overdue = client.post("/api/v1/tasks/", json=task_overdue).json()["id"]
+        client.post("/api/v1/tasks/", json=task_future)
+
+        response = client.get("/api/v1/tasks/today/ids")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert set(data) == {id_today, id_overdue}
 

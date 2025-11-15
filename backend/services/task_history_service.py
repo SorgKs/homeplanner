@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy.orm import Session
 
 from backend.models.task_history import TaskHistory, TaskHistoryAction
+from backend.services.time_manager import get_current_time
 
 if TYPE_CHECKING:
     from backend.schemas.task_history import TaskHistoryCreate
@@ -55,7 +56,7 @@ class TaskHistoryService:
         history_data = {
             "task_id": task_id,
             "action": action,
-            "action_timestamp": datetime.now(),
+            "action_timestamp": get_current_time(),
             "iteration_date": iteration_date,
             "meta_data": metadata,
             "comment": comment,

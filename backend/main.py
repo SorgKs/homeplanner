@@ -9,8 +9,8 @@ from fastapi.staticfiles import StaticFiles
 
 from backend.config import get_settings
 from backend.database import engine, init_db
-from backend.models import Event, Group, Task, TaskHistory  # noqa: F401
-from backend.routers import events, groups, task_history, tasks
+from backend.models import Event, Group, Task, TaskHistory, User  # noqa: F401
+from backend.routers import events, groups, task_history, tasks, time_control, users
 from backend.routers import download
 from backend.routers import realtime
 
@@ -57,8 +57,10 @@ def create_app() -> FastAPI:
     app.include_router(events.router, prefix="/api/v1/events", tags=["events"])
     app.include_router(tasks.router, prefix="/api/v1/tasks", tags=["tasks"])
     app.include_router(groups.router, prefix="/api/v1/groups", tags=["groups"])
+    app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
     app.include_router(task_history.router, prefix="/api/v1", tags=["task_history"])
     app.include_router(download.router, prefix="/download", tags=["download"])
+    app.include_router(time_control.router, tags=["time"])
     app.include_router(realtime.router, tags=["realtime"])  # /ws
 
     # Serve frontend static files

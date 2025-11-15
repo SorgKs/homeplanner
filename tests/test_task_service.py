@@ -272,7 +272,10 @@ class TestTaskService:
         """Test calculating next due date for weekly recurrence."""
         today = datetime(2025, 1, 1, 9, 0, 0)
         next_date = TaskService._calculate_next_due_date(
-            today, RecurrenceType.WEEKLY, 1
+            today,
+            RecurrenceType.WEEKLY,
+            1,
+            reminder_time=today,
         )
         
         assert next_date == today + timedelta(weeks=1)
@@ -338,4 +341,24 @@ class TestTaskService:
         assert len(upcoming_tasks) == 2
         assert any(task.title == "Task Today" for task in upcoming_tasks)
         assert any(task.title == "Task Tomorrow" for task in upcoming_tasks)
+
+    def test_get_today_tasks_skips_future_recurring(self, db_session: "Session") -> None:
+        """Ensure recurring tasks scheduled in the future are not returned in 'today' view."""
+        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
+        future_due = today + timedelta(days=1)
+
+        future_recurring = TaskCreate(
+            title="Future recurring task",
+            task_type=TaskType.RECURRING,
+            recurrence_type=RecurrenceType.DAILY,
+            recurrence_interval=1,
+            next_due_date=future_due,
+            is_active=True,
+        )
+
+        TaskService.create_task(db_session, future_recurring)
+
+        today_tasks = TaskService.get_today_tasks(db_session)
+
+        assert today_tasks == []
 

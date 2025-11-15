@@ -100,6 +100,14 @@ def get_today_tasks(
     return [TaskResponse.model_validate(task) for task in tasks]
 
 
+@router.get("/today/ids", response_model=list[int])
+def get_today_task_ids(
+    db: Session = Depends(get_db),
+) -> list[int]:
+    """Get identifiers of tasks visible in 'today' view."""
+    return TaskService.get_today_task_ids(db)
+
+
 @router.get("/{task_id}", response_model=TaskResponse)
 def get_task(
     task_id: int,

@@ -1,71 +1,93 @@
-"""Configuration management using Pydantic settings."""
+"""Configuration management that reads exclusively from `config/settings.toml`."""
 
-import zoneinfo
-from datetime import datetime
+from __future__ import annotations
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
-
-
-def get_system_timezone() -> str:
-    """Get system timezone."""
-    try:
-        # Try to get from system
-        tz = datetime.now().astimezone().tzinfo
-        if isinstance(tz, zoneinfo.ZoneInfo):
-            return str(tz.key)
-    except Exception:
-        pass
-    # Fallback to Europe/Moscow
-    return "Europe/Moscow"
+from dataclasses import dataclass
+from pathlib import Path
+import tomllib
+from typing import Any
 
 
-def init_env_file() -> None:
-    """Initialize .env file with system timezone if it doesn't exist."""
-    import os
-    env_path = ".env"
-    if not os.path.exists(env_path):
-        tz = get_system_timezone()
-        with open(env_path, "w") as f:
-            f.write(f"TIMEZONE={tz}\n")
+CONFIG_PATH = Path(__file__).resolve().parent.parent / "config" / "settings.toml"
 
 
-class Settings(BaseSettings):
-    """Application settings."""
+class SettingsError(RuntimeError):
+    """Raised when configuration cannot be loaded."""
 
-    # Database
-    database_url: str = "sqlite:///./homeplanner.db"
 
-    # Security
-    secret_key: str = "change-me-in-production"
-    algorithm: str = "HS256"
-    access_token_expire_minutes: int = 30
+def _load_config_file(path: Path) -> dict[str, Any]:
+    """Load TOML configuration from disk."""
+    if not path.exists():
+        raise SettingsError(
+            f"Configuration file '{path}' is missing. "
+            "Copy and adjust 'config/settings.toml' before launching the backend."
+        )
+    with path.open("rb") as fp:
+        return tomllib.load(fp)
 
-    # Server
-    host: str = "0.0.0.0"
-    port: int = 8000
-    debug: bool = True
 
-    # CORS
-    cors_origins: str = (
-        "http://localhost:3000,http://localhost:8080,http://localhost:8081,"
-        "http://192.168.1.2:8080"
-    )
-    
-    # Timezone
-    timezone: str = get_system_timezone()
+def _require_section(raw: dict[str, Any], section: str) -> dict[str, Any]:
+    if section not in raw or not isinstance(raw[section], dict):
+        raise SettingsError(
+            f"Section '[{section}]' is missing in '{CONFIG_PATH}'. "
+            "All settings must be defined in the config file."
+        )
+    return raw[section]
 
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        case_sensitive=False,
-    )
+
+def _require_value(section: dict[str, Any], key: str, *, section_name: str) -> Any:
+    if key not in section:
+        raise SettingsError(
+            f"Missing key '{section_name}.{key}' in '{CONFIG_PATH}'. "
+            "Configuration values cannot be overridden via environment variables "
+            "or CLI flags."
+        )
+    return section[key]
+
+
+def _extract_settings(raw: dict[str, Any]) -> dict[str, Any]:
+    """Map nested TOML structure into flat settings attributes."""
+    database = _require_section(raw, "database")
+    security = _require_section(raw, "security")
+    server = _require_section(raw, "server")
+    cors = _require_section(raw, "cors")
+    app = _require_section(raw, "app")
+
+    return {
+        "database_url": _require_value(database, "url", section_name="database"),
+        "secret_key": _require_value(security, "secret_key", section_name="security"),
+        "algorithm": _require_value(security, "algorithm", section_name="security"),
+        "access_token_expire_minutes": _require_value(
+            security,
+            "access_token_expire_minutes",
+            section_name="security",
+        ),
+        "host": _require_value(server, "host", section_name="server"),
+        "port": _require_value(server, "port", section_name="server"),
+        "debug": _require_value(server, "debug", section_name="server"),
+        "cors_origins": _require_value(cors, "origins", section_name="cors"),
+        "timezone": _require_value(app, "timezone", section_name="app"),
+    }
+
+
+@dataclass(slots=True)
+class Settings:
+    """Application settings loaded from a config file."""
+
+    database_url: str
+    secret_key: str
+    algorithm: str
+    access_token_expire_minutes: int
+    host: str
+    port: int
+    debug: bool
+    cors_origins: list[str]
+    timezone: str
 
     @property
     def cors_origins_list(self) -> list[str]:
-        """Parse CORS origins from comma-separated string."""
-        if isinstance(self.cors_origins, str):
-            return [origin.strip() for origin in self.cors_origins.split(",")]
-        return list(self.cors_origins) if isinstance(self.cors_origins, list) else []
+        """Return the list of configured CORS origins."""
+        return self.cors_origins
 
 
 _settings: Settings | None = None
@@ -75,8 +97,8 @@ def get_settings() -> Settings:
     """Get application settings (singleton pattern)."""
     global _settings
     if _settings is None:
-        # Initialize .env file on first run
-        init_env_file()
-        _settings = Settings()
+        raw = _load_config_file(CONFIG_PATH)
+        extracted = _extract_settings(raw)
+        _settings = Settings(**extracted)
     return _settings
 

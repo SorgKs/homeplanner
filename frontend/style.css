@@ -1,3 +1,156 @@
+.input-label {
+    display: block;
+    font-size: 0.85rem;
+    margin-bottom: 4px;
+    color: var(--text-secondary);
+}
+
+select[multiple] {
+    min-height: 120px;
+}
+
+.form-hint {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.users-card {
+    margin-top: 16px;
+    padding: 16px;
+}
+
+.users-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+}
+
+.card-subtitle {
+    margin: 4px 0 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.user-form {
+    margin-top: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px;
+    background: var(--card-bg);
+}
+
+.user-form-grid {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.user-form-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.users-list {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.user-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px 12px;
+    background: var(--card-bg);
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.user-meta {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.user-name {
+    font-weight: 600;
+}
+
+.user-email {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.user-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.user-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background: var(--muted-bg);
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-right: 4px;
+}
+
+.user-chip-active {
+    background: rgba(46, 204, 113, 0.2);
+    color: #1c7c4d;
+}
+
+.user-chip-inactive {
+    background: rgba(231, 76, 60, 0.15);
+    color: #a3221b;
+}
+
+.users-view-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+@media (min-width: 900px) {
+    .users-view-layout {
+        flex-direction: row;
+        align-items: flex-start;
+    }
+}
+
+.users-form-card,
+.users-list-card {
+    flex: 1;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px;
+    background: var(--card-bg);
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+}
+
+.checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+}
 * {
     margin: 0;
     padding: 0;

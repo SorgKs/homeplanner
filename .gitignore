@@ -58,6 +58,7 @@ android/.gradle/
 android/build/
 android/.idea/
 android/local.properties
+android/.android-sdk/
 *.iml
 *.apk
 *.ap_

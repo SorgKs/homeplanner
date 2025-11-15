@@ -3,6 +3,8 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+import com.android.build.gradle.internal.api.ApkVariantOutputImpl
+
 import java.util.Properties
 
 // Read and increment build number
@@ -113,5 +115,15 @@ dependencies {
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+}
+
+@Suppress("UnstableApiUsage")
+android.applicationVariants.all {
+    val versionLabel = (versionName ?: "0.0.0").replace('.', '_')
+    outputs
+        .mapNotNull { it as? ApkVariantOutputImpl }
+        .forEach { output ->
+            output.outputFileName = "homeplanner_v$versionLabel.apk"
+        }
 }
 
