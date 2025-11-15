@@ -1,182 +1,156 @@
-"""Tests for tasks API."""
+"""Тесты REST API задач."""
 
+from __future__ import annotations
+
+from collections.abc import Generator
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session
 
 from backend.database import Base, get_db
 from backend.main import app
 from backend.models.task import RecurrenceType
-
-if TYPE_CHECKING:
-    from _pytest.capture import CaptureFixture
-    from _pytest.fixtures import FixtureRequest
-    from _pytest.logging import LogCaptureFixture
-    from _pytest.monkeypatch import MonkeyPatch
-    from pytest_mock.plugin import MockerFixture
-
-
-# Test database
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test_tasks.db"
-
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+from tests.utils import (
+    api_path,
+    create_sqlite_engine,
+    isoformat,
+    session_scope,
+    test_client_with_session,
 )
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
+engine, SessionLocal = create_sqlite_engine("test_tasks.db")
 
 
 @pytest.fixture(scope="function")
-def db_session():
-    """Create test database session."""
-    Base.metadata.create_all(bind=engine)
-    db = TestingSessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-        Base.metadata.drop_all(bind=engine)
+def db_session() -> Generator[Session, None, None]:
+    """Создать сессию тестовой базы данных SQLite."""
+
+    with session_scope(Base, engine, SessionLocal) as session:
+        yield session
 
 
 @pytest.fixture(scope="function")
-def client(db_session):
-    """Create test client with test database."""
-    def override_get_db():
-        try:
-            yield db_session
-        finally:
-            pass
+def client(db_session: Session) -> Generator[TestClient, None, None]:
+    """Создать тестовый клиент FastAPI с изолированной БД."""
 
-    app.dependency_overrides[get_db] = override_get_db
-    with TestClient(app) as test_client:
+    with test_client_with_session(app, get_db, db_session) as test_client:
         yield test_client
-    app.dependency_overrides.clear()
 
 
-def test_create_task(client):
-    """Test creating a new task."""
-    task_data = {
-        "title": "Test Task",
-        "description": "Test Description",
-        "recurrence_type": RecurrenceType.DAILY.value,
-        "recurrence_interval": 1,
-        "next_due_date": (datetime.now() + timedelta(days=1)).isoformat(),
-        "reminder_time": (datetime.now() + timedelta(hours=12)).isoformat(),
-    }
-    response = client.post("/api/v1/tasks/", json=task_data)
+def _create_task(client: TestClient, payload: dict) -> dict:
+    """Создать задачу через REST и вернуть ответ."""
+
+    response = client.post(api_path("/tasks/"), json=payload)
     assert response.status_code == 201
-    data = response.json()
-    assert data["title"] == task_data["title"]
-    assert data["description"] == task_data["description"]
-    assert data["recurrence_type"] == task_data["recurrence_type"]
-    assert "id" in data
+    return response.json()
 
 
-def test_get_tasks(client):
-    """Test getting all tasks."""
-    # Create a test task
-    task_data = {
-        "title": "Test Task",
-        "recurrence_type": RecurrenceType.DAILY.value,
-        "recurrence_interval": 1,
-        "next_due_date": (datetime.now() + timedelta(days=1)).isoformat(),
+def test_create_one_time_task_defaults(client: TestClient) -> None:
+    """Создание разовой задачи возвращает корректные флаги."""
+
+    reminder_time = datetime.now() + timedelta(hours=2)
+    payload = {
+        "title": "Одноразовая задача",
+        "task_type": "one_time",
+        "reminder_time": isoformat(reminder_time),
     }
-    client.post("/api/v1/tasks/", json=task_data)
+    data = _create_task(client, payload)
 
-    # Get all tasks
-    response = client.get("/api/v1/tasks/")
-    assert response.status_code == 200
-    data = response.json()
-    assert isinstance(data, list)
-    assert len(data) >= 1
+    assert data["title"] == payload["title"]
+    assert data["reminder_time"] == payload["reminder_time"]
+    assert data["completed"] is False
+    assert data["active"] is True
 
 
-def test_get_task_by_id(client):
-    """Test getting a task by ID."""
-    # Create a test task
-    task_data = {
-        "title": "Test Task",
-        "recurrence_type": RecurrenceType.DAILY.value,
-        "recurrence_interval": 1,
-        "next_due_date": (datetime.now() + timedelta(days=1)).isoformat(),
-    }
-    create_response = client.post("/api/v1/tasks/", json=task_data)
-    task_id = create_response.json()["id"]
+def test_update_task_sets_active_flag(client: TestClient) -> None:
+    """Обновление задачи позволяет менять флаг активности."""
 
-    # Get task by ID
-    response = client.get(f"/api/v1/tasks/{task_id}")
-    assert response.status_code == 200
-    data = response.json()
-    assert data["id"] == task_id
-    assert data["title"] == task_data["title"]
-
-
-def test_update_task(client):
-    """Test updating a task."""
-    # Create a test task
-    task_data = {
-        "title": "Test Task",
-        "recurrence_type": RecurrenceType.DAILY.value,
-        "recurrence_interval": 1,
-        "next_due_date": (datetime.now() + timedelta(days=1)).isoformat(),
-    }
-    create_response = client.post("/api/v1/tasks/", json=task_data)
-    task_id = create_response.json()["id"]
-
-    # Update task
-    update_data = {"title": "Updated Task", "is_active": False}
-    response = client.put(f"/api/v1/tasks/{task_id}", json=update_data)
-    assert response.status_code == 200
-    data = response.json()
-    assert data["title"] == "Updated Task"
-    assert data["is_active"] is False
-
-
-def test_delete_task(client):
-    """Test deleting a task."""
-    # Create a test task
-    task_data = {
-        "title": "Test Task",
-        "recurrence_type": RecurrenceType.DAILY.value,
-        "recurrence_interval": 1,
-        "next_due_date": (datetime.now() + timedelta(days=1)).isoformat(),
-    }
-    create_response = client.post("/api/v1/tasks/", json=task_data)
-    task_id = create_response.json()["id"]
-
-    # Delete task
-    response = client.delete(f"/api/v1/tasks/{task_id}")
-    assert response.status_code == 204
-
-    # Verify task is deleted
-    get_response = client.get(f"/api/v1/tasks/{task_id}")
-    assert get_response.status_code == 404
-
-
-def test_complete_task(client):
-    """Test completing a task."""
-    # Create a test task due today
-    today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
-    task_data = {
-        "title": "Test Task",
+    reminder_time = datetime.now() + timedelta(days=1)
+    payload = {
+        "title": "Ежедневная задача",
         "task_type": "recurring",
         "recurrence_type": RecurrenceType.DAILY.value,
         "recurrence_interval": 1,
-        "next_due_date": today.isoformat(),
+        "reminder_time": isoformat(reminder_time),
     }
-    create_response = client.post("/api/v1/tasks/", json=task_data)
-    task_id = create_response.json()["id"]
-    original_due_date = create_response.json()["next_due_date"]
+    created = _create_task(client, payload)
 
-    # Complete task
-    response = client.post(f"/api/v1/tasks/{task_id}/complete")
+    update_body = {
+        "revision": created["revision"],
+        "active": False,
+    }
+    response = client.put(api_path(f"/tasks/{created['id']}"), json=update_body)
     assert response.status_code == 200
-    data = response.json()
-    assert data["last_completed_at"] is not None
-    # Next due date should NOT be updated immediately if due today
-    # Date will be updated only after midnight (next day)
-    assert data["next_due_date"] == original_due_date
+    updated = response.json()
+    assert updated["active"] is False
+    assert updated["revision"] == created["revision"] + 1
+
+
+def test_complete_task_marks_completed(client: TestClient) -> None:
+    """Подтверждение выполнения помечает задачу completed."""
+
+    reminder_time = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
+    payload = {
+        "title": "Расписание на сегодня",
+        "task_type": "recurring",
+        "recurrence_type": RecurrenceType.DAILY.value,
+        "recurrence_interval": 1,
+        "reminder_time": isoformat(reminder_time),
+    }
+    created = _create_task(client, payload)
+
+    response = client.post(api_path(f"/tasks/{created['id']}/complete"))
+    assert response.status_code == 200
+    completed = response.json()
+    assert completed["completed"] is True
+    # Напоминание не меняется, если задача была на сегодня
+    assert completed["reminder_time"] == created["reminder_time"]
+
+
+def test_complete_task_future_shifts_reminder(client: TestClient) -> None:
+    """Для будущей задачи reminder_time сдвигается вперёд."""
+
+    reminder_time = (datetime.now() + timedelta(days=1)).replace(hour=8, minute=30, second=0, microsecond=0)
+    payload = {
+        "title": "Задача на завтра",
+        "task_type": "recurring",
+        "recurrence_type": RecurrenceType.DAILY.value,
+        "recurrence_interval": 1,
+        "reminder_time": isoformat(reminder_time),
+    }
+    created = _create_task(client, payload)
+
+    response = client.post(api_path(f"/tasks/{created['id']}/complete"))
+    assert response.status_code == 200
+    completed = response.json()
+    assert completed["completed"] is True
+    assert completed["reminder_time"] != created["reminder_time"]
+    assert datetime.fromisoformat(completed["reminder_time"]) > reminder_time
+
+
+def test_uncomplete_task_restores_state(client: TestClient) -> None:
+    """Отмена выполнения возвращает флаги по умолчанию."""
+
+    reminder_time = datetime.now().replace(hour=10, minute=0, second=0, microsecond=0)
+    payload = {
+        "title": "Разовая задача",
+        "task_type": "one_time",
+        "reminder_time": isoformat(reminder_time),
+    }
+    created = _create_task(client, payload)
+
+    complete_response = client.post(api_path(f"/tasks/{created['id']}/complete"))
+    assert complete_response.status_code == 200
+    assert complete_response.json()["completed"] is True
+    assert complete_response.json()["active"] is False
+
+    uncomplete_response = client.post(api_path(f"/tasks/{created['id']}/uncomplete"))
+    assert uncomplete_response.status_code == 200
+    data = uncomplete_response.json()
+    assert data["completed"] is False
+    assert data["active"] is True
+    assert data["reminder_time"] == created["reminder_time"]
 

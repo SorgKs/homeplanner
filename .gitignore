@@ -46,6 +46,15 @@ ENV/
 # Logs
 *.log
 logs/
+backend/logs/*
+!backend/logs/.gitkeep
+frontend/logs/*
+!frontend/logs/.gitkeep
+android/logs/*
+!android/logs/.gitkeep
+runtime/
+backend/db/*.db
+!backend/db/.gitkeep
 
 # Testing
 .pytest_cache/

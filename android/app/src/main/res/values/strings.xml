@@ -17,6 +17,6 @@
     <string name="delete">Удалить</string>
     <string name="complete">Выполнено</string>
     <string name="edit">Редактировать</string>
-    <string name="api_base_url">http://10.0.2.2:8000/api/v1</string>
+    <string name="api_base_url">http://10.0.2.2:8000/api/v0.2</string>
 </resources>
 

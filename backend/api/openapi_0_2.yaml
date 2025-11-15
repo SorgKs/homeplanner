@@ -1,0 +1,529 @@
+openapi: 3.1.0
+info:
+  title: HomePlanner API v0.2
+  description: >
+    Спецификация HTTP API для релиза HomePlanner v0.2.
+    Все временные поля передаются в локальном формате проекта без таймзоны (`YYYY-MM-DD HH:MM:SS`).
+  version: 0.2.0
+servers:
+  - url: /api/v0.2
+    description: Базовый префикс API v0.2
+tags:
+  - name: tasks
+    description: Управление задачами и повторяемостью
+  - name: calendars
+    description: Управление участниками календарей
+  - name: analytics
+    description: Сбор телеметрии
+paths:
+  /tasks:
+    post:
+      tags: [tasks]
+      summary: Создание задачи
+      description: Создаёт новую задачу с опциональными повторениями и напоминаниями. При создании `revision` должен быть равен `0`.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskCreateRequest'
+      responses:
+        '201':
+          description: Задача успешно создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизовано
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /tasks/{taskId}:
+    put:
+      tags: [tasks]
+      summary: Обновление задачи
+      description: >
+        Обновляет задачу. Клиент обязан передать актуальную `revision`. В случае конфликта сервер возвращает 409 и данные последней версии.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Идентификатор задачи
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskUpdateRequest'
+      responses:
+        '200':
+          description: Задача успешно обновлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизовано
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Конфликт версии (revision)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictErrorResponse'
+  /tasks/stream:
+    get:
+      tags: [tasks]
+      summary: WebSocket-стрим задач
+      description: >
+        WebSocket-канал для получения событий задач и напоминаний в реальном времени.
+        Соединение устанавливается по протоколу `wss`, токен передаётся в query `token`.
+      security:
+        - bearerAuth: []
+      responses:
+        '101':
+          description: Успешное переключение протокола на WebSocket
+      x-websocket: true
+  /calendars/{calendarId}/members:
+    post:
+      tags: [calendars]
+      summary: Добавление участника календаря
+      description: Добавляет участника в календарь и задаёт его роль.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: calendarId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Идентификатор календаря
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CalendarMemberRequest'
+      responses:
+        '200':
+          description: Участник добавлен или обновлён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalendarMemberResponse'
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизовано
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /analytics/batch:
+    post:
+      tags: [analytics]
+      summary: Отправка пачки событий аналитики
+      description: Принимает до 20 событий телеметрии и сохраняет их для дальнейшей обработки.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalyticsBatchRequest'
+      responses:
+        '202':
+          description: Пачка принята в обработку
+        '400':
+          description: Некорректная структура событий
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизовано
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    TaskBase:
+      type: object
+      required:
+        - title
+        - task_type
+        - reminder_time
+      properties:
+        title:
+          type: string
+          description: Заголовок задачи
+        description:
+          type: string
+          nullable: true
+          description: Произвольное описание задачи
+        task_type:
+          type: string
+          description: Тип задачи
+          enum: [one_time, recurring, interval]
+        recurrence_type:
+          type: string
+          nullable: true
+          description: Тип повторяемости для расписаний
+          enum: [daily, weekly, monthly, yearly, weekdays, weekends]
+        recurrence_interval:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: Интервал повторяемости (каждые N периодов)
+        interval_days:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: Длительность окна для интервальных задач (в днях)
+        reminder_time:
+          type: string
+          format: date-time
+          description: Дата и время напоминания в локальном формате проекта
+          example: '2025-03-15T14:30:00'
+        completed:
+          type: boolean
+          description: Выполнена ли задача в текущие сутки
+          default: false
+        active:
+          type: boolean
+          description: Активна ли задача (участвует в планировании и выдаче)
+          default: true
+        group_id:
+          type: integer
+          nullable: true
+          description: Связанная группа задач (если есть)
+        recurrence:
+          $ref: '#/components/schemas/TaskRecurrencePayload'
+        notifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskNotificationPayload'
+    TaskCreateRequest:
+      allOf:
+        - $ref: '#/components/schemas/TaskBase'
+      required:
+        - revision
+      properties:
+        revision:
+          type: integer
+          minimum: 0
+          description: Ревизия сущности (при создании всегда 0)
+          example: 0
+    TaskUpdateRequest:
+      type: object
+      required:
+        - revision
+      properties:
+        revision:
+          type: integer
+          minimum: 0
+          description: Текущая ревизия клиента. Несовпадение приводит к 409.
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        task_type:
+          type: string
+          enum: [one_time, recurring, interval]
+        recurrence_type:
+          type: string
+          nullable: true
+          enum: [daily, weekly, monthly, yearly, weekdays, weekends]
+        recurrence_interval:
+          type: integer
+          minimum: 1
+          nullable: true
+        interval_days:
+          type: integer
+          minimum: 1
+          nullable: true
+        reminder_time:
+          type: string
+          format: date-time
+        completed:
+          type: boolean
+        active:
+          type: boolean
+        group_id:
+          type: integer
+          nullable: true
+        recurrence:
+          $ref: '#/components/schemas/TaskRecurrencePayload'
+        notifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskNotificationPayload'
+        soft_lock_owner:
+          type: string
+          nullable: true
+        soft_lock_expires_at:
+          type: string
+          format: date-time
+          nullable: true
+    TaskResponse:
+      type: object
+      required:
+        - id
+        - revision
+        - title
+        - task_type
+        - reminder_time
+        - completed
+        - active
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: integer
+        revision:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        task_type:
+          type: string
+          enum: [one_time, recurring, interval]
+        recurrence_type:
+          type: string
+          nullable: true
+          enum: [daily, weekly, monthly, yearly, weekdays, weekends]
+        recurrence_interval:
+          type: integer
+          nullable: true
+        interval_days:
+          type: integer
+          nullable: true
+        reminder_time:
+          type: string
+          format: date-time
+        completed:
+          type: boolean
+        active:
+          type: boolean
+        group_id:
+          type: integer
+          nullable: true
+        last_shown_at:
+          type: string
+          format: date-time
+          nullable: true
+        readable_config:
+          type: string
+          nullable: true
+        recurrence:
+          $ref: '#/components/schemas/TaskRecurrenceResponse'
+        notifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskNotificationResponse'
+        soft_lock_owner:
+          type: string
+          nullable: true
+        soft_lock_expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    TaskRecurrencePayload:
+      type: object
+      properties:
+        rrule:
+          type: string
+          description: Правило повторяемости в формате RRULE
+          example: 'FREQ=WEEKLY;BYDAY=MO,WE,FR'
+        end_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Дата завершения повторов (локальный формат)
+    TaskRecurrenceResponse:
+      allOf:
+        - $ref: '#/components/schemas/TaskRecurrencePayload'
+      type: object
+      required:
+        - id
+        - rrule
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    TaskNotificationPayload:
+      type: object
+      properties:
+        notification_type:
+          type: string
+          description: Тип уведомления (например, reminder)
+          example: reminder
+        channel:
+          type: string
+          description: Канал доставки (push, local и т.д.)
+          example: local
+        offset_minutes:
+          type: integer
+          description: Смещение в минутах относительно времени напоминания
+          example: 15
+    TaskNotificationResponse:
+      allOf:
+        - $ref: '#/components/schemas/TaskNotificationPayload'
+      type: object
+      required:
+        - id
+        - notification_type
+        - channel
+        - offset_minutes
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CalendarMemberRequest:
+      type: object
+      required:
+        - user_id
+        - role
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          description: Участник, которого нужно добавить
+        role:
+          type: string
+          description: Роль в календаре (`owner`, `editor`, `viewer`)
+    CalendarMemberResponse:
+      type: object
+      required:
+        - calendar_id
+        - user_id
+        - role
+      properties:
+        calendar_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        role:
+          type: string
+    AnalyticsBatchRequest:
+      type: object
+      required:
+        - events
+      properties:
+        events:
+          type: array
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/AnalyticsEvent'
+    AnalyticsEvent:
+      type: object
+      required:
+        - event_name
+        - category
+        - timestamp_local
+      properties:
+        event_name:
+          type: string
+        category:
+          type: string
+          description: Категория события (`tasks`, `sync`, `notifications`, `app_lifecycle`)
+        payload:
+          type: object
+          additionalProperties: true
+          description: Дополнительные поля события
+        timestamp_local:
+          type: string
+          description: Временная метка в локальном формате проекта
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+    ConflictErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+        - server_revision
+        - server_payload
+      properties:
+        code:
+          type: string
+          example: 'conflict_revision'
+        message:
+          type: string
+          example: 'Конфликт ревизий. Обновите данные перед сохранением.'
+        server_revision:
+          type: integer
+          description: Актуальная ревизия на сервере
+        server_payload:
+          $ref: '#/components/schemas/TaskResponse'
+

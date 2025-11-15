@@ -1,58 +1,46 @@
 """Tests for events API."""
 
+from collections.abc import Generator
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session
 
 from backend.database import Base, get_db
 from backend.main import app
+from tests.utils import (
+    api_path,
+    create_sqlite_engine,
+    isoformat,
+    session_scope,
+    test_client_with_session,
+)
 
 if TYPE_CHECKING:
     from _pytest.capture import CaptureFixture
     from _pytest.fixtures import FixtureRequest
     from _pytest.logging import LogCaptureFixture
     from _pytest.monkeypatch import MonkeyPatch
-    from pytest_mock.plugin import MockerFixture
 
 
 # Test database
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
-
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+engine, SessionLocal = create_sqlite_engine("test_events.db")
 
 
 @pytest.fixture(scope="function")
-def db_session():
+def db_session() -> Generator[Session, None, None]:
     """Create test database session."""
-    Base.metadata.create_all(bind=engine)
-    db = TestingSessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-        Base.metadata.drop_all(bind=engine)
+    with session_scope(Base, engine, SessionLocal) as session:
+        yield session
 
 
 @pytest.fixture(scope="function")
-def client(db_session):
+def client(db_session: Session) -> Generator[TestClient, None, None]:
     """Create test client with test database."""
-    def override_get_db():
-        try:
-            yield db_session
-        finally:
-            pass
-
-    app.dependency_overrides[get_db] = override_get_db
-    with TestClient(app) as test_client:
+    with test_client_with_session(app, get_db, db_session) as test_client:
         yield test_client
-    app.dependency_overrides.clear()
 
 
 def test_create_event(client):
@@ -60,10 +48,10 @@ def test_create_event(client):
     event_data = {
         "title": "Test Event",
         "description": "Test Description",
-        "event_date": (datetime.now() + timedelta(days=1)).isoformat(),
-        "reminder_time": (datetime.now() + timedelta(hours=12)).isoformat(),
+        "event_date": isoformat(datetime.now() + timedelta(days=1)),
+        "reminder_time": isoformat(datetime.now() + timedelta(hours=12)),
     }
-    response = client.post("/api/v1/events/", json=event_data)
+    response = client.post(api_path("/events/"), json=event_data)
     assert response.status_code == 201
     data = response.json()
     assert data["title"] == event_data["title"]
@@ -76,12 +64,12 @@ def test_get_events(client):
     # Create a test event
     event_data = {
         "title": "Test Event",
-        "event_date": (datetime.now() + timedelta(days=1)).isoformat(),
+        "event_date": isoformat(datetime.now() + timedelta(days=1)),
     }
-    client.post("/api/v1/events/", json=event_data)
+    client.post(api_path("/events/"), json=event_data)
 
     # Get all events
-    response = client.get("/api/v1/events/")
+    response = client.get(api_path("/events/"))
     assert response.status_code == 200
     data = response.json()
     assert isinstance(data, list)
@@ -93,13 +81,13 @@ def test_get_event_by_id(client):
     # Create a test event
     event_data = {
         "title": "Test Event",
-        "event_date": (datetime.now() + timedelta(days=1)).isoformat(),
+        "event_date": isoformat(datetime.now() + timedelta(days=1)),
     }
-    create_response = client.post("/api/v1/events/", json=event_data)
+    create_response = client.post(api_path("/events/"), json=event_data)
     event_id = create_response.json()["id"]
 
     # Get event by ID
-    response = client.get(f"/api/v1/events/{event_id}")
+    response = client.get(api_path(f"/events/{event_id}"))
     assert response.status_code == 200
     data = response.json()
     assert data["id"] == event_id
@@ -111,14 +99,14 @@ def test_update_event(client):
     # Create a test event
     event_data = {
         "title": "Test Event",
-        "event_date": (datetime.now() + timedelta(days=1)).isoformat(),
+        "event_date": isoformat(datetime.now() + timedelta(days=1)),
     }
-    create_response = client.post("/api/v1/events/", json=event_data)
+    create_response = client.post(api_path("/events/"), json=event_data)
     event_id = create_response.json()["id"]
 
     # Update event
     update_data = {"title": "Updated Event"}
-    response = client.put(f"/api/v1/events/{event_id}", json=update_data)
+    response = client.put(api_path(f"/events/{event_id}"), json=update_data)
     assert response.status_code == 200
     data = response.json()
     assert data["title"] == "Updated Event"
@@ -129,17 +117,17 @@ def test_delete_event(client):
     # Create a test event
     event_data = {
         "title": "Test Event",
-        "event_date": (datetime.now() + timedelta(days=1)).isoformat(),
+        "event_date": isoformat(datetime.now() + timedelta(days=1)),
     }
-    create_response = client.post("/api/v1/events/", json=event_data)
+    create_response = client.post(api_path("/events/"), json=event_data)
     event_id = create_response.json()["id"]
 
     # Delete event
-    response = client.delete(f"/api/v1/events/{event_id}")
+    response = client.delete(api_path(f"/events/{event_id}"))
     assert response.status_code == 204
 
     # Verify event is deleted
-    get_response = client.get(f"/api/v1/events/{event_id}")
+    get_response = client.get(api_path(f"/events/{event_id}"))
     assert get_response.status_code == 404
 
 
@@ -148,13 +136,13 @@ def test_complete_event(client):
     # Create a test event
     event_data = {
         "title": "Test Event",
-        "event_date": (datetime.now() + timedelta(days=1)).isoformat(),
+        "event_date": isoformat(datetime.now() + timedelta(days=1)),
     }
-    create_response = client.post("/api/v1/events/", json=event_data)
+    create_response = client.post(api_path("/events/"), json=event_data)
     event_id = create_response.json()["id"]
 
     # Complete event
-    response = client.post(f"/api/v1/events/{event_id}/complete")
+    response = client.post(api_path(f"/events/{event_id}/complete"))
     assert response.status_code == 200
     data = response.json()
     assert data["is_completed"] is True

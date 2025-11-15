@@ -158,6 +158,21 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+private fun resolveWebSocketUrl(): String {
+    val rawBase = BuildConfig.API_BASE_URL.trimEnd('/')
+    val wsBase = when {
+        rawBase.startsWith("https://", ignoreCase = true) -> "wss://" + rawBase.substring(8)
+        rawBase.startsWith("http://", ignoreCase = true) -> "ws://" + rawBase.substring(7)
+        else -> {
+            Log.w("MainActivity", "resolveWebSocketUrl: unexpected scheme in '$rawBase', using fallback")
+            return "ws://192.168.1.2:8000/api/v0.2/tasks/stream"
+        }
+    }
+    val resolved = "$wsBase/tasks/stream"
+    Log.d("MainActivity", "resolveWebSocketUrl resolved=$resolved")
+    return resolved
+}
+
 @Composable
 @OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class)
 fun TasksScreen() {
@@ -204,8 +219,7 @@ fun TasksScreen() {
     var editRecurrenceType by remember { mutableStateOf<String?>(null) }
     var editRecurrenceInterval by remember { mutableStateOf<String>("") }
     var editIntervalDays by remember { mutableStateOf<String>("") }
-    var editNextDueDate by remember { mutableStateOf("") }
-    var editReminderTime by remember { mutableStateOf<String?>(null) }
+    var editReminderTime by remember { mutableStateOf("") }
     var editGroupId by remember { mutableStateOf<Int?>(null) }
     var editTaskTypeExpanded by remember { mutableStateOf(false) }
     var editRecurrenceTypeExpanded by remember { mutableStateOf(false) }
@@ -213,7 +227,7 @@ fun TasksScreen() {
 
     // Validation state
     var titleError by remember { mutableStateOf<String?>(null) }
-    var nextDateError by remember { mutableStateOf<String?>(null) }
+    var reminderTimeError by remember { mutableStateOf<String?>(null) }
     var recurrenceError by remember { mutableStateOf<String?>(null) }
 
     // Date/Time pickers (use platform dialogs for reliability)
@@ -292,13 +306,10 @@ fun TasksScreen() {
 
     // Helper to parse Task from JSON
     fun parseTaskFromJson(json: JSONObject): Task {
-        // Normalize empty last_completed_at to null
-        val lastCompletedAtValue = if (json.isNull("last_completed_at")) {
-            null
-        } else {
-            val v = json.optString("last_completed_at", null)
-            if (v.isNullOrEmpty()) null else v
-        }
+        val reminderValue = json.optString("reminder_time", null)?.takeIf { it.isNotBlank() }
+            ?: throw IllegalStateException("Отсутствует reminder_time в ответе сервера: $json")
+        val activeValue = if (json.isNull("active")) true else json.getBoolean("active")
+        val completedValue = if (json.isNull("completed")) false else json.getBoolean("completed")
         return Task(
             id = json.getInt("id"),
             title = json.getString("title"),
@@ -307,11 +318,10 @@ fun TasksScreen() {
             recurrenceType = json.optString("recurrence_type", null),
             recurrenceInterval = if (json.isNull("recurrence_interval")) null else json.getInt("recurrence_interval"),
             intervalDays = if (json.isNull("interval_days")) null else json.getInt("interval_days"),
-            nextDueDate = json.getString("next_due_date"),
-            reminderTime = json.optString("reminder_time", null),
+            reminderTime = reminderValue,
             groupId = if (json.isNull("group_id")) null else json.getInt("group_id"),
-            isCompleted = lastCompletedAtValue != null,
-            lastCompletedAt = lastCompletedAtValue
+            active = activeValue,
+            completed = completedValue,
         )
     }
 
@@ -403,6 +413,8 @@ fun TasksScreen() {
         }
     }
 
+    val webSocketUrl = remember { resolveWebSocketUrl() }
+
     // WebSocket auto-refresh with reconnection
     LaunchedEffect(Unit) {
         val client = OkHttpClient()
@@ -413,7 +425,7 @@ fun TasksScreen() {
             try {
                 wsConnecting = true
                 val request = Request.Builder()
-                    .url("ws://192.168.1.2:8000/ws")
+                    .url(webSocketUrl)
                     .build()
                 val listener = object : WebSocketListener() {
                     override fun onMessage(webSocket: WebSocket, text: String) {
@@ -526,6 +538,15 @@ fun TasksScreen() {
                     editingTask = null
                     editTitle = ""
                     editDescription = ""
+                    editTaskType = "one_time"
+                    editRecurrenceType = null
+                    editRecurrenceInterval = ""
+                    editIntervalDays = ""
+                    editReminderTime = formatIso(LocalDateTime.now())
+                    editGroupId = null
+                    titleError = null
+                    reminderTimeError = null
+                    recurrenceError = null
                     showEditDialog = true
                 }) {
                     Text("+")
@@ -580,167 +601,48 @@ fun TasksScreen() {
                 }
             }
             if (error != null) {
-                Text(text = "Error: $error", color = MaterialTheme.colorScheme.error)
-            } else {
-                // Tasks are already filtered by backend for today view
-                val visibleTasks = when (selectedTab) {
-                    ViewTab.TODAY -> tasks  // Already filtered by backend /today endpoint
-                    ViewTab.ALL -> tasks
-                    ViewTab.SETTINGS -> emptyList()
-                    ViewTab.WEBSOCKET -> emptyList()
+                Text(text = "Ошибка: $error", color = MaterialTheme.colorScheme.error)
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            val visibleTasks = when (selectedTab) {
+                ViewTab.TODAY -> tasks
+                ViewTab.ALL -> tasks
+                ViewTab.SETTINGS -> emptyList()
+                ViewTab.WEBSOCKET -> emptyList()
+            }
+
+            when (selectedTab) {
+                ViewTab.SETTINGS -> {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(text = "Настройки", style = MaterialTheme.typography.titleMedium)
+                        Text(text = "Версия: ${BuildConfig.VERSION_NAME}")
+                    }
                 }
 
-                if (selectedTab == ViewTab.SETTINGS) {
-                    // Заполнитель, чтобы контент растягивался и нижняя панель оставалась снизу
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(text = "Settings", style = MaterialTheme.typography.titleMedium)
-                        Text(text = "Version: ${BuildConfig.VERSION_NAME}")
-                    }
-                } else if (selectedTab == ViewTab.WEBSOCKET) {
+                ViewTab.WEBSOCKET -> {
                     LazyColumn(modifier = Modifier.weight(1f)) {
                         items(wsLog) { line ->
                             Text(text = line)
                         }
                     }
-                } else if (visibleTasks.isEmpty()) {
-                    // Пустое состояние + заполнение пространства
-                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(text = "No tasks")
-                    }
-                } else {
-                    // Для вкладки "Все задачи": сначала активные, затем неактивные
-                    val activeTasks = visibleTasks.filter { it.isCompleted == false || it.lastCompletedAt == null }.filter { true }
-                    val inactiveTasks = visibleTasks.filter { it.isCompleted == true && false } // placeholder; будет переопределено ниже
-                    val activeList = visibleTasks.filter { true }.filter { task ->
-                        // Активность определяется сервером (active флаг может быть добавлен позже в модель)
-                        // Пока считаем активной, если lastCompletedAt == null (для визуального отделения)
-                        task.lastCompletedAt == null
-                    }
-                    val inactiveList = visibleTasks.filter { task -> task.lastCompletedAt != null }
+                }
 
-                    LazyColumn(modifier = Modifier.weight(1f)) {
-                        // Активные
-                        items(activeList, key = { it.id }) { task ->
-                            val dismissState = rememberDismissState(
-                                confirmStateChange = { newValue ->
-                                    when (newValue) {
-                                        DismissValue.DismissedToStart -> {
-                                            pendingDeleteTaskId = task.id
-                                            showDeleteConfirm = true
-                                            false
-                                        }
-                                        DismissValue.DismissedToEnd -> {
-                                            editingTask = task
-                                            editTitle = task.title
-                                            editDescription = task.description ?: ""
-                                            editTaskType = task.taskType
-                                            editRecurrenceType = task.recurrenceType
-                                            editRecurrenceInterval = task.recurrenceInterval?.toString() ?: ""
-                                            editIntervalDays = task.intervalDays?.toString() ?: ""
-                                            editNextDueDate = task.nextDueDate
-                                            // Если reminderTime отсутствует, подставим nextDueDate, чтобы поле не было пустым
-                                            editReminderTime = task.reminderTime ?: task.nextDueDate
-                                            editGroupId = task.groupId
-                                            showEditDialog = true
-                                            false
-                                        }
-                                        else -> true
-                                    }
-                                }
-                            )
-                            SwipeToDismiss(
-                                state = dismissState,
-                                directions = setOf(DismissDirection.StartToEnd, DismissDirection.EndToStart),
-                                background = {},
-                                dismissContent = {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                fun formatTime(dt: String?): String {
-                                    if (dt == null) return "--:--"
-                                    return try {
-                                        val ldt = LocalDateTime.parse(dt)
-                                        ldt.format(DateTimeFormatter.ofPattern("HH:mm"))
-                                    } catch (_: DateTimeParseException) {
-                                        val timePart = dt.substringAfter('T', dt)
-                                        if (timePart.length >= 5) timePart.substring(0, 5) else "--:--"
-                                    }
-                                }
-                                val timeText = formatTime(task.reminderTime ?: task.nextDueDate)
-                                Text(timeText)
-                                Spacer(modifier = Modifier.width(12.dp))
-
-                                val groupName = task.groupId?.let { groups[it] } ?: ""
-                                val titleWithGroup = buildString {
-                                    append("• ").append(task.title)
-                                    if (groupName.isNotEmpty()) append(" (").append(groupName).append(")")
-                                }
-                                Text(
-                                    text = titleWithGroup,
-                                    modifier = Modifier.weight(1f)
-                                )
-
-                                // Test notification button (for debugging)
-                                TextButton(
-                                    onClick = { testNotificationForTask(task) },
-                                    modifier = Modifier.padding(horizontal = 4.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Notifications,
-                                        contentDescription = "Тест уведомления",
-                                        modifier = Modifier.width(20.dp).height(20.dp)
-                                    )
-                                }
-
-                                val checked = task.lastCompletedAt != null
-                                Checkbox(checked = checked, onCheckedChange = { isChecked ->
-                                    Log.d("TasksScreen", "Checkbox clicked: task.id=${task.id}, currentChecked=$checked, newChecked=$isChecked")
-                                    if (isChecked && !checked) {
-                                        scope.launch {
-                                            try {
-                                                appendLog("HTTP->", "POST /tasks/${task.id}/complete")
-                                                val updated = withContext(Dispatchers.IO) { TasksApi().completeTask(task.id) }
-                                                Log.d("TasksScreen", "Task completed: id=${updated.id}, lastCompletedAt=${updated.lastCompletedAt}")
-                                                val newList = tasks.map { if (it.id == updated.id) updated else it }
-                                                tasks = newList
-                                                Log.d("TasksScreen", "Tasks list updated, new size=${newList.size}")
-                                            } catch (e: Exception) {
-                                                Log.e("TasksScreen", "Error completing task", e)
-                                                appendLog("HTTP<-", "error: ${e.message}")
-                                                e.printStackTrace()
-                                            }
-                                        }
-                                    } else if (!isChecked && checked) {
-                                        scope.launch {
-                                            try {
-                                                appendLog("HTTP->", "POST /tasks/${task.id}/uncomplete")
-                                                val updated = withContext(Dispatchers.IO) { TasksApi().uncompleteTask(task.id) }
-                                                Log.d("TasksScreen", "Task uncompleted: id=${updated.id}, lastCompletedAt=${updated.lastCompletedAt}")
-                                                val newList = tasks.map { if (it.id == updated.id) updated else it }
-                                                tasks = newList
-                                                Log.d("TasksScreen", "Tasks list updated, new size=${newList.size}")
-                                            } catch (e: Exception) {
-                                                Log.e("TasksScreen", "Error uncompleting task", e)
-                                                appendLog("HTTP<-", "error: ${e.message}")
-                                                e.printStackTrace()
-                                            }
-                                        }
-                                    }
-                                })
-                                    }
-                                }
-                            )
+                ViewTab.TODAY, ViewTab.ALL -> {
+                    if (visibleTasks.isEmpty()) {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Text(text = "No tasks")
                         }
-                        // Заголовок для неактивных
-                        if (inactiveList.isNotEmpty()) {
-                            item {
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(text = "Неактивные", style = MaterialTheme.typography.titleSmall, color = ComposeColor(0xFF607D8B))
-                                Spacer(modifier = Modifier.height(4.dp))
-                            }
-                            // Неактивные
-                            items(inactiveList, key = { it.id }) { task ->
+                    } else {
+                        val activeList = visibleTasks.filter { it.active }
+                        val inactiveList = visibleTasks.filter { !it.active }
+
+                        LazyColumn(modifier = Modifier.weight(1f)) {
+                            items(activeList, key = { it.id }) { task ->
                                 val dismissState = rememberDismissState(
                                     confirmStateChange = { newValue ->
                                         when (newValue) {
@@ -749,6 +651,7 @@ fun TasksScreen() {
                                                 showDeleteConfirm = true
                                                 false
                                             }
+
                                             DismissValue.DismissedToEnd -> {
                                                 editingTask = task
                                                 editTitle = task.title
@@ -757,12 +660,15 @@ fun TasksScreen() {
                                                 editRecurrenceType = task.recurrenceType
                                                 editRecurrenceInterval = task.recurrenceInterval?.toString() ?: ""
                                                 editIntervalDays = task.intervalDays?.toString() ?: ""
-                                                editNextDueDate = task.nextDueDate
-                                                editReminderTime = task.reminderTime ?: task.nextDueDate
+                                                editReminderTime = task.reminderTime
                                                 editGroupId = task.groupId
+                                                titleError = null
+                                                reminderTimeError = null
+                                                recurrenceError = null
                                                 showEditDialog = true
                                                 false
                                             }
+
                                             else -> true
                                         }
                                     }
@@ -774,293 +680,425 @@ fun TasksScreen() {
                                     dismissContent = {
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
-                                            verticalAlignment = Alignment.CenterVertically
+                                            verticalAlignment = Alignment.CenterVertically,
                                         ) {
-                                    fun formatTime(dt: String?): String {
-                                        if (dt == null) return "--:--"
-                                        return try {
-                                            val ldt = LocalDateTime.parse(dt)
-                                            ldt.format(DateTimeFormatter.ofPattern("HH:mm"))
-                                        } catch (_: DateTimeParseException) {
-                                            val timePart = dt.substringAfter('T', dt)
-                                            if (timePart.length >= 5) timePart.substring(0, 5) else "--:--"
-                                        }
-                                    }
-                                    val timeText = formatTime(task.reminderTime ?: task.nextDueDate)
-                                    Text(timeText)
-                                    Spacer(modifier = Modifier.width(12.dp))
-
-                                    val groupName = task.groupId?.let { groups[it] } ?: ""
-                                    val titleWithGroup = buildString {
-                                        append("• ").append(task.title)
-                                        if (groupName.isNotEmpty()) append(" (").append(groupName).append(")")
-                                    }
-                                    Text(
-                                        text = titleWithGroup,
-                                        modifier = Modifier.weight(1f)
-                                    )
-
-                                    TextButton(
-                                        onClick = { testNotificationForTask(task) },
-                                        modifier = Modifier.padding(horizontal = 4.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Notifications,
-                                            contentDescription = "Тест уведомления",
-                                            modifier = Modifier.width(20.dp).height(20.dp)
-                                        )
-                                    }
-
-                                    val checked = task.lastCompletedAt != null
-                                    Checkbox(checked = checked, onCheckedChange = { isChecked ->
-                                        Log.d("TasksScreen", "Checkbox clicked: task.id=${task.id}, currentChecked=$checked, newChecked=$isChecked")
-                                        if (isChecked && !checked) {
-                                            scope.launch {
-                                                try {
-                                                    appendLog("HTTP->", "POST /tasks/${task.id}/complete")
-                                                    val updated = withContext(Dispatchers.IO) { TasksApi().completeTask(task.id) }
-                                                    Log.d("TasksScreen", "Task completed: id=${updated.id}, lastCompletedAt=${updated.lastCompletedAt}")
-                                                    val newList = tasks.map { if (it.id == updated.id) updated else it }
-                                                    tasks = newList
-                                                    Log.d("TasksScreen", "Tasks list updated, new size=${newList.size}")
-                                                } catch (e: Exception) {
-                                                    Log.e("TasksScreen", "Error completing task", e)
-                                                    appendLog("HTTP<-", "error: ${e.message}")
-                                                    e.printStackTrace()
+                                            fun formatTime(dt: String?): String {
+                                                if (dt.isNullOrBlank()) return "--:--"
+                                                return try {
+                                                    val ldt = LocalDateTime.parse(dt)
+                                                    ldt.format(DateTimeFormatter.ofPattern("HH:mm"))
+                                                } catch (_: DateTimeParseException) {
+                                                    val timePart = dt.substringAfter('T', dt)
+                                                    if (timePart.length >= 5) timePart.substring(0, 5) else "--:--"
                                                 }
                                             }
-                                        } else if (!isChecked && checked) {
-                                            scope.launch {
-                                                try {
-                                                    appendLog("HTTP->", "POST /tasks/${task.id}/uncomplete")
-                                                    val updated = withContext(Dispatchers.IO) { TasksApi().uncompleteTask(task.id) }
-                                                    Log.d("TasksScreen", "Task uncompleted: id=${updated.id}, lastCompletedAt=${updated.lastCompletedAt}")
-                                                    val newList = tasks.map { if (it.id == updated.id) updated else it }
-                                                    tasks = newList
-                                                    Log.d("TasksScreen", "Tasks list updated, new size=${newList.size}")
-                                                } catch (e: Exception) {
-                                                    Log.e("TasksScreen", "Error uncompleting task", e)
-                                                    appendLog("HTTP<-", "error: ${e.message}")
-                                                    e.printStackTrace()
-                                                }
+                                            val timeText = formatTime(task.reminderTime)
+                                            Text(timeText)
+                                            Spacer(modifier = Modifier.width(12.dp))
+
+                                            val groupName = task.groupId?.let { groups[it] } ?: ""
+                                            val titleWithGroup = buildString {
+                                                append("• ").append(task.title)
+                                                if (groupName.isNotEmpty()) append(" (").append(groupName).append(")")
                                             }
-                                        }
-                                    })
+                                            Text(
+                                                text = titleWithGroup,
+                                                modifier = Modifier.weight(1f),
+                                            )
+
+                                            TextButton(
+                                                onClick = { testNotificationForTask(task) },
+                                                modifier = Modifier.padding(horizontal = 4.dp),
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Notifications,
+                                                    contentDescription = "Тест уведомления",
+                                                    modifier = Modifier
+                                                        .width(20.dp)
+                                                        .height(20.dp),
+                                                )
+                                            }
+
+                                            val checked = task.completed
+                                            Checkbox(checked = checked, onCheckedChange = { isChecked ->
+                                                Log.d(
+                                                    "TasksScreen",
+                                                    "Checkbox clicked: task.id=${task.id}, currentChecked=$checked, newChecked=$isChecked",
+                                                )
+                                                if (isChecked && !checked) {
+                                                    scope.launch {
+                                                        try {
+                                                            appendLog("HTTP->", "POST /tasks/${task.id}/complete")
+                                                            val updated = withContext(Dispatchers.IO) { TasksApi().completeTask(task.id) }
+                                                            Log.d("TasksScreen", "Task completed: id=${updated.id}, completed=${updated.completed}")
+                                                            val newList = tasks.map { if (it.id == updated.id) updated else it }
+                                                            tasks = newList
+                                                            Log.d("TasksScreen", "Tasks list updated, new size=${newList.size}")
+                                                        } catch (e: Exception) {
+                                                            Log.e("TasksScreen", "Error completing task", e)
+                                                            appendLog("HTTP<-", "error: ${e.message}")
+                                                            e.printStackTrace()
+                                                        }
+                                                    }
+                                                } else if (!isChecked && checked) {
+                                                    scope.launch {
+                                                        try {
+                                                            appendLog("HTTP->", "POST /tasks/${task.id}/uncomplete")
+                                                            val updated = withContext(Dispatchers.IO) { TasksApi().uncompleteTask(task.id) }
+                                                            Log.d("TasksScreen", "Task uncompleted: id=${updated.id}, completed=${updated.completed}")
+                                                            val newList = tasks.map { if (it.id == updated.id) updated else it }
+                                                            tasks = newList
+                                                            Log.d("TasksScreen", "Tasks list updated, new size=${newList.size}")
+                                                        } catch (e: Exception) {
+                                                            Log.e("TasksScreen", "Error uncompleting task", e)
+                                                            appendLog("HTTP<-", "error: ${e.message}")
+                                                            e.printStackTrace()
+                                                        }
+                                                    }
+                                                }
+                                            })
                                         }
                                     }
                                 )
+                            }
+
+                            if (inactiveList.isNotEmpty()) {
+                                item {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = "Неактивные",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        color = ComposeColor(0xFF607D8B),
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                }
+
+                                items(inactiveList, key = { it.id }) { task ->
+                                    val dismissState = rememberDismissState(
+                                        confirmStateChange = { newValue ->
+                                            when (newValue) {
+                                                DismissValue.DismissedToStart -> {
+                                                    pendingDeleteTaskId = task.id
+                                                    showDeleteConfirm = true
+                                                    false
+                                                }
+
+                                                DismissValue.DismissedToEnd -> {
+                                                    editingTask = task
+                                                    editTitle = task.title
+                                                    editDescription = task.description ?: ""
+                                                    editTaskType = task.taskType
+                                                    editRecurrenceType = task.recurrenceType
+                                                    editRecurrenceInterval = task.recurrenceInterval?.toString() ?: ""
+                                                    editIntervalDays = task.intervalDays?.toString() ?: ""
+                                                    editReminderTime = task.reminderTime
+                                                    editGroupId = task.groupId
+                                                    titleError = null
+                                                    reminderTimeError = null
+                                                    recurrenceError = null
+                                                    showEditDialog = true
+                                                    false
+                                                }
+
+                                                else -> true
+                                            }
+                                        }
+                                    )
+
+                                    SwipeToDismiss(
+                                        state = dismissState,
+                                        directions = setOf(DismissDirection.StartToEnd, DismissDirection.EndToStart),
+                                        background = {},
+                                        dismissContent = {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                            ) {
+                                                fun formatTime(dt: String?): String {
+                                                    if (dt.isNullOrBlank()) return "--:--"
+                                                    return try {
+                                                        val ldt = LocalDateTime.parse(dt)
+                                                        ldt.format(DateTimeFormatter.ofPattern("HH:mm"))
+                                                    } catch (_: DateTimeParseException) {
+                                                        val timePart = dt.substringAfter('T', dt)
+                                                        if (timePart.length >= 5) timePart.substring(0, 5) else "--:--"
+                                                    }
+                                                }
+                                                val timeText = formatTime(task.reminderTime)
+                                                Text(timeText)
+                                                Spacer(modifier = Modifier.width(12.dp))
+
+                                                val groupName = task.groupId?.let { groups[it] } ?: ""
+                                                val titleWithGroup = buildString {
+                                                    append("• ").append(task.title)
+                                                    if (groupName.isNotEmpty()) append(" (").append(groupName).append(")")
+                                                }
+                                                Text(
+                                                    text = titleWithGroup,
+                                                    modifier = Modifier.weight(1f),
+                                                )
+
+                                                TextButton(
+                                                    onClick = { testNotificationForTask(task) },
+                                                    modifier = Modifier.padding(horizontal = 4.dp),
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Notifications,
+                                                        contentDescription = "Тест уведомления",
+                                                        modifier = Modifier
+                                                            .width(20.dp)
+                                                            .height(20.dp),
+                                                    )
+                                                }
+
+                                                val checked = task.completed
+                                                Checkbox(checked = checked, onCheckedChange = { isChecked ->
+                                                    Log.d(
+                                                        "TasksScreen",
+                                                        "Checkbox clicked: task.id=${task.id}, currentChecked=$checked, newChecked=$isChecked",
+                                                    )
+                                                    if (isChecked && !checked) {
+                                                        scope.launch {
+                                                            try {
+                                                                appendLog("HTTP->", "POST /tasks/${task.id}/complete")
+                                                                val updated = withContext(Dispatchers.IO) { TasksApi().completeTask(task.id) }
+                                                                Log.d("TasksScreen", "Task completed: id=${updated.id}, completed=${updated.completed}")
+                                                                val newList = tasks.map { if (it.id == updated.id) updated else it }
+                                                                tasks = newList
+                                                                Log.d("TasksScreen", "Tasks list updated, new size=${newList.size}")
+                                                            } catch (e: Exception) {
+                                                                Log.e("TasksScreen", "Error completing task", e)
+                                                                appendLog("HTTP<-", "error: ${e.message}")
+                                                                e.printStackTrace()
+                                                            }
+                                                        }
+                                                    } else if (!isChecked && checked) {
+                                                        scope.launch {
+                                                            try {
+                                                                appendLog("HTTP->", "POST /tasks/${task.id}/uncomplete")
+                                                                val updated = withContext(Dispatchers.IO) { TasksApi().uncompleteTask(task.id) }
+                                                                Log.d("TasksScreen", "Task uncompleted: id=${updated.id}, completed=${updated.completed}")
+                                                                val newList = tasks.map { if (it.id == updated.id) updated else it }
+                                                                tasks = newList
+                                                                Log.d("TasksScreen", "Tasks list updated, new size=${newList.size}")
+                                                            } catch (e: Exception) {
+                                                                Log.e("TasksScreen", "Error uncompleting task", e)
+                                                                appendLog("HTTP<-", "error: ${e.message}")
+                                                                e.printStackTrace()
+                                                            }
+                                                        }
+                                                    }
+                                                })
+                                            }
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
-        }
 
-        if (showEditDialog) {
-            AlertDialog(
-                onDismissRequest = { showEditDialog = false },
-                confirmButton = {
-                    TextButton(onClick = {
-                        scope.launch {
-                            try {
-                                val api = TasksApi()
-                                if (editingTask == null) {
-                                    // Если время напоминания не задано, используем nextDueDate
-                                    val reminderForCreate = editReminderTime?.takeIf { it.isNotBlank() } ?: run {
-                                        if (editNextDueDate.isNotBlank()) editNextDueDate else formatIso(LocalDateTime.now())
-                                    }
-                                    val template = Task(
-                                        id = 0,
-                                        title = editTitle,
-                                        description = if (editDescription.isBlank()) null else editDescription,
-                                        taskType = editTaskType,
-                                        recurrenceType = editRecurrenceType,
-                                        recurrenceInterval = editRecurrenceInterval.toIntOrNull(),
-                                        intervalDays = editIntervalDays.toIntOrNull(),
-                                        nextDueDate = if (editNextDueDate.isNotBlank()) editNextDueDate else LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-                                        reminderTime = reminderForCreate,
-                                        groupId = editGroupId,
-                                        isCompleted = false,
-                                        lastCompletedAt = null
-                                    )
-                                    // Validation
-                                    titleError = if (template.title.isBlank()) "Укажите название" else null
-                                    nextDateError = if (parseIsoOrNull(template.nextDueDate) == null) "Неверный формат даты-времени" else null
-                                    recurrenceError = null
-                                    if (template.taskType == "recurring" && template.recurrenceType.isNullOrBlank()) {
-                                        recurrenceError = "Укажите тип повторения"
-                                    }
-                                    if (titleError != null || nextDateError != null || recurrenceError != null) return@launch
-                                    // Create via API - WebSocket will handle UI update, but also refresh to ensure consistency
-                                    val created = withContext(Dispatchers.IO) { api.createTask(template) }
-                                    android.util.Log.d("TasksScreen", "Task created via API: id=${created.id}, refreshing list")
-                                    // Refresh tasks list to ensure UI is updated
-                                    // WebSocket message will also trigger update, but this ensures immediate update
-                                    refreshKey += 1
-                                } else {
-                                    val base = editingTask!!
-                                    // Для обновления также гарантируем наличие reminderTime
-                                    val reminderForUpdate = editReminderTime?.takeIf { it.isNotBlank() } ?: base.reminderTime ?: base.nextDueDate
-                                    val updatedPayload = base.copy(
-                                        title = editTitle,
-                                        description = if (editDescription.isBlank()) null else editDescription,
-                                        taskType = editTaskType,
-                                        recurrenceType = editRecurrenceType,
-                                        recurrenceInterval = editRecurrenceInterval.toIntOrNull(),
-                                        intervalDays = editIntervalDays.toIntOrNull(),
-                                        nextDueDate = if (editNextDueDate.isNotBlank()) editNextDueDate else base.nextDueDate,
-                                        reminderTime = reminderForUpdate,
-                                        groupId = editGroupId
-                                    )
-                                    titleError = if (updatedPayload.title.isBlank()) "Укажите название" else null
-                                    nextDateError = if (parseIsoOrNull(updatedPayload.nextDueDate) == null) "Неверный формат даты-времени" else null
-                                    recurrenceError = null
-                                    if (updatedPayload.taskType == "recurring" && updatedPayload.recurrenceType.isNullOrBlank()) {
-                                        recurrenceError = "Укажите тип повторения"
-                                    }
-                                    if (titleError != null || nextDateError != null || recurrenceError != null) return@launch
-                                    // Update via API - WebSocket will handle UI update, but also refresh to ensure consistency
-                                    val updated = withContext(Dispatchers.IO) { api.updateTask(base.id, updatedPayload) }
-                                    android.util.Log.d("TasksScreen", "Task updated via API: id=${updated.id}, refreshing list")
-                                    // Refresh tasks list to ensure UI is updated
-                                    // WebSocket message will also trigger update, but this ensures immediate update
-                                    refreshKey += 1
-                                }
-                            } catch (e: Exception) {
-                                Log.e("TasksScreen", "Save task error", e)
-                            } finally {
-                                showEditDialog = false
-                            }
-                        }
-                    }) { Text("Сохранить") }
-                },
-                dismissButton = { TextButton(onClick = { showEditDialog = false }) { Text("Отмена") } },
-                title = { Text(if (editingTask == null) "Новая задача" else "Редактировать задачу") },
-                text = {
-                    Column {
-                        OutlinedTextField(value = editTitle, onValueChange = { editTitle = it }, label = { Text("Название") }, isError = titleError != null, supportingText = { if (titleError != null) Text(titleError!!) })
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(value = editDescription, onValueChange = { editDescription = it }, label = { Text("Описание") })
-                        Spacer(modifier = Modifier.height(8.dp))
-                        val taskTypeOptions = listOf("one_time","recurring","interval")
-                        ExposedDropdownMenuBox(expanded = editTaskTypeExpanded, onExpandedChange = { editTaskTypeExpanded = !editTaskTypeExpanded }) {
-                            OutlinedTextField(
-                                value = editTaskType,
-                                onValueChange = {},
-                                readOnly = true,
-                                label = { Text("Тип задачи") },
-                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = editTaskTypeExpanded) },
-                                modifier = Modifier.menuAnchor()
-                            )
-                            DropdownMenu(expanded = editTaskTypeExpanded, onDismissRequest = { editTaskTypeExpanded = false }) {
-                                taskTypeOptions.forEach { opt ->
-                                    DropdownMenuItem(text = { Text(opt) }, onClick = { editTaskType = opt; editTaskTypeExpanded = false })
-                                }
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        val recurrenceOptions = listOf("daily","weekly","monthly","yearly")
-                        ExposedDropdownMenuBox(expanded = editRecurrenceTypeExpanded, onExpandedChange = { editRecurrenceTypeExpanded = !editRecurrenceTypeExpanded }) {
-                            OutlinedTextField(
-                                value = editRecurrenceType ?: "",
-                                onValueChange = {},
-                                readOnly = true,
-                                label = { Text("Тип повторения") },
-                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = editRecurrenceTypeExpanded) },
-                                modifier = Modifier.menuAnchor(),
-                                isError = recurrenceError != null,
-                                supportingText = { if (recurrenceError != null) Text(recurrenceError!!) }
-                            )
-                            DropdownMenu(expanded = editRecurrenceTypeExpanded, onDismissRequest = { editRecurrenceTypeExpanded = false }) {
-                                DropdownMenuItem(text = { Text("— Не задано —") }, onClick = { editRecurrenceType = null; editRecurrenceTypeExpanded = false })
-                                recurrenceOptions.forEach { opt ->
-                                    DropdownMenuItem(text = { Text(opt) }, onClick = { editRecurrenceType = opt; editRecurrenceTypeExpanded = false })
-                                }
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(value = editRecurrenceInterval, onValueChange = { editRecurrenceInterval = it }, label = { Text("Интервал повторения (число)") })
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(value = editIntervalDays, onValueChange = { editIntervalDays = it }, label = { Text("Дней интервала (число)") })
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            OutlinedTextField(value = editNextDueDate, onValueChange = { editNextDueDate = it }, label = { Text("Дата/время (ISO 8601)") }, modifier = Modifier.weight(1f), isError = nextDateError != null, supportingText = { if (nextDateError != null) Text(nextDateError!!) })
-                            Spacer(modifier = Modifier.width(8.dp))
-                            TextButton(onClick = {
-                                pickDateTime(parseIsoOrNull(editNextDueDate)) { picked ->
-                                    editNextDueDate = formatIso(picked)
-                                }
-                            }) { Text("Выбрать") }
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            OutlinedTextField(value = editReminderTime ?: "", onValueChange = { editReminderTime = it.ifBlank { null } }, label = { Text("Время напоминания (ISO 8601)") }, modifier = Modifier.weight(1f))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            TextButton(onClick = {
-                                pickDateTime(parseIsoOrNull(editReminderTime)) { picked ->
-                                    editReminderTime = formatIso(picked)
-                                }
-                            }) { Text("Выбрать") }
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        // Group dropdown from loaded groups
-                        val groupEntries = groups.entries.sortedBy { it.value }
-                        ExposedDropdownMenuBox(expanded = editGroupExpanded, onExpandedChange = { editGroupExpanded = !editGroupExpanded }) {
-                            OutlinedTextField(
-                                value = editGroupId?.let { gid -> groups[gid] ?: gid.toString() } ?: "— Не задано —",
-                                onValueChange = {}, readOnly = true, label = { Text("Группа") }, trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = editGroupExpanded) }, modifier = Modifier.menuAnchor()
-                            )
-                            DropdownMenu(expanded = editGroupExpanded, onDismissRequest = { editGroupExpanded = false }) {
-                                DropdownMenuItem(text = { Text("— Не задано —") }, onClick = { editGroupId = null; editGroupExpanded = false })
-                                groupEntries.forEach { e ->
-                                    DropdownMenuItem(text = { Text(e.value) }, onClick = { editGroupId = e.key; editGroupExpanded = false })
-                                }
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        // Presets quick actions
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            TextButton(onClick = {
-                                editTaskType = "recurring"; editRecurrenceType = "daily"; editRecurrenceInterval = "1"
-                                parseIsoOrNull(editNextDueDate) ?: run { editNextDueDate = formatIso(LocalDateTime.now().withHour(9).withMinute(0)) }
-                            }) { Text("Ежедневно 9:00") }
-                            TextButton(onClick = {
-                                editTaskType = "recurring"; editRecurrenceType = "weekly"; editRecurrenceInterval = "1"
-                                parseIsoOrNull(editNextDueDate) ?: run { editNextDueDate = formatIso(LocalDateTime.now().withHour(10).withMinute(0)) }
-                            }) { Text("Еженедельно") }
-                        }
-                    }
-                }
-            )
-        }
-
-        if (showDeleteConfirm) {
-            AlertDialog(
-                onDismissRequest = { showDeleteConfirm = false; pendingDeleteTaskId = null },
-                confirmButton = {
-                    TextButton(onClick = {
-                        val toDelete = pendingDeleteTaskId
-                        if (toDelete != null) {
+            if (showEditDialog) {
+                AlertDialog(
+                    onDismissRequest = { showEditDialog = false },
+                    confirmButton = {
+                        TextButton(onClick = {
                             scope.launch {
                                 try {
-                                    withContext(Dispatchers.IO) { TasksApi().deleteTask(toDelete) }
-                                    tasks = tasks.filter { it.id != toDelete }
+                                    val api = TasksApi()
+                                    if (editingTask == null) {
+                                        val reminderForCreate = editReminderTime.ifBlank { formatIso(LocalDateTime.now()) }
+                                        val template = Task(
+                                            id = 0,
+                                            title = editTitle,
+                                            description = if (editDescription.isBlank()) null else editDescription,
+                                            taskType = editTaskType,
+                                            recurrenceType = editRecurrenceType,
+                                            recurrenceInterval = editRecurrenceInterval.toIntOrNull(),
+                                            intervalDays = editIntervalDays.toIntOrNull(),
+                                            reminderTime = reminderForCreate,
+                                            groupId = editGroupId,
+                                            active = true,
+                                            completed = false,
+                                        )
+                                        // Validation
+                                        titleError = if (template.title.isBlank()) "Укажите название" else null
+                                        reminderTimeError = if (parseIsoOrNull(template.reminderTime) == null) "Неверный формат даты-времени" else null
+                                        recurrenceError = null
+                                        if (template.taskType == "recurring" && template.recurrenceType.isNullOrBlank()) {
+                                            recurrenceError = "Укажите тип повторения"
+                                        }
+                                        if (titleError != null || reminderTimeError != null || recurrenceError != null) return@launch
+                                        // Create via API - WebSocket will handle UI update, but also refresh to ensure consistency
+                                        val created = withContext(Dispatchers.IO) { api.createTask(template) }
+                                        android.util.Log.d("TasksScreen", "Task created via API: id=${created.id}, refreshing list")
+                                        // Refresh tasks list to ensure UI is updated
+                                        // WebSocket message will also trigger update, but this ensures immediate update
+                                        refreshKey += 1
+                                    } else {
+                                        val base = editingTask!!
+                                        // Для обновления также гарантируем наличие reminderTime
+                                        val reminderForUpdate = editReminderTime.ifBlank { base.reminderTime }
+                                        val updatedPayload = base.copy(
+                                            title = editTitle,
+                                            description = if (editDescription.isBlank()) null else editDescription,
+                                            taskType = editTaskType,
+                                            recurrenceType = editRecurrenceType,
+                                            recurrenceInterval = editRecurrenceInterval.toIntOrNull(),
+                                            intervalDays = editIntervalDays.toIntOrNull(),
+                                            reminderTime = reminderForUpdate,
+                                            groupId = editGroupId,
+                                            active = base.active,
+                                            completed = base.completed,
+                                        )
+                                        titleError = if (updatedPayload.title.isBlank()) "Укажите название" else null
+                                        reminderTimeError = if (parseIsoOrNull(updatedPayload.reminderTime) == null) "Неверный формат даты-времени" else null
+                                        recurrenceError = null
+                                        if (updatedPayload.taskType == "recurring" && updatedPayload.recurrenceType.isNullOrBlank()) {
+                                            recurrenceError = "Укажите тип повторения"
+                                        }
+                                        if (titleError != null || reminderTimeError != null || recurrenceError != null) return@launch
+                                        // Update via API - WebSocket will handle UI update, but also refresh to ensure consistency
+                                        val updated = withContext(Dispatchers.IO) { api.updateTask(base.id, updatedPayload) }
+                                        android.util.Log.d("TasksScreen", "Task updated via API: id=${updated.id}, refreshing list")
+                                        // Refresh tasks list to ensure UI is updated
+                                        // WebSocket message will also trigger update, but this ensures immediate update
+                                        refreshKey += 1
+                                    }
                                 } catch (e: Exception) {
-                                    Log.e("TasksScreen", "Delete error", e)
+                                    Log.e("TasksScreen", "Save task error", e)
                                 } finally {
-                                    showDeleteConfirm = false
-                                    pendingDeleteTaskId = null
+                                    showEditDialog = false
                                 }
                             }
-                        } else {
-                            showDeleteConfirm = false
+                        }) { Text("Сохранить") }
+                    },
+                    dismissButton = { TextButton(onClick = { showEditDialog = false }) { Text("Отмена") } },
+                    title = { Text(if (editingTask == null) "Новая задача" else "Редактировать задачу") },
+                    text = {
+                        Column {
+                            OutlinedTextField(value = editTitle, onValueChange = { editTitle = it }, label = { Text("Название") }, isError = titleError != null, supportingText = { if (titleError != null) Text(titleError!!) })
+                            Spacer(modifier = Modifier.height(8.dp))
+                            OutlinedTextField(value = editDescription, onValueChange = { editDescription = it }, label = { Text("Описание") })
+                            Spacer(modifier = Modifier.height(8.dp))
+                            val taskTypeOptions = listOf("one_time","recurring","interval")
+                            ExposedDropdownMenuBox(expanded = editTaskTypeExpanded, onExpandedChange = { editTaskTypeExpanded = !editTaskTypeExpanded }) {
+                                OutlinedTextField(
+                                    value = editTaskType,
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    label = { Text("Тип задачи") },
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = editTaskTypeExpanded) },
+                                    modifier = Modifier.menuAnchor()
+                                )
+                                DropdownMenu(expanded = editTaskTypeExpanded, onDismissRequest = { editTaskTypeExpanded = false }) {
+                                    taskTypeOptions.forEach { opt ->
+                                        DropdownMenuItem(text = { Text(opt) }, onClick = { editTaskType = opt; editTaskTypeExpanded = false })
+                                    }
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            val recurrenceOptions = listOf("daily","weekly","monthly","yearly")
+                            ExposedDropdownMenuBox(expanded = editRecurrenceTypeExpanded, onExpandedChange = { editRecurrenceTypeExpanded = !editRecurrenceTypeExpanded }) {
+                                OutlinedTextField(
+                                    value = editRecurrenceType ?: "",
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    label = { Text("Тип повторения") },
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = editRecurrenceTypeExpanded) },
+                                    modifier = Modifier.menuAnchor(),
+                                    isError = recurrenceError != null,
+                                    supportingText = { if (recurrenceError != null) Text(recurrenceError!!) }
+                                )
+                                DropdownMenu(expanded = editRecurrenceTypeExpanded, onDismissRequest = { editRecurrenceTypeExpanded = false }) {
+                                    DropdownMenuItem(text = { Text("— Не задано —") }, onClick = { editRecurrenceType = null; editRecurrenceTypeExpanded = false })
+                                    recurrenceOptions.forEach { opt ->
+                                        DropdownMenuItem(text = { Text(opt) }, onClick = { editRecurrenceType = opt; editRecurrenceTypeExpanded = false })
+                                    }
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            OutlinedTextField(value = editRecurrenceInterval, onValueChange = { editRecurrenceInterval = it }, label = { Text("Интервал повторения (число)") })
+                            Spacer(modifier = Modifier.height(8.dp))
+                            OutlinedTextField(value = editIntervalDays, onValueChange = { editIntervalDays = it }, label = { Text("Дней интервала (число)") })
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                OutlinedTextField(
+                                    value = editReminderTime,
+                                    onValueChange = { editReminderTime = it },
+                                    label = { Text("Дата/время напоминания (ISO 8601)") },
+                                    modifier = Modifier.weight(1f),
+                                    isError = reminderTimeError != null,
+                                    supportingText = { if (reminderTimeError != null) Text(reminderTimeError!!) }
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                TextButton(onClick = {
+                                    pickDateTime(parseIsoOrNull(editReminderTime)) { picked ->
+                                        editReminderTime = formatIso(picked)
+                                    }
+                                }) { Text("Выбрать") }
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            // Group dropdown from loaded groups
+                            val groupEntries = groups.entries.sortedBy { it.value }
+                            ExposedDropdownMenuBox(expanded = editGroupExpanded, onExpandedChange = { editGroupExpanded = !editGroupExpanded }) {
+                                OutlinedTextField(
+                                    value = editGroupId?.let { gid -> groups[gid] ?: gid.toString() } ?: "— Не задано —",
+                                    onValueChange = {}, readOnly = true, label = { Text("Группа") }, trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = editGroupExpanded) }, modifier = Modifier.menuAnchor()
+                                )
+                                DropdownMenu(expanded = editGroupExpanded, onDismissRequest = { editGroupExpanded = false }) {
+                                    DropdownMenuItem(text = { Text("— Не задано —") }, onClick = { editGroupId = null; editGroupExpanded = false })
+                                    groupEntries.forEach { e ->
+                                        DropdownMenuItem(text = { Text(e.value) }, onClick = { editGroupId = e.key; editGroupExpanded = false })
+                                    }
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            // Presets quick actions
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                TextButton(onClick = {
+                                    editTaskType = "recurring"; editRecurrenceType = "daily"; editRecurrenceInterval = "1"
+                                    parseIsoOrNull(editReminderTime) ?: run { editReminderTime = formatIso(LocalDateTime.now().withHour(9).withMinute(0)) }
+                                }) { Text("Ежедневно 9:00") }
+                                TextButton(onClick = {
+                                    editTaskType = "recurring"; editRecurrenceType = "weekly"; editRecurrenceInterval = "1"
+                                    parseIsoOrNull(editReminderTime) ?: run { editReminderTime = formatIso(LocalDateTime.now().withHour(10).withMinute(0)) }
+                                }) { Text("Еженедельно") }
+                            }
                         }
-                    }) { Text("Удалить") }
-                },
-                dismissButton = { TextButton(onClick = { showDeleteConfirm = false; pendingDeleteTaskId = null }) { Text("Отмена") } },
-                title = { Text("Удалить задачу?") },
-                text = { Text("Действие нельзя отменить.") }
-            )
+                    }
+                )
+            }
+
+            if (showDeleteConfirm) {
+                AlertDialog(
+                    onDismissRequest = { showDeleteConfirm = false; pendingDeleteTaskId = null },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            val toDelete = pendingDeleteTaskId
+                            if (toDelete != null) {
+                                scope.launch {
+                                    try {
+                                        withContext(Dispatchers.IO) { TasksApi().deleteTask(toDelete) }
+                                        tasks = tasks.filter { it.id != toDelete }
+                                    } catch (e: Exception) {
+                                        Log.e("TasksScreen", "Delete error", e)
+                                    } finally {
+                                        showDeleteConfirm = false
+                                        pendingDeleteTaskId = null
+                                    }
+                                }
+                            } else {
+                                showDeleteConfirm = false
+                            }
+                        }) { Text("Удалить") }
+                    },
+                    dismissButton = { TextButton(onClick = { showDeleteConfirm = false; pendingDeleteTaskId = null }) { Text("Отмена") } },
+                    title = { Text("Удалить задачу?") },
+                    text = { Text("Действие нельзя отменить.") }
+                )
+            }
         }
     }
 }

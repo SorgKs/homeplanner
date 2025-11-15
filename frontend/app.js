@@ -2,8 +2,9 @@
  * Main application logic for HomePlanner frontend.
  */
 
-let allTasks = []; // Все задачи
-let todayTaskIds = new Set(); // Идентификаторы задач для вида "Сегодня"
+let allTasks = []; // Все задачи (для текущего вида)
+let todayTasksCache = []; // Кэш задач для вида "Сегодня"
+let allTasksCache = []; // Кэш всех задач
 let groups = []; // Список групп
 let filteredTasks = [];
 let searchQuery = '';
@@ -25,8 +26,14 @@ const USER_STATUS_LABELS = {
 };
 
 function getWsUrl() {
-    const host = (typeof window !== 'undefined' && window.location && window.location.hostname) ? window.location.hostname : '192.168.1.2';
-    return `ws://${host}:8000/ws`;
+    const host =
+        (typeof window !== "undefined" && window.HP_BACKEND_HOST) || "192.168.1.2";
+    const port =
+        (typeof window !== "undefined" && window.HP_BACKEND_PORT) || 8000;
+    const path =
+        (typeof window !== "undefined" && window.HP_WS_PATH) ||
+        "/api/v0.2/tasks/stream";
+    return `ws://${host}:${port}${path}`;
 }
 
 function applyTaskEventFromWs(action, taskJson, taskId) {
@@ -51,27 +58,26 @@ function applyTaskEventFromWs(action, taskJson, taskId) {
     }
     // Преобразуем TaskResponse -> внутреннюю структуру
     const t = taskJson;
-    // Определяем статус выполнения: галка подтверждения НЕ зависит от next_due_date
-    let isCompleted = false;
-    if (t.task_type === 'one_time') {
-        // Для разовых задач: выполнена если неактивна
-        isCompleted = !t.is_active;
-    } else {
-        // Для повторяющихся и интервальных задач: выполнена если есть last_completed_at
-        // Не зависит от next_due_date
-        isCompleted = t.last_completed_at != null;
-    }
+    const activeFlag = t.active ?? true;
+    const completedFlag = Boolean(t.completed);
+    const reminderTime = t.reminder_time ?? null;
     const mapped = {
         ...t,
         type: 'task',
         is_recurring: t.task_type === 'recurring',
         task_type: t.task_type || 'one_time',
+<<<<<<< HEAD
         due_date: t.next_due_date,
         is_completed: isCompleted,
         is_active: t.is_active,
         last_completed_at: t.last_completed_at,
         assigned_user_ids: Array.isArray(t.assigned_user_ids) ? t.assigned_user_ids.map(Number) : [],
         assignees: Array.isArray(t.assignees) ? t.assignees : [],
+=======
+        reminder_time: reminderTime,
+        active: activeFlag,
+        completed: completedFlag,
+>>>>>>> origin/main
     };
     const idx = allTasks.findIndex(x => x.id === mapped.id);
     if (idx >= 0) {
@@ -390,22 +396,56 @@ function setupEventListeners() {
     updateAdminNavigation();
 }
 
+function mapTaskResponse(task) {
+    const reminderTime = task.reminder_time ?? null;
+    const activeFlag = task.active ?? true;
+    const completedFlag = Boolean(task.completed);
+    return {
+        ...task,
+        type: 'task',
+        is_recurring: task.task_type === 'recurring',
+        task_type: task.task_type || 'one_time',
+        reminder_time: reminderTime,
+        active: activeFlag,
+        completed: completedFlag,
+    };
+}
+
+function applyCurrentViewData() {
+    if (currentView === 'today') {
+        allTasks = [...todayTasksCache];
+    } else if (currentView === 'all') {
+        allTasks = [...allTasksCache];
+    } else {
+        allTasks = [...allTasksCache];
+    }
+    filterAndRenderTasks();
+}
+
 /**
  * Load all data from API.
  */
 async function loadData() {
     try {
         showLoading('tasks-list');
+<<<<<<< HEAD
         // Загружаем полный список задач и отдельный список для вида "Сегодня"
         const [tasks, todayTaskIdsList, groupsData, usersData] = await Promise.all([
             tasksAPI.getAll(),
             tasksAPI.getTodayIds(),
             groupsAPI.getAll(),
             usersAPI.getAll()
+=======
+        const [todayTasks, allTasksResponse, groupsData] = await Promise.all([
+            tasksAPI.getToday(),
+            tasksAPI.getAll(),
+            groupsAPI.getAll(),
+>>>>>>> origin/main
         ]);
         
         todayTaskIds = new Set(todayTaskIdsList || []);
         groups = groupsData;
+<<<<<<< HEAD
         users = usersData;
         updateUserFilterOptions();
         updateAssigneeSelect();
@@ -454,6 +494,12 @@ async function loadData() {
             switchView('today');
         }
         filterAndRenderTasks();
+=======
+        todayTasksCache = todayTasks.map(mapTaskResponse);
+        allTasksCache = allTasksResponse.map(mapTaskResponse);
+        
+        switchView(currentView);
+>>>>>>> origin/main
         updateGroupSelect();
     } catch (error) {
         console.error('Failed to load data:', error);
@@ -688,12 +734,16 @@ function switchView(view) {
         tasksFilters.style.display = 'block';
         if (settingsView) settingsView.style.display = 'none';
         if (tasksList) tasksList.style.display = 'block';
+        applyCurrentViewData();
+        return;
     } else if (view === 'all') {
         allBtn.classList.add('active');
         historyFilters.style.display = 'none';
         tasksFilters.style.display = 'block';
         if (settingsView) settingsView.style.display = 'none';
         if (tasksList) tasksList.style.display = 'block';
+        applyCurrentViewData();
+        return;
     } else if (view === 'history') {
         historyBtn.classList.add('active');
         historyFilters.style.display = 'block';
@@ -911,16 +961,25 @@ function filterAndRenderTasks() {
             (task.description && task.description.toLowerCase().includes(searchQuery.toLowerCase()));
         
         const matchesFilter = filterState === null || 
+<<<<<<< HEAD
             (filterState === 'completed' && (task.is_completed || !task.is_active)) ||
             (filterState === 'active' && !task.is_completed && task.is_active);
 
         const matchesUser = !selectedUserId || (task.assigned_user_ids || []).includes(selectedUserId);
+=======
+            (filterState === 'completed' && (task.completed || task.active === false)) ||
+            (filterState === 'active' && !task.completed && task.active !== false);
+>>>>>>> origin/main
         
         return matchesSearch && matchesFilter && matchesUser;
     });
 
     // Sort by due date
-    filteredTasks.sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
+    filteredTasks.sort((a, b) => {
+        const aTime = a.reminder_time ? new Date(a.reminder_time).getTime() : Number.MAX_SAFE_INTEGER;
+        const bTime = b.reminder_time ? new Date(b.reminder_time).getTime() : Number.MAX_SAFE_INTEGER;
+        return aTime - bTime;
+    });
     
     renderTasks();
 }
@@ -1136,13 +1195,18 @@ function renderTodayTasksCollection(tasks, referenceDate) {
 /**
  * Render single task item for today view.
  */
+<<<<<<< HEAD
 function renderTodayTaskItem(task, group, category) {
     // Используем is_completed из данных задачи (уже правильно вычислен в loadData)
     const isCompleted = task.is_completed;
+=======
+function renderTodayTaskItem(task, group) {
+    const isCompleted = Boolean(task.completed);
+>>>>>>> origin/main
     const fullTitle = group ? `${group.name}: ${task.title}` : task.title;
     
-    // Форматируем время из due_date или reminder_time
-    const timeSource = task.reminder_time || task.due_date;
+    // Форматируем время из reminder_time
+    const timeSource = task.reminder_time;
     const timeStr = timeSource ? new Date(timeSource).toLocaleTimeString('ru-RU', {
         hour: '2-digit',
         minute: '2-digit'
@@ -1175,9 +1239,14 @@ function renderAllTasksView() {
     const container = document.getElementById('tasks-list');
 
     // Разделяем активные и неактивные, далее группируем каждый набор по группам
+<<<<<<< HEAD
     const activeTasks = filteredTasks.filter(t => t.is_active);
     const inactiveTasks = filteredTasks.filter(t => !t.is_active);
     const headerRow = renderAllTasksHeader();
+=======
+    const activeTasks = filteredTasks.filter(t => t.active !== false);
+    const inactiveTasks = filteredTasks.filter(t => t.active === false);
+>>>>>>> origin/main
 
     const activeByGroup = {};
     const activeWithoutGroup = [];
@@ -1311,6 +1380,7 @@ function renderAllTasksHeader() {
  * Render task card for all tasks view with details.
  */
 function renderAllTasksCard(task, now) {
+<<<<<<< HEAD
     const taskDate = task.due_date ? new Date(task.due_date) : null;
     const isCompleted = Boolean(task.is_completed);
     const isActive = Boolean(task.is_active);
@@ -1352,6 +1422,46 @@ function renderAllTasksCard(task, now) {
             <div class="task-row-cell task-row-status">
                 <span class="status-indicator ${isCompleted ? 'status-completed' : isActive ? 'status-active' : 'status-inactive'}"></span>
                 <span>${statusText}</span>
+=======
+    const reminderDate = task.reminder_time ? new Date(task.reminder_time) : null;
+    const isCompleted = Boolean(task.completed);
+    const isActive = task.active !== false;
+    const isUrgent =
+        reminderDate !== null &&
+        reminderDate <= new Date(now.getTime() + 24 * 60 * 60 * 1000) &&
+        !isCompleted &&
+        isActive;
+    const isPast =
+        reminderDate !== null &&
+        reminderDate < now &&
+        !isCompleted &&
+        isActive;
+
+    const activeStatus = isActive ? '✅ Активна' : '❌ Неактивна';
+    const configText = task.readable_config || 'Не указано';
+
+    return `
+        <div class="item-card ${isCompleted ? 'completed' : ''} ${isUrgent ? 'urgent' : ''}">
+            <div class="item-info" style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <label class="task-checkbox-label" style="cursor: pointer; display: flex; align-items: center;">
+                        <input type="checkbox" ${isCompleted ? 'checked' : ''} 
+                               onchange="toggleTaskComplete(${task.id}, this.checked)"
+                               class="task-checkbox"
+                               title="${isCompleted ? 'Отметить как невыполненную' : 'Отметить как выполненную'}">
+                        <span class="task-title" style="font-size: 18px; font-weight: 600;">${escapeHtml(task.title)}</span>
+                    </label>
+                </div>
+                ${task.description ? `<div class="item-description">${escapeHtml(task.description)}</div>` : ''}
+                <div class="item-meta" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                    <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                        <span><strong>Конфигурация:</strong> ${escapeHtml(configText)}</span>
+                        <span><strong>Статус:</strong> ${activeStatus}</span>
+                        ${reminderDate ? `<span><strong>Напоминание:</strong> ${escapeHtml(formatDateTime(task.reminder_time))}</span>` : ''}
+                    </div>
+                    ${isPast ? '<span style="color: var(--danger-color);">⚠️ Просрочено</span>' : ''}
+                </div>
+>>>>>>> origin/main
             </div>
             <div class="task-row-cell task-row-actions">
                 <button class="btn btn-secondary btn-icon" onclick="editTask(${task.id})" title="Редактировать">✎</button>
@@ -1365,13 +1475,20 @@ function renderAllTasksCard(task, now) {
  * Render single task card (legacy, kept for compatibility).
  */
 function renderTaskCard(task, now) {
-    const taskDate = new Date(task.due_date);
-    const isUrgent = taskDate <= new Date(now.getTime() + 24 * 60 * 60 * 1000) && 
-                    !task.is_completed && 
-                    task.is_active;
-    const isPast = taskDate < now && !task.is_completed && 
-                  task.is_active;
-    
+    const reminderDate = task.reminder_time ? new Date(task.reminder_time) : null;
+    const isCompleted = Boolean(task.completed);
+    const isActive = task.active !== false;
+    const isUrgent =
+        reminderDate !== null &&
+        reminderDate <= new Date(now.getTime() + 24 * 60 * 60 * 1000) &&
+        !isCompleted &&
+        isActive;
+    const isPast =
+        reminderDate !== null &&
+        reminderDate < now &&
+        !isCompleted &&
+        isActive;
+
     let metaInfo = '';
     const taskType = task.task_type || 'one_time';
     if (taskType === 'interval' && task.interval_days) {
@@ -1387,7 +1504,6 @@ function renderTaskCard(task, now) {
             yearly: 'Ежегодно',
             yearly_weekday: 'Ежегодно (по дню недели)',
         }[task.recurrence_type] || task.recurrence_type;
-        // Показываем интервал для всех типов повторения
         if (task.recurrence_interval && task.recurrence_interval > 1) {
             metaInfo = `<span>🔄 ${recurrenceText} (каждые ${task.recurrence_interval})</span>`;
         } else {
@@ -1396,9 +1512,11 @@ function renderTaskCard(task, now) {
     } else if (taskType === 'one_time') {
         metaInfo = `<span>📌 Разовое</span>`;
     }
-    
+
+    const reminderInfo = reminderDate ? formatDateTime(task.reminder_time) : 'Не задано';
+
     return `
-        <div class="item-card ${task.is_completed || !task.is_active ? 'completed' : ''} ${isUrgent ? 'urgent' : ''}">
+        <div class="item-card ${isCompleted || !isActive ? 'completed' : ''} ${isUrgent ? 'urgent' : ''}">
             <div class="item-info">
                 <div class="item-title">
                     ${escapeHtml(task.title)}
@@ -1406,13 +1524,13 @@ function renderTaskCard(task, now) {
                 </div>
                 ${task.description ? `<div class="item-description">${escapeHtml(task.description)}</div>` : ''}
                 <div class="item-meta">
-                    <span>📅 ${formatDateTime(task.due_date)}</span>
+                    <span>📅 ${reminderInfo}</span>
                     ${metaInfo}
                     ${isPast ? '<span style="color: var(--danger-color);">⚠️ Просрочено</span>' : ''}
                 </div>
             </div>
             <div class="item-actions">
-                ${!task.is_completed && task.is_active ? `<button class="btn btn-success" onclick="completeTask(${task.id})" title="Подтвердить выполнение">✓</button>` : ''}
+                ${!isCompleted && isActive ? `<button class="btn btn-success" onclick="completeTask(${task.id})" title="Подтвердить выполнение">✓</button>` : ''}
                 <button class="btn btn-secondary" onclick="editTask(${task.id})" title="Редактировать">✎</button>
                 <button class="btn btn-danger" onclick="deleteTask(${task.id})" title="Удалить">✕</button>
             </div>
@@ -1442,13 +1560,14 @@ function openTaskModal(taskId = null) {
             title.textContent = 'Редактировать задачу';
             document.getElementById('task-id').value = task.id;
             document.getElementById('task-type').value = 'task';
+            document.getElementById('task-revision').value = task.revision ?? '';
             document.getElementById('task-title').value = task.title;
             document.getElementById('task-description').value = task.description || '';
             document.getElementById('task-group-id').value = task.group_id || '';
             setAssigneeSelection(task.assigned_user_ids || []);
             // Store original value in data attribute for comparison
-            dateInput.dataset.originalValue = task.due_date;
-            dateInput.value = formatDatetimeLocal(task.due_date);
+            dateInput.dataset.originalValue = task.reminder_time || '';
+            dateInput.value = task.reminder_time ? formatDatetimeLocal(task.reminder_time) : '';
             
             // Определяем тип задачи
             const taskSchedulingType = task.task_type || 'one_time';
@@ -1580,6 +1699,7 @@ function openTaskModal(taskId = null) {
         form.reset();
         document.getElementById('task-id').value = '';
         document.getElementById('task-type').value = '';
+        document.getElementById('task-revision').value = '';
         document.getElementById('task-group-id').value = '';
         setAssigneeSelection([]);
         document.getElementById('task-is-recurring').value = 'one_time';
@@ -1671,6 +1791,7 @@ async function handleTaskSubmit(e) {
     const id = document.getElementById('task-id').value;
     const taskType = document.getElementById('task-type').value;
     const taskSchedulingType = document.getElementById('task-is-recurring').value;
+    const revisionInput = document.getElementById('task-revision');
     const groupId = document.getElementById('task-group-id').value;
 
     const submitBtn = e.target.querySelector('button[type="submit"]');
@@ -1706,6 +1827,8 @@ async function handleTaskSubmit(e) {
         const bindingType = document.querySelector('input[name="monthly-yearly-binding"]:checked');
         const useWeekdayBinding = bindingType && bindingType.value === 'weekday' && (recurrenceType === 'monthly' || recurrenceType === 'yearly');
         
+        let reminderTimeValue = null;
+
         if (useWeekdayBinding) {
             // Calculate date from weekday fields
             const weekdayDay = parseInt(document.getElementById('weekday-day').value); // 0-6 (Monday-Sunday)
@@ -1753,8 +1876,7 @@ async function handleTaskSubmit(e) {
             const hoursStr = String(hours).padStart(2, '0');
             const minutesStr = String(minutes).padStart(2, '0');
             
-            taskData.next_due_date = `${year}-${month}-${day}T${hoursStr}:${minutesStr}:00`;
-            taskData.reminder_time = taskData.next_due_date;
+            reminderTimeValue = `${year}-${month}-${day}T${hoursStr}:${minutesStr}:00`;
         } else {
             // Use regular date input
             const dateInput = document.getElementById('task-due-date');
@@ -1766,15 +1888,19 @@ async function handleTaskSubmit(e) {
                 const originalLocal = formatDatetimeLocal(originalValue);
                 if (currentValue === originalLocal) {
                     // Date hasn't changed, use original value
-                    taskData.next_due_date = originalValue;
+                    reminderTimeValue = originalValue;
                 } else {
                     // Date changed, convert new local time
-                    taskData.next_due_date = parseDatetimeLocal(currentValue);
+                    reminderTimeValue = parseDatetimeLocal(currentValue);
                 }
             } else {
                 // For new tasks or if no original value, convert local time
-                taskData.next_due_date = parseDatetimeLocal(currentValue);
+                reminderTimeValue = parseDatetimeLocal(currentValue);
             }
+        }
+
+        if (reminderTimeValue) {
+            taskData.reminder_time = reminderTimeValue;
         }
         
         if (taskSchedulingType === 'one_time') {
@@ -1782,10 +1908,7 @@ async function handleTaskSubmit(e) {
             taskData.recurrence_type = null;
             taskData.recurrence_interval = null;
             taskData.interval_days = null;
-            // reminder_time устанавливается из next_due_date если не был установлен ранее
-            if (!taskData.reminder_time) {
-                taskData.reminder_time = taskData.next_due_date;
-            }
+            taskData.reminder_time = reminderTimeValue;
         } else if (taskSchedulingType === 'recurring') {
             // Universal function for saving recurring task configuration
             // Simply save interval and datetime for any interval type
@@ -1808,30 +1931,33 @@ async function handleTaskSubmit(e) {
             // Save reminder_time as passed (no normalization, no special handling)
             // Normalization is only used for calculating next date and formatting comments on backend
             // For weekday binding, reminder_time is already set above
-            if (!useWeekdayBinding) {
-                taskData.reminder_time = taskData.next_due_date;
-            }
+            taskData.reminder_time = reminderTimeValue;
         } else if (taskSchedulingType === 'interval') {
             taskData.interval_days = parseInt(document.getElementById('task-interval-days').value);
             // Явно очищаем recurrence_type и recurrence_interval для interval задач
             taskData.recurrence_type = null;
             taskData.recurrence_interval = null;
-            // reminder_time обязателен для всех задач, устанавливаем из next_due_date если не был установлен ранее
-            if (!taskData.reminder_time) {
-                taskData.reminder_time = taskData.next_due_date;
-            }
+            taskData.reminder_time = reminderTimeValue;
         }
         
         // Финальная проверка: reminder_time должен быть всегда установлен
-        if (!taskData.reminder_time) {
-            taskData.reminder_time = taskData.next_due_date;
+        if (!taskData.reminder_time && reminderTimeValue) {
+            taskData.reminder_time = reminderTimeValue;
         }
         
         console.log('Saving task with data:', taskData);
         
         if (id && taskType) {
+            const numericId = parseInt(id);
+            const existingTask = allTasks.find(t => t.id === numericId);
+            if (existingTask) {
+                const revisionValue = revisionInput && revisionInput.value !== ''
+                    ? parseInt(revisionInput.value, 10)
+                    : existingTask.revision ?? 0;
+                taskData.revision = revisionValue;
+            }
             // Редактирование существующей задачи
-            await tasksAPI.update(parseInt(id), taskData);
+            await tasksAPI.update(numericId, taskData);
             showToast('Задача обновлена', 'success');
         } else {
             // Создание новой задачи
@@ -1861,6 +1987,15 @@ async function handleTaskSubmit(e) {
         if (error && error.message) {
             errorMessage = error.message;
         }
+
+        if (error && error.code === 'conflict_revision') {
+            errorMessage = errorMessage || 'Конфликт версий. Обновляем данные задачи.';
+            await loadData();
+            if (id) {
+                openTaskModal(parseInt(id, 10));
+            }
+        }
+
         console.error('Error message:', errorMessage);
         showToast(errorMessage, 'error');
     }
@@ -1951,8 +2086,12 @@ async function toggleTaskComplete(id, completed) {
         }
         
         if (completed) {
-            // Отмечаем задачу как выполненную
-            console.log('Подтверждаем задачу:', { id, task_type: task.task_type, next_due_date: task.due_date, is_active: task.is_active });
+            console.log('Подтверждаем задачу:', {
+                id,
+                task_type: task.task_type,
+                reminder_time: task.reminder_time,
+                active: task.active,
+            });
             await tasksAPI.complete(id);
             showToast('Задача отмечена как выполненная', 'success');
         } else {
@@ -1969,10 +2108,9 @@ async function toggleTaskComplete(id, completed) {
                 id: updatedTask.id,
                 title: updatedTask.title,
                 task_type: updatedTask.task_type,
-                is_completed: updatedTask.is_completed,
-                last_completed_at: updatedTask.last_completed_at,
-                is_active: updatedTask.is_active,
-                next_due_date: updatedTask.due_date
+                completed: updatedTask.completed,
+                active: updatedTask.active,
+                reminder_time: updatedTask.reminder_time,
             });
         }
     } catch (error) {

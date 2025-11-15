@@ -37,7 +37,7 @@ class TaskHistory(Base):
     action_timestamp = Column(DateTime, default=get_current_time, nullable=False, index=True)
     
     # Дополнительные данные для контекста
-    iteration_date = Column(DateTime, nullable=True, index=True)  # Дата итерации задачи (next_due_date на момент действия)
+    iteration_date = Column(DateTime, nullable=True, index=True)  # Дата итерации задачи (reminder_time на момент действия)
     meta_data = Column(Text, nullable=True)  # JSON метаданные (старые/новые значения при редактировании и т.д.)
     comment = Column(Text, nullable=True)  # Комментарий к действию
     

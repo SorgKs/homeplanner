@@ -5,11 +5,6 @@
  * To run: node frontend/tests/test_api.js
  */
 
-// Mock fetch globally
-global.fetch = jest.fn || function() {
-    throw new Error('fetch is not mocked. Use node-fetch or similar.');
-};
-
 // Simple fetch mock for Node.js
 function mockFetch(responseData, ok = true, status = 200) {
     return Promise.resolve({
@@ -22,21 +17,28 @@ function mockFetch(responseData, ok = true, status = 200) {
 
 // Mock fetch implementation for tests
 let fetchMock = null;
+const isJestEnvironment = typeof jest !== 'undefined';
+
+if (isJestEnvironment) {
+    global.fetch = jest.fn();
+    fetchMock = global.fetch;
+} else {
+    global.fetch = (...args) => mockFetch({}, true, 200, ...args);
+    fetchMock = global.fetch;
+}
 
 function setupFetchMock() {
-    if (typeof jest !== 'undefined') {
-        // Jest environment
+    if (isJestEnvironment) {
         global.fetch = jest.fn();
         fetchMock = global.fetch;
     } else {
-        // Node.js environment - need to provide fetch mock
-        // In real environment, would use node-fetch or similar
-        fetchMock = mockFetch;
+        global.fetch = (...args) => mockFetch({}, true, 200, ...args);
+        fetchMock = global.fetch;
     }
 }
 
 function teardownFetchMock() {
-    if (typeof jest !== 'undefined') {
+    if (isJestEnvironment) {
         global.fetch.mockClear();
     }
 }

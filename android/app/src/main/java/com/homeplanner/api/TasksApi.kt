@@ -13,9 +13,10 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /** Simple API client for tasks. */
-class TasksApi(private val httpClient: OkHttpClient = OkHttpClient()) {
-
-    private val baseUrl: String = BuildConfig.API_BASE_URL
+class TasksApi(
+    private val httpClient: OkHttpClient = OkHttpClient(),
+    private val baseUrl: String = BuildConfig.API_BASE_URL,
+) {
 
     fun getTasks(activeOnly: Boolean = true): List<Task> {
         val url = buildString {
@@ -61,9 +62,10 @@ class TasksApi(private val httpClient: OkHttpClient = OkHttpClient()) {
             put("recurrence_type", task.recurrenceType)
             put("recurrence_interval", task.recurrenceInterval)
             put("interval_days", task.intervalDays)
-            put("next_due_date", task.nextDueDate)
             put("reminder_time", task.reminderTime)
             put("group_id", task.groupId)
+            put("active", task.active)
+            put("completed", task.completed)
         }.toString()
         Log.d("TasksApi", "Creating task: url=$url, json=$json")
         val mediaType = "application/json; charset=utf-8".toMediaType()
@@ -141,9 +143,10 @@ class TasksApi(private val httpClient: OkHttpClient = OkHttpClient()) {
             put("recurrence_type", task.recurrenceType)
             put("recurrence_interval", task.recurrenceInterval)
             put("interval_days", task.intervalDays)
-            put("next_due_date", task.nextDueDate)
             put("reminder_time", task.reminderTime)
             put("group_id", task.groupId)
+            put("active", task.active)
+            put("completed", task.completed)
         }.toString()
         Log.d("TasksApi", "Updating task: id=$taskId, url=$url, json=$json")
         val mediaType = "application/json; charset=utf-8".toMediaType()
@@ -174,13 +177,10 @@ class TasksApi(private val httpClient: OkHttpClient = OkHttpClient()) {
 }
 
 private fun JSONObject.toTask(): Task {
-    // Handle last_completed_at: if null in JSON, return null; if present, return the string value
-    val lastCompletedAtValue: String? = if (isNull("last_completed_at")) {
-        null
-    } else {
-        val value = optString("last_completed_at", null)
-        if (value.isNullOrEmpty()) null else value
-    }
+    val reminderValue = optString("reminder_time", null)?.takeIf { it.isNotEmpty() }
+        ?: throw IllegalStateException("Missing reminder_time in task payload: $this")
+    val activeValue = if (isNull("active")) true else getBoolean("active")
+    val completedValue = if (isNull("completed")) false else getBoolean("completed")
     return Task(
         id = getInt("id"),
         title = getString("title"),
@@ -189,11 +189,10 @@ private fun JSONObject.toTask(): Task {
         recurrenceType = optString("recurrence_type", null),
         recurrenceInterval = if (isNull("recurrence_interval")) null else getInt("recurrence_interval"),
         intervalDays = if (isNull("interval_days")) null else getInt("interval_days"),
-        nextDueDate = getString("next_due_date"),
-        reminderTime = optString("reminder_time", null),
+        reminderTime = reminderValue,
         groupId = if (isNull("group_id")) null else getInt("group_id"),
-        isCompleted = lastCompletedAtValue != null,
-        lastCompletedAt = lastCompletedAtValue
+        active = activeValue,
+        completed = completedValue,
     )
 }
 

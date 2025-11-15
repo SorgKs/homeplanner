@@ -3,14 +3,25 @@
  */
 
 // API base URL configuration
-// Priority: window.API_BASE_URL → localStorage('apiBaseUrl') → default LAN IP
-let API_BASE_URL = (typeof window !== 'undefined' && window.API_BASE_URL) || null;
-if (!API_BASE_URL && typeof localStorage !== 'undefined') {
-    API_BASE_URL = localStorage.getItem('apiBaseUrl');
+const CONFIGURED_API_BASE_URL =
+    (typeof window !== "undefined" && window.HP_API_BASE_URL) || null;
+
+if (!CONFIGURED_API_BASE_URL) {
+    throw new Error("HP_API_BASE_URL is not defined. Проверьте frontend/config.js");
 }
-if (!API_BASE_URL) {
-    const hostname = (typeof window !== 'undefined' && window.location && window.location.hostname) ? window.location.hostname : 'localhost';
-    API_BASE_URL = `http://${hostname}:8000/api/v1`;
+
+let API_BASE_URL = CONFIGURED_API_BASE_URL;
+
+if (typeof localStorage !== "undefined") {
+    const storedApiUrl = localStorage.getItem("apiBaseUrl");
+    if (storedApiUrl) {
+        API_BASE_URL = storedApiUrl;
+    }
+}
+
+// Экспортируем актуальное значение для других скриптов
+if (typeof window !== "undefined") {
+    window.API_BASE_URL = API_BASE_URL;
 }
 
 /**
@@ -146,27 +157,62 @@ const tasksAPI = {
     async update(id, task) {
         console.log('[HTTP->] PUT', `${API_BASE_URL}/tasks/${id}`, task);
         const response = await fetch(`${API_BASE_URL}/tasks/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(task),
         });
         if (!response.ok) {
-            let errorMessage = 'Failed to update task';
+            let errorMessage = "Failed to update task";
             try {
                 const errorData = await response.json();
-                console.error('API Error Response:', errorData);
+                console.error("API Error Response:", errorData);
+
+                if (
+                    errorData &&
+                    errorData.detail &&
+                    typeof errorData.detail === "object" &&
+                    errorData.detail.code === "conflict_revision"
+                ) {
+                    const conflictError = new Error(
+                        errorData.detail.message ||
+                            "Конфликт версий. Обновите данные и повторите попытку."
+                    );
+                    conflictError.serverPayload = errorData.detail.server_payload;
+                    conflictError.serverRevision = errorData.detail.server_revision;
+                    conflictError.code = "conflict_revision";
+                    throw conflictError;
+                }
+
                 if (Array.isArray(errorData.detail)) {
                     // Pydantic validation errors
-                    errorMessage = errorData.detail.map(e => `${e.loc.join('.')}: ${e.msg}`).join(', ');
+                    errorMessage = errorData.detail
+                        .map((e) => `${e.loc.join(".")}: ${e.msg}`)
+                        .join(", ");
                 } else if (errorData.detail) {
-                    errorMessage = errorData.detail;
+                    errorMessage =
+                        typeof errorData.detail === "string"
+                            ? errorData.detail
+                            : JSON.stringify(errorData.detail);
                 } else if (errorData.message) {
                     errorMessage = errorData.message;
                 }
             } catch (e) {
-                console.error('Failed to parse error response:', e);
+                if (e instanceof Error && e.code === "conflict_revision") {
+                    console.log(
+                        "[HTTP<-] PUT",
+                        `${API_BASE_URL}/tasks/${id}`,
+                        "ERROR conflict_revision"
+                    );
+                    throw e;
+                }
+                console.error("Failed to parse error response:", e);
             }
-            console.log('[HTTP<-] PUT', `${API_BASE_URL}/tasks/${id}`, 'ERROR', errorMessage);
+            console.log(
+                "[HTTP<-] PUT",
+                `${API_BASE_URL}/tasks/${id}`,
+                "ERROR",
+                errorMessage
+            );
             throw new Error(errorMessage);
         }
         const json = await response.json();
