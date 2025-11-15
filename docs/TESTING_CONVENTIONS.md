@@ -17,10 +17,30 @@
 - Общие фабрики данных размещаются в `tests/factories` (или соседних доменных подпапках) и импортируются в тесты через `conftest.py`, чтобы избежать дублирования.
 - Повторно используемые хелперы (API-пути, нормализация времени, запуск клиентов) выносить в отдельные библиотеки (`tests/utils.py`, `tests/factories/`) и подключать через импорт вместо дублирования кода.
 - Логи тестов должны быть информативными (см. `LogCaptureFixture`), но не зашумлять вывод CI. Дефолтный уровень логирования для локальных и CI-прогонов — `WARNING`; снижение уровня оформляется в тесте явно. Рекомендуемый формат сообщения — `<module>::<scenario>::<context>`.
-- Локальные и CI-прогоны выполняются через `uv run`: для backend `uv run pytest`, для фронтенда `uv run npm run test`, для Playwright — `uv run npx playwright test`. Последовательность локального запуска python-тестов фиксируем отдельно:
-  1. `uv sync` — установка и актуализация зависимостей.
-  2. `uv run pytest --maxfail=1 --disable-warnings` — базовый прогон.
-  3. `uv run pytest --cov=src --cov-report=term-missing` — проверка покрытия перед публикацией.
+- **Запуск тестов**: доступны два способа запуска тестов Python:
+  
+  **Способ 1: Через uv (рекомендуется)**
+  ```bash
+  uv run pytest tests/ -v
+  ```
+  
+  **Способ 2: Через активацию виртуального окружения**
+  ```bash
+  # Активировать виртуальное окружение
+  source .venv/bin/activate  # Linux/Mac
+  # или
+  .venv\Scripts\activate  # Windows
+  
+  # Запустить тесты
+  .venv/bin/python -m pytest tests/ -v
+  ```
+  
+  **Важно**: При использовании способа 2 команды выполняются отдельно — сначала активация окружения, затем запуск тестов. Не используйте `cd` в командах, работайте из корня проекта.
+  
+- Последовательность локального запуска python-тестов:
+  1. `uv sync` — установка и актуализация зависимостей (или активация `.venv`).
+  2. `uv run pytest --maxfail=1 --disable-warnings` — базовый прогон (или `.venv/bin/python -m pytest --maxfail=1 --disable-warnings`).
+  3. `uv run pytest --cov=backend --cov-report=term-missing` — проверка покрытия перед публикацией (или `.venv/bin/python -m pytest --cov=backend --cov-report=term-missing`).
 - Те же команды закреплены в GitHub Actions `.github/workflows/ci-python-tests.yml`, `.github/workflows/ci-frontend-tests.yml` и `.github/workflows/ci-android.yml`. При обновлении workflow необходимо синхронизировать документ.
 - Общие правила расположения артефактов и документов описаны в `docs/ARTIFACTS_LAYOUT.md`; при добавлении новых тестовых пакетов ссылаться на соответствующие разделы.
 

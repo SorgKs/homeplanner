@@ -138,12 +138,16 @@ uv run mypy backend/
 
 ### Запуск тестов
 
+Доступны два способа запуска тестов:
+
+#### Способ 1: Через uv (рекомендуется)
+
 ```bash
 # Все тесты
-uv run pytest
+uv run pytest tests/
 
 # С подробным выводом
-uv run pytest -v
+uv run pytest tests/ -v
 
 # Конкретный тест
 uv run pytest tests/test_tasks.py
@@ -155,6 +159,29 @@ uv run pytest --cov=backend --cov-report=html
 open htmlcov/index.html  # Mac
 xdg-open htmlcov/index.html  # Linux
 ```
+
+#### Способ 2: Через активацию виртуального окружения
+
+```bash
+# Активировать виртуальное окружение
+source .venv/bin/activate  # Linux/Mac
+# или
+.venv\Scripts\activate  # Windows
+
+# Все тесты
+.venv/bin/python -m pytest tests/
+
+# С подробным выводом
+.venv/bin/python -m pytest tests/ -v
+
+# Конкретный тест
+.venv/bin/python -m pytest tests/test_tasks.py
+
+# С покрытием
+.venv/bin/python -m pytest --cov=backend --cov-report=html
+```
+
+**Важно**: При использовании способа 2 команды выполняются отдельно — сначала активация окружения, затем запуск тестов. Не используйте `cd` в командах, работайте из корня проекта.
 
 ### Структура тестов
 
