@@ -1360,13 +1360,21 @@ function renderAllTasksHeader() {
  * Render task card for all tasks view with details.
  */
 function renderAllTasksCard(task, now) {
-    const taskDate = task.due_date ? new Date(task.due_date) : null;
     const isCompleted = Boolean(task.is_completed);
     const isActive = Boolean(task.is_active);
-    const isUrgent = taskDate !== null &&
-        taskDate <= new Date(now.getTime() + 24 * 60 * 60 * 1000) &&
-        !isCompleted &&
-        isActive;
+    // Категоризация по тем же правилам, что и в Today view:
+    // - overdue: reminder_time в предыдущий день (учитывая начало дня)
+    // - current: сегодня (до текущего момента — current; после — planned, но по полосе — текущий день)
+    // - planned: за пределами текущего дня
+    const referenceDate = getReferenceDate();
+    const todayStart = new Date(
+        referenceDate.getFullYear(),
+        referenceDate.getMonth(),
+        referenceDate.getDate()
+    );
+    const yesterdayStart = new Date(todayStart);
+    yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+    const category = getTaskTimeCategory(task, referenceDate, todayStart, yesterdayStart);
 
     const statusText = isActive
         ? (isCompleted ? 'Выполнена' : 'Активна')
@@ -1381,7 +1389,9 @@ function renderAllTasksCard(task, now) {
     const rowClasses = [
         'task-row',
         isCompleted ? 'completed' : '',
-        isUrgent ? 'urgent' : '',
+        !isCompleted && isActive && category === 'overdue' ? 'overdue' : '',
+        !isCompleted && isActive && category === 'current' ? 'current' : '',
+        !isCompleted && isActive && category === 'planned' ? 'planned' : '',
         !isActive ? 'inactive' : '',
     ].filter(Boolean).join(' ');
 

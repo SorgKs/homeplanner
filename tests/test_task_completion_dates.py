@@ -77,40 +77,6 @@ class TestTaskCompletionDates:
 
         assert completed["reminder_time"] == created["reminder_time"]
 
-    def test_recurring_future_shifts_forward(self, client: TestClient) -> None:
-        """Задача с reminder_time в будущем сдвигается при выполнении вперёд."""
-
-        reminder_time = (datetime.now() + timedelta(days=2)).replace(hour=8, minute=30, second=0, microsecond=0)
-        payload = {
-            "title": "Future daily task",
-            "task_type": "recurring",
-            "recurrence_type": "daily",
-            "recurrence_interval": 1,
-            "reminder_time": isoformat(reminder_time),
-        }
-
-        created = client.post(api_path("/tasks/"), json=payload).json()
-        completed = client.post(api_path(f"/tasks/{created['id']}/complete")).json()
-
-        assert datetime.fromisoformat(completed["reminder_time"]) > reminder_time
-
-    def test_interval_future_shifts_by_interval(self, client: TestClient) -> None:
-        """Интервальная задача смещает reminder_time на интервал, если выполнена заранее."""
-
-        reminder_time = (datetime.now() + timedelta(days=3)).replace(hour=12, minute=0, second=0, microsecond=0)
-        payload = {
-            "title": "Interval task",
-            "task_type": "interval",
-            "interval_days": 7,
-            "reminder_time": isoformat(reminder_time),
-        }
-
-        created = client.post(api_path("/tasks/"), json=payload).json()
-        completed = client.post(api_path(f"/tasks/{created['id']}/complete")).json()
-
-        completed_time = datetime.fromisoformat(completed["reminder_time"])
-        assert completed_time >= reminder_time + timedelta(days=7)
-
     def test_one_time_completion_marks_inactive(self, client: TestClient) -> None:
         """Разовая задача после выполнения становится неактивной и не смещает reminder_time."""
 

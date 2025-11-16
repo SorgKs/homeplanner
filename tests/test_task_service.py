@@ -237,8 +237,8 @@ class TestTaskService:
         
         assert completed_task is not None
         assert completed_task.completed is True
-        # Date should change immediately if due in the future
-        assert completed_task.reminder_time > tomorrow
+        # Пересчёта быть не должно сразу — он произойдёт централизованно в новый день
+        assert completed_task.reminder_time == tomorrow
 
     def test_complete_task_interval(self, db_session: "Session") -> None:
         """Test completing an interval task due today."""
@@ -255,8 +255,37 @@ class TestTaskService:
         
         assert completed_task is not None
         assert completed_task.completed is True
-        # For interval tasks, confirmation shifts date from confirmation day
-        assert completed_task.reminder_time >= today + timedelta(days=7)
+        # Немедленного сдвига не происходит — сдвиг будет в новый день
+        assert completed_task.reminder_time == today
+
+    def test_recalc_happens_on_new_day_centrally(self, db_session: "Session", monkeypatch: "MonkeyPatch") -> None:
+        """Пересчёт дат происходит централизованно в новый день одним местом."""
+        # Задача recurring: сегодня в 09:00, подтверждаем сегодня
+        now = datetime.now().replace(second=0, microsecond=0)
+        today_9 = now.replace(hour=9, minute=0)
+        task_data = TaskCreate(
+            title="Daily Task",
+            task_type=TaskType.RECURRING,
+            recurrence_type=RecurrenceType.DAILY,
+            recurrence_interval=1,
+            reminder_time=today_9,
+        )
+        created_task = TaskService.create_task(db_session, task_data)
+        # Подтверждаем — дата не должна меняться сразу
+        completed_task = TaskService.complete_task(db_session, created_task.id)
+        assert completed_task is not None
+        assert completed_task.completed is True
+        assert completed_task.reminder_time == today_9
+
+        # Эмулируем наступление нового дня: заставляем сервис считать, что день сменился
+        monkeypatch.setattr(TaskService, "_is_new_day", staticmethod(lambda _db: True))
+        # Вызов централизованного обновления
+        updated = TaskService.get_all_tasks(db_session)
+        # Находим нашу задачу
+        updated_task = next(t for t in updated if t.id == created_task.id)
+        # Дата должна быть пересчитана на следующий цикл, а completed сброшен
+        assert updated_task.reminder_time > today_9
+        assert updated_task.completed is False
 
     def test_complete_task_not_found(self, db_session: "Session") -> None:
         """Test completing a non-existent task."""

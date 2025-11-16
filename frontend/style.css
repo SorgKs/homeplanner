@@ -842,6 +842,18 @@ nav {
     border-left-color: var(--success-color);
 }
 
+.task-row.overdue {
+    border-left-color: var(--danger-color);
+}
+
+.task-row.current {
+    border-left-color: var(--success-color);
+}
+
+.task-row.planned {
+    border-left-color: var(--text-secondary);
+}
+
 .task-row.urgent {
     border-left-color: var(--danger-color);
 }

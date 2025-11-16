@@ -640,66 +640,11 @@ class TaskService:
 
         # Mark task as completed
         task.completed = True
-
-        # Calculate next due date based on task type
+        # Per specification and tests: do NOT shift reminder_time on completion for any task type.
+        # Centralized recalculation will occur at day boundaries inside get_all_tasks().
         if task.task_type == TaskType.ONE_TIME:
-            # For one-time tasks: just mark as inactive (completed)
-            # Don't change the date - keep it so it stays visible
+            # One-time tasks are simply marked inactive upon completion.
             task.active = False
-        elif task.task_type == TaskType.INTERVAL:
-            # For interval tasks:
-            # If confirmation happens for a future reminder_time, shift immediately
-            # Otherwise, keep date until next day where get_all_tasks() will handle it
-            confirmation_now = now
-            if task.reminder_time and task.reminder_time > confirmation_now:
-                # Base shift from original reminder_time when confirming early
-                interval_days = task.interval_days or 1
-                next_date = (task.reminder_time + timedelta(days=interval_days)).replace(
-                    second=0,
-                    microsecond=0,
-                )
-                task.reminder_time = next_date
-            else:
-                # Confirming on/after due — base from today's start per config
-                settings_today = TaskService._get_day_start(confirmation_now)
-                interval_days = task.interval_days or 1
-                next_date = settings_today + timedelta(days=interval_days)
-                # Preserve original time if available
-                next_date = next_date.replace(
-                    hour=(task.reminder_time.hour if task.reminder_time else 0),
-                    minute=(task.reminder_time.minute if task.reminder_time else 0),
-                    second=0,
-                    microsecond=0,
-                )
-                task.reminder_time = next_date
-        else:
-            # For recurring tasks:
-            # If confirmation happens for a future reminder_time, shift immediately to the next due date
-            # Otherwise, keep date until next day where get_all_tasks() will handle it
-            confirmation_now = now
-            if task.reminder_time and task.reminder_time > confirmation_now:
-                # Base on the originally scheduled reminder, move to the next cycle
-                # This guarantees the new date is strictly after the original reminder_time
-                base_date = task.reminder_time
-                interval = task.recurrence_interval or 1
-                candidate = TaskService._calculate_next_due_date(
-                    base_date,
-                    task.recurrence_type,
-                    interval,
-                    task.reminder_time,
-                )
-                # Ensure candidate is strictly in the future
-                safety_counter = 0
-                while candidate <= base_date and safety_counter < 12:
-                    base_date = candidate + timedelta(seconds=1)
-                    candidate = TaskService._calculate_next_due_date(
-                        base_date,
-                        task.recurrence_type,
-                        interval,
-                        task.reminder_time,
-                    )
-                    safety_counter += 1
-                task.reminder_time = candidate
 
         db.commit()
         db.refresh(task)

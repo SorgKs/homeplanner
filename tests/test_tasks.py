@@ -110,27 +110,6 @@ def test_complete_task_marks_completed(client: TestClient) -> None:
     assert completed["reminder_time"] == created["reminder_time"]
 
 
-def test_complete_task_future_shifts_reminder(client: TestClient) -> None:
-    """Для будущей задачи reminder_time сдвигается вперёд."""
-
-    reminder_time = (datetime.now() + timedelta(days=1)).replace(hour=8, minute=30, second=0, microsecond=0)
-    payload = {
-        "title": "Задача на завтра",
-        "task_type": "recurring",
-        "recurrence_type": RecurrenceType.DAILY.value,
-        "recurrence_interval": 1,
-        "reminder_time": isoformat(reminder_time),
-    }
-    created = _create_task(client, payload)
-
-    response = client.post(api_path(f"/tasks/{created['id']}/complete"))
-    assert response.status_code == 200
-    completed = response.json()
-    assert completed["completed"] is True
-    assert completed["reminder_time"] != created["reminder_time"]
-    assert datetime.fromisoformat(completed["reminder_time"]) > reminder_time
-
-
 def test_uncomplete_task_restores_state(client: TestClient) -> None:
     """Отмена выполнения возвращает флаги по умолчанию."""
 
