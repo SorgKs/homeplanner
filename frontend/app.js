@@ -15,6 +15,7 @@ let ws = null; // WebSocket connection
 let timeControlState = null; // Состояние панели управления временем
 let users = []; // Пользователи для назначения
 let selectedUserId = null; // ID выбранного пользователя для фильтра
+let appInitialized = false; // Флаг инициализации интерфейса
 const USER_ROLE_LABELS = {
     admin: 'Админ',
     regular: 'Обычный',
@@ -24,6 +25,55 @@ const USER_STATUS_LABELS = {
     true: 'Активен',
     false: 'Неактивен',
 };
+
+// Cookie utilities to persist selected user
+function setCookie(name, value, days = 180) {
+    const date = new Date();
+    date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+    const expires = '; expires=' + date.toUTCString();
+    const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+    document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(String(value))}${expires}; path=/; SameSite=Lax${secure}`;
+}
+
+function getCookie(name) {
+    const nameEQ = encodeURIComponent(name) + '=';
+    const parts = document.cookie.split(';');
+    for (let i = 0; i < parts.length; i++) {
+        let c = parts[i];
+        while (c.charAt(0) === ' ') c = c.substring(1);
+        if (c.indexOf(nameEQ) === 0) {
+            return decodeURIComponent(c.substring(nameEQ.length));
+        }
+    }
+    return null;
+}
+
+function deleteCookie(name) {
+    document.cookie = `${encodeURIComponent(name)}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax`;
+}
+
+function applySelectedUserFromCookie() {
+    const select = document.getElementById('user-filter');
+    if (!select) return;
+    const cookieVal = getCookie('hp.selectedUserId');
+    if (!cookieVal) {
+        showToast('Выберите пользователя в левом меню (фильтр «Пользователь»).', 'info');
+        return;
+    }
+    const idNum = parseInt(cookieVal, 10);
+    if (!Number.isFinite(idNum)) {
+        deleteCookie('hp.selectedUserId');
+        return;
+    }
+    const exists = Array.isArray(users) && users.some(u => Number(u.id) === idNum);
+    if (!exists) {
+        deleteCookie('hp.selectedUserId');
+        showToast('Ранее выбранный пользователь не найден. Выберите другого.', 'warning');
+        return;
+    }
+    select.value = String(idNum);
+    selectedUserId = idNum;
+}
 
 function getWsUrl() {
     const host =
@@ -186,10 +236,66 @@ function findNthWeekdayInMonth(year, month, weekday, n) {
  * Initialize application.
  */
 async function init() {
-    setupEventListeners();
-    updateTimePanelVisibility();
+    const hasCookie = !!getCookie('hp.selectedUserId');
+    if (!hasCookie) {
+        await showUserPickScreen();
+        return; // Не инициализируем интерфейс до выбора пользователя
+    }
+    await initializeAppIfNeeded();
+}
+
+async function initializeAppIfNeeded() {
+    const appLayout = document.getElementById('app-layout');
+    const pickScreen = document.getElementById('user-pick-screen');
+    if (pickScreen) pickScreen.style.display = 'none';
+    if (appLayout) appLayout.style.display = 'block';
+    if (!appInitialized) {
+        setupEventListeners();
+        updateTimePanelVisibility();
+        appInitialized = true;
+    }
+    toggleUserFilterControls(currentView === 'all');
     await loadData();
     connectWebSocket();
+}
+
+async function showUserPickScreen() {
+    const appLayout = document.getElementById('app-layout');
+    const pickScreen = document.getElementById('user-pick-screen');
+    if (appLayout) appLayout.style.display = 'none';
+    if (pickScreen) pickScreen.style.display = 'flex';
+    try {
+        // Берём пользователей, если уже загружены — используем локально; иначе — грузим
+        if (!Array.isArray(users) || users.length === 0) {
+            users = await usersAPI.getAll();
+        }
+        renderUserPickButtons(users);
+    } catch (e) {
+        console.error('Failed to load users for pick screen', e);
+        const list = document.getElementById('user-pick-list');
+        if (list) {
+            list.innerHTML = '<div style="color:#b91c1c;">Не удалось загрузить пользователей. Обновите страницу.</div>';
+        }
+    }
+}
+
+function renderUserPickButtons(userList) {
+    const list = document.getElementById('user-pick-list');
+    if (!list) return;
+    list.innerHTML = (userList || []).map(u => {
+        const name = (u && (u.name || u.display_name || `#${u.id}`)) || '—';
+        return `<button class="btn btn-primary" data-user-id="${String(u.id)}" style="flex:1 1 auto; min-width:180px;">${name}</button>`;
+    }).join('');
+    list.querySelectorAll('button[data-user-id]').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const id = parseInt(e.currentTarget.getAttribute('data-user-id'), 10);
+            if (!Number.isFinite(id)) return;
+            setCookie('hp.selectedUserId', id);
+            selectedUserId = id;
+            await initializeAppIfNeeded();
+            showToast('Пользователь выбран', 'success');
+        });
+    });
 }
 
 /**
@@ -281,6 +387,22 @@ function setupEventListeners() {
         userFilter.addEventListener('change', (e) => {
             const value = e.target.value;
             selectedUserId = value ? parseInt(value, 10) : null;
+            if (value) {
+                setCookie('hp.selectedUserId', selectedUserId);
+            } else {
+                deleteCookie('hp.selectedUserId');
+            }
+            filterAndRenderTasks();
+        });
+    }
+    const resetUserBtn = document.getElementById('user-reset-btn');
+    if (resetUserBtn) {
+        resetUserBtn.addEventListener('click', () => {
+            deleteCookie('hp.selectedUserId');
+            const select = document.getElementById('user-filter');
+            if (select) select.value = '';
+            selectedUserId = null;
+            showToast('Выбор пользователя сброшен', 'info');
             filterAndRenderTasks();
         });
     }
@@ -446,6 +568,8 @@ async function loadData() {
         users = usersData;
         updateUserFilterOptions();
         updateAssigneeSelect();
+        // Apply selected user from cookie (if present)
+        applySelectedUserFromCookie();
         renderUsersList();
         if (currentView === 'users') {
             renderUsersView();
@@ -727,6 +851,8 @@ function switchView(view) {
         todayBtn.classList.add('active');
         historyFilters.style.display = 'none';
         tasksFilters.style.display = 'block';
+        // скрыть элементы фильтра пользователя в этом виде
+        toggleUserFilterControls(false);
         if (settingsView) settingsView.style.display = 'none';
         if (tasksList) tasksList.style.display = 'block';
         applyCurrentViewData();
@@ -735,6 +861,8 @@ function switchView(view) {
         allBtn.classList.add('active');
         historyFilters.style.display = 'none';
         tasksFilters.style.display = 'block';
+        // показать элементы фильтра пользователя только в этом виде
+        toggleUserFilterControls(true);
         if (settingsView) settingsView.style.display = 'none';
         if (tasksList) tasksList.style.display = 'block';
         applyCurrentViewData();
@@ -743,6 +871,7 @@ function switchView(view) {
         historyBtn.classList.add('active');
         historyFilters.style.display = 'block';
         tasksFilters.style.display = 'none';
+        toggleUserFilterControls(false);
         if (settingsView) settingsView.style.display = 'none';
         if (tasksList) tasksList.style.display = 'block';
         renderHistoryView();
@@ -751,6 +880,7 @@ function switchView(view) {
         if (settingsBtn) settingsBtn.classList.add('active');
         historyFilters.style.display = 'none';
         tasksFilters.style.display = 'none';
+        toggleUserFilterControls(false);
         if (tasksList) tasksList.style.display = 'none';
         if (settingsView) settingsView.style.display = 'block';
         return;
@@ -758,6 +888,7 @@ function switchView(view) {
         if (usersBtn) usersBtn.classList.add('active');
         historyFilters.style.display = 'none';
         tasksFilters.style.display = 'none';
+        toggleUserFilterControls(false);
         if (tasksList) tasksList.style.display = 'none';
         if (settingsView) settingsView.style.display = 'none';
         if (usersView) usersView.style.display = 'block';
@@ -768,6 +899,12 @@ function switchView(view) {
     filterAndRenderTasks();
 }
 
+function toggleUserFilterControls(visible) {
+    const select = document.getElementById('user-filter');
+    const resetBtn = document.getElementById('user-reset-btn');
+    if (select) select.parentElement.style.display = visible ? 'block' : 'none';
+    if (resetBtn) resetBtn.style.display = visible ? 'block' : 'none';
+}
 /**
  * Toggle admin mode.
  */

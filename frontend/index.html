@@ -8,7 +8,14 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="app-layout">
+    <div id="user-pick-screen" style="display:none; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;">
+        <div style="max-width:720px; width:100%; background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:24px; box-shadow:0 10px 25px rgba(0,0,0,0.08);">
+            <h2 style="margin:0 0 12px 0;">Выберите пользователя</h2>
+            <p style="margin:0 0 16px 0; color:#666;">Для продолжения работы выберите пользователя. Настройки сохранятся в cookie.</p>
+            <div id="user-pick-list" style="display:flex; flex-wrap:wrap; gap:12px;"></div>
+        </div>
+    </div>
+    <div class="app-layout" id="app-layout" style="display:none;">
         <header>
             <h1>🏠 HomePlanner</h1>
         </header>
@@ -50,6 +57,7 @@
                             <select id="user-filter">
                                 <option value="">Все пользователи</option>
                             </select>
+                            <button class="btn btn-outline btn-sm" id="user-reset-btn" style="margin-top: 8px; width: 100%;">Сменить/сбросить выбор</button>
                         </div>
                         <button class="filter-btn sidebar-btn" id="tasks-filter-btn">Фильтры</button>
                     </div>
