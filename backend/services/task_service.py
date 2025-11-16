@@ -202,12 +202,11 @@ class TaskService:
             
             # Find tasks that need date update:
             # - Are completed (completed = True)
-            # - reminder_time is before today (date is in the past)
+            # Update ALL completed tasks regardless of reminder_time position
             tasks_to_update = (
                 db.query(Task)
                 .options(selectinload(Task.assignees))
                 .filter(Task.completed == True)
-                .filter(Task.reminder_time < today)
                 .all()
             )
             
@@ -217,25 +216,48 @@ class TaskService:
                 # Update the date based on task type and reset completed flag for recurring/interval tasks
                 if task.task_type == TaskType.ONE_TIME:
                     # One-time tasks stay as they are (already inactive)
+                    # Date is not changed for one-time tasks
                     pass
                 elif task.task_type == TaskType.INTERVAL:
-                    # Calculate next date from last completion + interval
-                    if task.interval_days:
-                        # Calculate next cycle start date from today
-                        next_date = today + timedelta(days=task.interval_days)
-                        task.reminder_time = next_date
-                    else:
-                        task.reminder_time = today + timedelta(days=1)
+                    # Interval tasks: always shift from confirmation day start
+                    interval_days = task.interval_days or 1
+                    next_date = today + timedelta(days=interval_days)
+                    # Preserve original time component from reminder_time
+                    if task.reminder_time is not None:
+                        next_date = next_date.replace(
+                            hour=task.reminder_time.hour,
+                            minute=task.reminder_time.minute,
+                            second=0,
+                            microsecond=0,
+                        )
+                    task.reminder_time = next_date
                     # Reset completed flag - task should be active again
                     task.completed = False
                 else:
-                    # Recurring tasks: calculate next date from today
-                    task.reminder_time = TaskService._calculate_next_due_date(
-                        today,
+                    # Recurring tasks: calculate next date based on current time,
+                    # ensuring the result is strictly in the future
+                    current_time = now
+                    interval = task.recurrence_interval or 1
+                    candidate = TaskService._calculate_next_due_date(
+                        current_time,
                         task.recurrence_type,
-                        task.recurrence_interval,
+                        interval,
                         task.reminder_time,
                     )
+                    # Ensure candidate is strictly in the future relative to current time
+                    # In rare edge cases (large overdue or same-moment), advance again
+                    safety_counter = 0
+                    while candidate <= current_time and safety_counter < 12:
+                        # Move the base forward slightly and recalculate
+                        current_time = candidate + timedelta(seconds=1)
+                        candidate = TaskService._calculate_next_due_date(
+                            current_time,
+                            task.recurrence_type,
+                            interval,
+                            task.reminder_time,
+                        )
+                        safety_counter += 1
+                    task.reminder_time = candidate
                     # Reset completed flag - task should be active again
                     task.completed = False
             
@@ -323,6 +345,12 @@ class TaskService:
         if not task:
             return None
 
+        # Optimistic concurrency control: check expected revision if provided
+        expected_revision = getattr(task_data, "revision", None)
+        if expected_revision is not None and expected_revision != task.revision:
+            # Return conflict with current server task and expected revision
+            raise TaskRevisionConflictError(task=task, expected_revision=task.revision)
+
         update_data = task_data.model_dump(exclude_unset=True, exclude={"assigned_user_ids"})
         
         # Save old task state for history comments (before applying changes)
@@ -368,6 +396,9 @@ class TaskService:
         # Apply changes
         for key, value in update_data.items():
             setattr(task, key, value)
+
+        # Bump revision after successful in-memory update
+        task.revision = (task.revision or 0) + 1
 
         # Update assignees if provided
         if task_data.assigned_user_ids is not None:
@@ -616,17 +647,59 @@ class TaskService:
             # Don't change the date - keep it so it stays visible
             task.active = False
         elif task.task_type == TaskType.INTERVAL:
-            # For interval tasks: do not update date here
-            # Date will be updated only in get_all_tasks() when new day starts
-            # This ensures that completed tasks remain visible until next day
-            # regardless of whether they are due today, overdue, or in the future
-            pass
+            # For interval tasks:
+            # If confirmation happens for a future reminder_time, shift immediately
+            # Otherwise, keep date until next day where get_all_tasks() will handle it
+            confirmation_now = now
+            if task.reminder_time and task.reminder_time > confirmation_now:
+                # Base shift from original reminder_time when confirming early
+                interval_days = task.interval_days or 1
+                next_date = (task.reminder_time + timedelta(days=interval_days)).replace(
+                    second=0,
+                    microsecond=0,
+                )
+                task.reminder_time = next_date
+            else:
+                # Confirming on/after due — base from today's start per config
+                settings_today = TaskService._get_day_start(confirmation_now)
+                interval_days = task.interval_days or 1
+                next_date = settings_today + timedelta(days=interval_days)
+                # Preserve original time if available
+                next_date = next_date.replace(
+                    hour=(task.reminder_time.hour if task.reminder_time else 0),
+                    minute=(task.reminder_time.minute if task.reminder_time else 0),
+                    second=0,
+                    microsecond=0,
+                )
+                task.reminder_time = next_date
         else:
-            # For recurring tasks: do not update date here
-            # Date will be updated only in get_all_tasks() when new day starts
-            # This ensures that completed tasks remain visible until next day
-            # regardless of whether they are due today, overdue, or in the future
-            pass
+            # For recurring tasks:
+            # If confirmation happens for a future reminder_time, shift immediately to the next due date
+            # Otherwise, keep date until next day where get_all_tasks() will handle it
+            confirmation_now = now
+            if task.reminder_time and task.reminder_time > confirmation_now:
+                # Base on the originally scheduled reminder, move to the next cycle
+                # This guarantees the new date is strictly after the original reminder_time
+                base_date = task.reminder_time
+                interval = task.recurrence_interval or 1
+                candidate = TaskService._calculate_next_due_date(
+                    base_date,
+                    task.recurrence_type,
+                    interval,
+                    task.reminder_time,
+                )
+                # Ensure candidate is strictly in the future
+                safety_counter = 0
+                while candidate <= base_date and safety_counter < 12:
+                    base_date = candidate + timedelta(seconds=1)
+                    candidate = TaskService._calculate_next_due_date(
+                        base_date,
+                        task.recurrence_type,
+                        interval,
+                        task.reminder_time,
+                    )
+                    safety_counter += 1
+                task.reminder_time = candidate
 
         db.commit()
         db.refresh(task)

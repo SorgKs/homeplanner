@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field, ConfigDict, model_validator
+from pydantic import BaseModel, Field, ConfigDict, model_validator, field_serializer
 
 from backend.services.time_manager import (
     get_time_state,
@@ -26,7 +26,12 @@ class TimeStateResponse(BaseModel):
         default=None, description="Offset between virtual and real times in seconds"
     )
 
-    model_config = ConfigDict(json_encoders={datetime: lambda value: value.isoformat()})
+    @field_serializer("real_now", "virtual_now", when_used="always")
+    def _serialize_dt(self, value: datetime) -> str:
+        """Serialize datetime to ISO 8601 without timezone."""
+        if value.tzinfo is not None:
+            value = value.replace(tzinfo=None)
+        return value.isoformat()
 
 
 class TimeShiftRequest(BaseModel):
@@ -73,8 +78,17 @@ def shift_time_endpoint(payload: TimeShiftRequest) -> TimeStateResponse:
 @router.post("/set", response_model=TimeStateResponse)
 def set_time_endpoint(payload: TimeSetRequest) -> TimeStateResponse:
     """Set absolute application time."""
-    set_current_time(payload.target_datetime)
-    return _serialize_state()
+    # Normalize to minute precision (seconds and microseconds to zero)
+    normalized = payload.target_datetime.replace(second=0, microsecond=0)
+    set_current_time(normalized)
+    # Compose response explicitly to avoid transient microsecond drift
+    state = get_time_state()
+    return TimeStateResponse(
+        real_now=state["real_now"],
+        virtual_now=normalized,
+        override_enabled=state["override_enabled"],
+        offset_seconds=state["offset_seconds"],
+    )
 
 
 @router.post("/reset", response_model=TimeStateResponse)

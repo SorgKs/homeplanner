@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 
 class GroupBase(BaseModel):
@@ -40,8 +40,5 @@ class GroupResponse(GroupBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        """Pydantic config."""
-
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 

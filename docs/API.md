@@ -31,7 +31,7 @@ http://localhost:8000/api/v0.2
   - `2024-01-01T12:00:00`
   - `2024-01-01T12:00`
 
-При отправке данных на сервер используйте локальное время. Сервер сохраняет время как есть, без преобразований.
+При отправке данных на сервер используйте локальное время. Сервер сохраняет время как есть, без преобразований. Точность сохраняемого времени — до минут (секунды и микросекунды нормализуются к `00` для абсолютных операций, таких как `/time/set`).
 
 ### Типы задач
 
@@ -113,15 +113,14 @@ Content-Type: application/json
   "task_type": "one_time|recurring|interval",
   "recurrence_type": "daily|weekly|monthly|yearly" (обязательно для recurring),
   "recurrence_interval": 1 (обязательно для recurring),
-  "next_due_date": "2024-01-01T12:00:00",
-  "reminder_time": "2024-01-01T11:00:00" (обязательно для recurring),
+  "reminder_time": "2024-01-01T12:00:00" (обязательно для всех типов),
   "interval_days": 7 (обязательно для interval),
   "group_id": null
 }
 ```
 
 **Требования:**
-- Для задач типа `recurring`: `reminder_time` обязателен
+- Для задач: `reminder_time` обязателен
 - Для задач типа `interval`: `interval_days` обязателен
 - Для задач типа `recurring`: `recurrence_type` и `recurrence_interval` обязательны
 
@@ -164,10 +163,12 @@ Content-Type: application/json
 
 {
   "title": "Новое название",
-  "is_active": false
+  "active": false,
+  "revision": 0
 }
 ```
 
+Оптимистичная блокировка: при обновлении рекомендуется передавать текущее значение `revision` из последнего GET. В случае конфликта версий сервер вернёт 409 (conflict_revision) с актуальным payload и `server_revision`.
 #### Удалить задачу
 ```http
 DELETE /tasks/{task_id}

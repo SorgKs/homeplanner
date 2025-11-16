@@ -3,7 +3,7 @@
 from typing import Any, List
 from datetime import datetime
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
 
 from backend.models.task import RecurrenceType, TaskType
 from backend.schemas.user import UserSummary
@@ -14,6 +14,7 @@ class TaskBase(BaseModel):
 
     title: str = Field(..., min_length=1, max_length=255, description="Task title")
     description: str | None = Field(None, description="Task description")
+    # Revision is not part of base to avoid forcing it for create
     task_type: TaskType = Field(TaskType.ONE_TIME, description="Type of task scheduling")
     recurrence_type: RecurrenceType | None = Field(
         None, description="Type of recurrence (for recurring tasks)"
@@ -35,6 +36,7 @@ class TaskUpdate(BaseModel):
 
     title: str | None = Field(None, min_length=1, max_length=255)
     description: str | None = None
+    revision: int | None = Field(None, description="Expected task revision for optimistic concurrency control")
     task_type: TaskType | None = None
     recurrence_type: RecurrenceType | None = None
     recurrence_interval: int | None = Field(None, description="Recurrence interval (for recurring tasks only)")
@@ -91,6 +93,7 @@ class TaskResponse(TaskBase):
     """Schema for task response."""
 
     id: int
+    revision: int
     active: bool  # Task is active (replaces is_active)
     completed: bool  # Task is completed (replaces last_completed_at)
     task_type: TaskType
@@ -103,10 +106,7 @@ class TaskResponse(TaskBase):
     assigned_user_ids: list[int] = Field(default_factory=list, description="List of user IDs assigned to the task")
     assignees: list[UserSummary] = Field(default_factory=list, description="Assigned user objects")
 
-    class Config:
-        """Pydantic config."""
-
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @classmethod
     def model_validate(cls, obj: Any, /, *, strict: bool | None = None, from_attributes: bool | None = None, context: dict[str, Any] | None = None) -> "TaskResponse":

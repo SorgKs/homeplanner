@@ -9,9 +9,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from backend.database import Base, get_db
-from backend.main import app
+import importlib
+from backend.main import create_app
 from backend.models.task import RecurrenceType, TaskType
 from backend.models.user import UserRole
+from tests.utils.api import api_path
+from common.versioning import get_supported_api_versions
 
 if TYPE_CHECKING:
     from _pytest.fixtures import FixtureRequest
@@ -39,8 +42,14 @@ def db_session() -> "Session":
         Base.metadata.drop_all(bind=engine)
 
 
+@pytest.fixture(params=get_supported_api_versions() or ["0.2"], scope="function")
+def api_version(request) -> str:
+    """Параметр версии API для прогона по всем поддерживаемым версиям."""
+    return request.param
+
+
 @pytest.fixture(scope="function")
-def client(db_session: "Session") -> TestClient:
+def client(db_session: "Session", api_version: str, monkeypatch: "FixtureRequest") -> TestClient:
     """Create test client with test database."""
 
     def override_get_db():
@@ -49,10 +58,35 @@ def client(db_session: "Session") -> TestClient:
         finally:
             pass
 
-    app.dependency_overrides[get_db] = override_get_db
-    with TestClient(app) as test_client:
+    # Подменяем загрузку конфигурации, чтобы выставить нужную версию API
+    import backend.config as cfg
+    original_loader = cfg._load_config_file
+
+    def patched_loader(path):
+        data = original_loader(path)
+        # Переопределяем версию API
+        if "api" not in data:
+            data["api"] = {}
+        data["api"]["version"] = api_version
+        return data
+
+    monkeypatch.setattr(cfg, "_load_config_file", patched_loader)
+    # Сбрасываем кеш настроек
+    monkeypatch.setattr(cfg, "_settings", None)
+
+    # Также синхронизируем версию для tests.utils.api (get_api_prefix),
+    # чтобы префикс путей совпадал с конфигом.
+    import common.versioning as ver
+    major, minor = api_version.split(".")
+    monkeypatch.setattr(ver, "_API_VERSION_CONFIG", {"major": int(major), "minor": int(minor)})
+
+    # Пересоздаём приложение с новой версией API
+    test_app = create_app()
+
+    test_app.dependency_overrides[get_db] = override_get_db
+    with TestClient(test_app) as test_client:
         yield test_client
-    app.dependency_overrides.clear()
+    test_app.dependency_overrides.clear()
 
 
 class TestTasksRouter:
@@ -65,10 +99,10 @@ class TestTasksRouter:
             "title": "Test Task",
             "description": "Test Description",
             "task_type": TaskType.ONE_TIME.value,
-            "next_due_date": today.isoformat(),
+            "reminder_time": today.isoformat(),
         }
         
-        response = client.post("/api/v1/tasks/", json=task_data)
+        response = client.post(api_path("/tasks/"), json=task_data)
         
         assert response.status_code == 201
         data = response.json()
@@ -84,18 +118,18 @@ class TestTasksRouter:
         task1_data = {
             "title": "Task 1",
             "task_type": TaskType.ONE_TIME.value,
-            "next_due_date": today.isoformat(),
+            "reminder_time": today.isoformat(),
         }
         task2_data = {
             "title": "Task 2",
             "task_type": TaskType.ONE_TIME.value,
-            "next_due_date": (today + timedelta(days=1)).isoformat(),
+            "reminder_time": (today + timedelta(days=1)).isoformat(),
         }
         
-        client.post("/api/v1/tasks/", json=task1_data)
-        client.post("/api/v1/tasks/", json=task2_data)
+        client.post(api_path("/tasks/"), json=task1_data)
+        client.post(api_path("/tasks/"), json=task2_data)
         
-        response = client.get("/api/v1/tasks/")
+        response = client.get(api_path("/tasks/"))
         
         assert response.status_code == 200
         data = response.json()
@@ -108,22 +142,23 @@ class TestTasksRouter:
         task1_data = {
             "title": "Active Task",
             "task_type": TaskType.ONE_TIME.value,
-            "next_due_date": today.isoformat(),
+            "reminder_time": today.isoformat(),
         }
         task2_data = {
             "title": "Inactive Task",
             "task_type": TaskType.ONE_TIME.value,
-            "next_due_date": today.isoformat(),
+            "reminder_time": today.isoformat(),
         }
         
-        create_response1 = client.post("/api/v1/tasks/", json=task1_data)
-        create_response2 = client.post("/api/v1/tasks/", json=task2_data)
+        create_response1 = client.post(api_path("/tasks/"), json=task1_data)
+        create_response2 = client.post(api_path("/tasks/"), json=task2_data)
         
         # Update task2 to be inactive
         task2_id = create_response2.json()["id"]
-        client.put(f"/api/v1/tasks/{task2_id}", json={"is_active": False})
+        current = client.get(api_path(f"/tasks/{task2_id}")).json()
+        client.put(api_path(f"/tasks/{task2_id}"), json={"revision": current["revision"], "active": False})
         
-        response = client.get("/api/v1/tasks/?active_only=true")
+        response = client.get(api_path("/tasks/") + "?active_only=true")
         
         assert response.status_code == 200
         data = response.json()
@@ -136,13 +171,13 @@ class TestTasksRouter:
         task_data = {
             "title": "Test Task",
             "task_type": TaskType.ONE_TIME.value,
-            "next_due_date": today.isoformat(),
+            "reminder_time": today.isoformat(),
         }
         
-        create_response = client.post("/api/v1/tasks/", json=task_data)
+        create_response = client.post(api_path("/tasks/"), json=task_data)
         task_id = create_response.json()["id"]
         
-        response = client.get(f"/api/v1/tasks/{task_id}")
+        response = client.get(api_path(f"/tasks/{task_id}"))
         
         assert response.status_code == 200
         data = response.json()
@@ -151,7 +186,7 @@ class TestTasksRouter:
 
     def test_get_task_not_found(self, client: TestClient) -> None:
         """Test getting a non-existent task via API."""
-        response = client.get("/api/v1/tasks/999")
+        response = client.get(api_path("/tasks/999"))
         
         assert response.status_code == 404
 
@@ -161,14 +196,15 @@ class TestTasksRouter:
         task_data = {
             "title": "Original Title",
             "task_type": TaskType.ONE_TIME.value,
-            "next_due_date": today.isoformat(),
+            "reminder_time": today.isoformat(),
         }
         
-        create_response = client.post("/api/v1/tasks/", json=task_data)
+        create_response = client.post(api_path("/tasks/"), json=task_data)
         task_id = create_response.json()["id"]
         
         update_data = {"title": "Updated Title"}
-        response = client.put(f"/api/v1/tasks/{task_id}", json=update_data)
+        cur = client.get(api_path(f"/tasks/{task_id}")).json()
+        response = client.put(api_path(f"/tasks/{task_id}"), json={"revision": cur["revision"], **update_data})
         
         assert response.status_code == 200
         data = response.json()
@@ -177,7 +213,7 @@ class TestTasksRouter:
     def test_update_task_not_found(self, client: TestClient) -> None:
         """Test updating a non-existent task via API."""
         update_data = {"title": "Updated Title"}
-        response = client.put("/api/v1/tasks/999", json=update_data)
+        response = client.put(api_path("/tasks/999"), json=update_data)
         
         assert response.status_code == 404
 
@@ -187,30 +223,30 @@ class TestTasksRouter:
         task_data = {
             "title": "Test Task",
             "task_type": TaskType.ONE_TIME.value,
-            "next_due_date": today.isoformat(),
+            "reminder_time": today.isoformat(),
         }
         
-        create_response = client.post("/api/v1/tasks/", json=task_data)
+        create_response = client.post(api_path("/tasks/"), json=task_data)
         task_id = create_response.json()["id"]
         
-        response = client.delete(f"/api/v1/tasks/{task_id}")
+        response = client.delete(api_path(f"/tasks/{task_id}"))
         
         assert response.status_code == 204
         
         # Verify task is deleted
-        get_response = client.get(f"/api/v1/tasks/{task_id}")
+        get_response = client.get(api_path(f"/tasks/{task_id}"))
         assert get_response.status_code == 404
 
     def test_delete_task_not_found(self, client: TestClient) -> None:
         """Test deleting a non-existent task via API."""
-        response = client.delete("/api/v1/tasks/999")
+        response = client.delete(api_path("/tasks/999"))
         
         assert response.status_code == 404
 
     def test_task_with_assignees(self, client: TestClient) -> None:
         """Ensure tasks can be assigned to users."""
         user_response = client.post(
-            "/api/v1/users/",
+            api_path("/users/"),
             json={"name": "Assignee One", "email": "user1@example.com"},
         )
         assert user_response.status_code == 201
@@ -220,11 +256,11 @@ class TestTasksRouter:
         task_data = {
             "title": "Task with assignee",
             "task_type": TaskType.ONE_TIME.value,
-            "next_due_date": today.isoformat(),
+            "reminder_time": today.isoformat(),
             "assigned_user_ids": [user_id],
         }
 
-        response = client.post("/api/v1/tasks/", json=task_data)
+        response = client.post(api_path("/tasks/"), json=task_data)
         assert response.status_code == 201
         created = response.json()
         assert created["assigned_user_ids"] == [user_id]
@@ -234,7 +270,12 @@ class TestTasksRouter:
         assert created["assignees"][0]["is_active"] is True
 
         task_id = created["id"]
-        update_resp = client.put(f"/api/v1/tasks/{task_id}", json={"assigned_user_ids": []})
+        # include revision to pass optimistic locking
+        cur = client.get(api_path(f"/tasks/{task_id}")).json()
+        update_resp = client.put(
+            api_path(f"/tasks/{task_id}"),
+            json={"revision": cur["revision"], "assigned_user_ids": []},
+        )
         assert update_resp.status_code == 200
         updated = update_resp.json()
         assert updated["assigned_user_ids"] == []
@@ -248,22 +289,19 @@ class TestTasksRouter:
             "role": UserRole.ADMIN.value,
             "is_active": True,
         }
-        create_resp = client.post("/api/v1/users/", json=create_payload)
+        create_resp = client.post(api_path("/users/"), json=create_payload)
         assert create_resp.status_code == 201
         created = create_resp.json()
         assert created["role"] == UserRole.ADMIN.value
         assert created["is_active"] is True
         user_id = created["id"]
 
-        list_resp = client.get("/api/v1/users/")
+        list_resp = client.get(api_path("/users/"))
         assert list_resp.status_code == 200
         data = list_resp.json()
         assert any(u["id"] == user_id for u in data)
 
-        update_resp = client.put(
-            f"/api/v1/users/{user_id}",
-            json={"role": UserRole.GUEST.value, "is_active": False},
-        )
+        update_resp = client.put(api_path(f"/users/{user_id}"), json={"role": UserRole.GUEST.value, "is_active": False})
         assert update_resp.status_code == 200
         updated = update_resp.json()
         assert updated["role"] == UserRole.GUEST.value
@@ -275,21 +313,23 @@ class TestTasksRouter:
         task_data = {
             "title": "Test Task",
             "task_type": TaskType.ONE_TIME.value,
-            "next_due_date": today.isoformat(),
+            "reminder_time": today.isoformat(),
         }
         
-        create_response = client.post("/api/v1/tasks/", json=task_data)
+        create_response = client.post(api_path("/tasks/"), json=task_data)
         task_id = create_response.json()["id"]
         
-        response = client.post(f"/api/v1/tasks/{task_id}/complete")
+        response = client.post(api_path(f"/tasks/{task_id}/complete"))
         
         assert response.status_code == 200
         data = response.json()
-        assert data["last_completed_at"] is not None
+        # For one-time tasks: active -> False, completed -> True, reminder_time unchanged
+        assert data["completed"] is True
+        assert data["active"] is False
 
     def test_complete_task_not_found(self, client: TestClient) -> None:
         """Test completing a non-existent task via API."""
-        response = client.post("/api/v1/tasks/999/complete")
+        response = client.post(api_path("/tasks/999/complete"))
         
         assert response.status_code == 404
 
@@ -300,20 +340,20 @@ class TestTasksRouter:
         task1_data = {
             "title": "Task Today",
             "task_type": TaskType.ONE_TIME.value,
-            "next_due_date": today.isoformat(),
+            "reminder_time": today.isoformat(),
             "is_active": True,
         }
         task2_data = {
             "title": "Task Tomorrow",
             "task_type": TaskType.ONE_TIME.value,
-            "next_due_date": (today + timedelta(days=1)).isoformat(),
+            "reminder_time": (today + timedelta(days=1)).isoformat(),
             "is_active": True,
         }
         
-        client.post("/api/v1/tasks/", json=task1_data)
-        client.post("/api/v1/tasks/", json=task2_data)
+        client.post(api_path("/tasks/"), json=task1_data)
+        client.post(api_path("/tasks/"), json=task2_data)
         
-        response = client.get("/api/v1/tasks/?days_ahead=3")
+        response = client.get(api_path("/tasks/") + "?days_ahead=3")
         
         assert response.status_code == 200
         data = response.json()
@@ -329,29 +369,29 @@ class TestTasksRouter:
         task_today = {
             "title": "Task Today",
             "task_type": TaskType.ONE_TIME.value,
-            "next_due_date": today.isoformat(),
+            "reminder_time": today.isoformat(),
             "is_active": True,
         }
         # Task overdue should be included
         task_overdue = {
             "title": "Task Overdue",
             "task_type": TaskType.ONE_TIME.value,
-            "next_due_date": yesterday.isoformat(),
+            "reminder_time": yesterday.isoformat(),
             "is_active": True,
         }
         # Task due tomorrow should be excluded
         task_future = {
             "title": "Task Future",
             "task_type": TaskType.ONE_TIME.value,
-            "next_due_date": tomorrow.isoformat(),
+            "reminder_time": tomorrow.isoformat(),
             "is_active": True,
         }
 
-        id_today = client.post("/api/v1/tasks/", json=task_today).json()["id"]
-        id_overdue = client.post("/api/v1/tasks/", json=task_overdue).json()["id"]
-        client.post("/api/v1/tasks/", json=task_future)
+        id_today = client.post(api_path("/tasks/"), json=task_today).json()["id"]
+        id_overdue = client.post(api_path("/tasks/"), json=task_overdue).json()["id"]
+        client.post(api_path("/tasks/"), json=task_future)
 
-        response = client.get("/api/v1/tasks/today/ids")
+        response = client.get(api_path("/tasks/today/ids"))
 
         assert response.status_code == 200
         data = response.json()

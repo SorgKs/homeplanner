@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field, field_serializer
+from pydantic import BaseModel, Field, field_serializer, ConfigDict
 
 from backend.models.task_history import TaskHistoryAction
 from backend.services.time_manager import get_current_time
@@ -41,7 +41,4 @@ class TaskHistoryResponse(TaskHistoryBase):
 
     id: int
 
-    class Config:
-        """Pydantic config."""
-
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

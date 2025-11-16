@@ -12,7 +12,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from backend.config import get_settings
+from common.versioning import get_api_prefix
 
 
 def normalize_datetime(dt: datetime) -> datetime:
@@ -32,7 +32,7 @@ def api_path(path: str) -> str:
 
     if not path.startswith("/"):
         path = f"/{path}"
-    return f"{get_settings().api_prefix}{path}"
+    return f"{get_api_prefix()}{path}"
 
 
 def create_sqlite_engine(db_name: str) -> tuple[Engine, sessionmaker]:

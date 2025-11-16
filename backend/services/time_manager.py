@@ -38,6 +38,8 @@ class TimeManager:
     @classmethod
     def set_override(cls, target_time: datetime) -> datetime:
         """Set absolute virtual time."""
+        # Normalize to minute precision (drop seconds and microseconds)
+        target_time = target_time.replace(second=0, microsecond=0)
         real_now = datetime.now()
         with cls._lock:
             cls._offset = target_time - real_now

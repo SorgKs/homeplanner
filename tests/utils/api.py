@@ -4,14 +4,14 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-from backend.config import get_settings
+from common.versioning import get_api_prefix
 
 
 @lru_cache(maxsize=1)
 def _api_prefix() -> str:
     """Получить префикс API из настроек."""
 
-    return get_settings().api_prefix
+    return get_api_prefix()
 
 
 def api_path(path: str) -> str:

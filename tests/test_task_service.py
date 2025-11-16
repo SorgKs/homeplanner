@@ -13,7 +13,11 @@ from backend.schemas.task import TaskCreate, TaskUpdate
 from backend.services.task_service import TaskService
 
 if TYPE_CHECKING:
+    from _pytest.capture import CaptureFixture
     from _pytest.fixtures import FixtureRequest
+    from _pytest.logging import LogCaptureFixture
+    from _pytest.monkeypatch import MonkeyPatch
+    from pytest_mock.plugin import MockerFixture
     from sqlalchemy.orm import Session
 
 
@@ -48,7 +52,7 @@ class TestTaskService:
             title="Test Task",
             description="Test Description",
             task_type=TaskType.ONE_TIME,
-            next_due_date=today,
+            reminder_time=today,
         )
         
         task = TaskService.create_task(db_session, task_data)
@@ -57,8 +61,8 @@ class TestTaskService:
         assert task.title == "Test Task"
         assert task.description == "Test Description"
         assert task.task_type == TaskType.ONE_TIME
-        assert task.next_due_date == today
-        assert task.is_active is True
+        assert task.reminder_time == today
+        assert task.active is True
 
     def test_get_task(self, db_session: "Session") -> None:
         """Test getting a task by ID."""
@@ -66,7 +70,7 @@ class TestTaskService:
         task_data = TaskCreate(
             title="Test Task",
             task_type=TaskType.ONE_TIME,
-            next_due_date=today,
+            reminder_time=today,
         )
         
         created_task = TaskService.create_task(db_session, task_data)
@@ -88,12 +92,12 @@ class TestTaskService:
         task1_data = TaskCreate(
             title="Task 1",
             task_type=TaskType.ONE_TIME,
-            next_due_date=today,
+            reminder_time=today,
         )
         task2_data = TaskCreate(
             title="Task 2",
             task_type=TaskType.ONE_TIME,
-            next_due_date=today + timedelta(days=1),
+            reminder_time=today + timedelta(days=1),
         )
         
         TaskService.create_task(db_session, task1_data)
@@ -112,19 +116,19 @@ class TestTaskService:
         task1_data = TaskCreate(
             title="Active Task",
             task_type=TaskType.ONE_TIME,
-            next_due_date=today,
+            reminder_time=today,
         )
         task2_data = TaskCreate(
             title="Inactive Task",
             task_type=TaskType.ONE_TIME,
-            next_due_date=today,
+            reminder_time=today,
         )
         
         task1 = TaskService.create_task(db_session, task1_data)
         task2 = TaskService.create_task(db_session, task2_data)
         
         # Update task2 to be inactive
-        update_data = TaskUpdate(is_active=False)
+        update_data = TaskUpdate(active=False)
         TaskService.update_task(db_session, task2.id, update_data)
         
         tasks = TaskService.get_all_tasks(db_session, active_only=True)
@@ -138,7 +142,7 @@ class TestTaskService:
         task_data = TaskCreate(
             title="Original Title",
             task_type=TaskType.ONE_TIME,
-            next_due_date=today,
+            reminder_time=today,
         )
         
         created_task = TaskService.create_task(db_session, task_data)
@@ -162,7 +166,7 @@ class TestTaskService:
         task_data = TaskCreate(
             title="Test Task",
             task_type=TaskType.ONE_TIME,
-            next_due_date=today,
+            reminder_time=today,
         )
         
         created_task = TaskService.create_task(db_session, task_data)
@@ -184,17 +188,17 @@ class TestTaskService:
         task_data = TaskCreate(
             title="One-time Task",
             task_type=TaskType.ONE_TIME,
-            next_due_date=today,
+            reminder_time=today,
         )
         
         created_task = TaskService.create_task(db_session, task_data)
         completed_task = TaskService.complete_task(db_session, created_task.id)
         
         assert completed_task is not None
-        assert completed_task.is_active is False
-        assert completed_task.last_completed_at is not None
+        assert completed_task.active is False
+        assert completed_task.completed is True
         # Date should not change for one-time tasks
-        assert completed_task.next_due_date.date() == today.date()
+        assert completed_task.reminder_time.date() == today.date()
 
     def test_complete_task_recurring(self, db_session: "Session") -> None:
         """Test completing a recurring task due today."""
@@ -204,16 +208,16 @@ class TestTaskService:
             task_type=TaskType.RECURRING,
             recurrence_type=RecurrenceType.DAILY,
             recurrence_interval=1,
-            next_due_date=today,
+            reminder_time=today,
         )
         
         created_task = TaskService.create_task(db_session, task_data)
         completed_task = TaskService.complete_task(db_session, created_task.id)
         
         assert completed_task is not None
-        assert completed_task.last_completed_at is not None
+        assert completed_task.completed is True
         # Date should not change immediately if due today
-        assert completed_task.next_due_date.date() == today.date()
+        assert completed_task.reminder_time.date() == today.date()
 
     def test_complete_task_recurring_future(self, db_session: "Session") -> None:
         """Test completing a recurring task due in the future."""
@@ -225,16 +229,16 @@ class TestTaskService:
             task_type=TaskType.RECURRING,
             recurrence_type=RecurrenceType.DAILY,
             recurrence_interval=1,
-            next_due_date=tomorrow,
+            reminder_time=tomorrow,
         )
         
         created_task = TaskService.create_task(db_session, task_data)
         completed_task = TaskService.complete_task(db_session, created_task.id)
         
         assert completed_task is not None
-        assert completed_task.last_completed_at is not None
+        assert completed_task.completed is True
         # Date should change immediately if due in the future
-        assert completed_task.next_due_date > tomorrow
+        assert completed_task.reminder_time > tomorrow
 
     def test_complete_task_interval(self, db_session: "Session") -> None:
         """Test completing an interval task due today."""
@@ -243,16 +247,16 @@ class TestTaskService:
             title="Interval Task",
             task_type=TaskType.INTERVAL,
             interval_days=7,
-            next_due_date=today,
+            reminder_time=today,
         )
         
         created_task = TaskService.create_task(db_session, task_data)
         completed_task = TaskService.complete_task(db_session, created_task.id)
         
         assert completed_task is not None
-        assert completed_task.last_completed_at is not None
-        # Date should not change immediately if due today
-        assert completed_task.next_due_date.date() == today.date()
+        assert completed_task.completed is True
+        # For interval tasks, confirmation shifts date from confirmation day
+        assert completed_task.reminder_time >= today + timedelta(days=7)
 
     def test_complete_task_not_found(self, db_session: "Session") -> None:
         """Test completing a non-existent task."""
@@ -315,20 +319,20 @@ class TestTaskService:
         task1_data = TaskCreate(
             title="Task Today",
             task_type=TaskType.ONE_TIME,
-            next_due_date=today,
-            is_active=True,
+            reminder_time=today,
+            # active defaults to True
         )
         task2_data = TaskCreate(
             title="Task Tomorrow",
             task_type=TaskType.ONE_TIME,
-            next_due_date=today + timedelta(days=1),
-            is_active=True,
+            reminder_time=today + timedelta(days=1),
+            # active defaults to True
         )
         task3_data = TaskCreate(
             title="Task Next Week",
             task_type=TaskType.ONE_TIME,
-            next_due_date=today + timedelta(days=7),
-            is_active=True,
+            reminder_time=today + timedelta(days=7),
+            # active defaults to True
         )
         
         TaskService.create_task(db_session, task1_data)
@@ -352,8 +356,8 @@ class TestTaskService:
             task_type=TaskType.RECURRING,
             recurrence_type=RecurrenceType.DAILY,
             recurrence_interval=1,
-            next_due_date=future_due,
-            is_active=True,
+            reminder_time=future_due,
+            # active defaults to True
         )
 
         TaskService.create_task(db_session, future_recurring)

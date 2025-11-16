@@ -3,12 +3,13 @@
 from datetime import datetime, timedelta
 
 from fastapi.testclient import TestClient
+from tests.utils.api import api_path
 
 from backend.main import app
 
 
 def _reset_time(client: TestClient) -> None:
-    client.post("/api/v1/time/reset")
+    client.post(api_path("/time/reset"))
 
 
 class TestTimeRouter:
@@ -18,7 +19,7 @@ class TestTimeRouter:
         """Default state should use real time."""
         with TestClient(app) as client:
             _reset_time(client)
-            response = client.get("/api/v1/time/")
+            response = client.get(api_path("/time/"))
             assert response.status_code == 200
             data = response.json()
             assert data["override_enabled"] is False
@@ -30,7 +31,7 @@ class TestTimeRouter:
         """Shifting time updates virtual clock."""
         with TestClient(app) as client:
             _reset_time(client)
-            response = client.post("/api/v1/time/shift", json={"days": 1})
+            response = client.post(api_path("/time/shift"), json={"days": 1})
             assert response.status_code == 200
             data = response.json()
             assert data["override_enabled"] is True
@@ -43,7 +44,7 @@ class TestTimeRouter:
         """Setting absolute time works."""
         with TestClient(app) as client:
             target = datetime(2030, 1, 1, 12, 0, 0)
-            response = client.post("/api/v1/time/set", json={"target_datetime": target.isoformat()})
+            response = client.post(api_path("/time/set"), json={"target_datetime": target.isoformat()})
             assert response.status_code == 200
             data = response.json()
             virtual = datetime.fromisoformat(data["virtual_now"])
@@ -53,8 +54,8 @@ class TestTimeRouter:
     def test_reset_time(self) -> None:
         """Reset disables override."""
         with TestClient(app) as client:
-            client.post("/api/v1/time/shift", json={"hours": 1})
-            reset_response = client.post("/api/v1/time/reset")
+            client.post(api_path("/time/shift"), json={"hours": 1})
+            reset_response = client.post(api_path("/time/reset"))
             assert reset_response.status_code == 200
             data = reset_response.json()
             assert data["override_enabled"] is False
