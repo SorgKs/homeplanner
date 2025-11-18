@@ -1,5 +1,6 @@
 """Unit tests for TaskService."""
 
+from collections.abc import Generator
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
@@ -30,16 +31,39 @@ engine = create_engine(
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-@pytest.fixture(scope="function")
-def db_session() -> "Session":
-    """Create test database session."""
+@pytest.fixture(scope="module")
+def db_setup() -> Generator[None, None, None]:
+    """Create test database schema once per module."""
     Base.metadata.create_all(bind=engine)
+    yield
+    Base.metadata.drop_all(bind=engine)
+
+
+@pytest.fixture(scope="function")
+def db_session(db_setup: None) -> Generator["Session", None, None]:
+    """Create test database session and clean data between tests using optimized DELETE."""
+    from sqlalchemy import text
+
     db = TestingSessionLocal()
     try:
+        # Clean all tables before each test
+        # Disable foreign key checks for faster deletion, then re-enable
+        with db.begin():
+            db.execute(text("PRAGMA foreign_keys = OFF"))
+            # Delete all data - order doesn't matter with FK checks disabled
+            db.execute(text("DELETE FROM task_users"))
+            db.execute(text("DELETE FROM task_history"))
+            db.execute(text("DELETE FROM tasks"))
+            db.execute(text("DELETE FROM events"))
+            db.execute(text("DELETE FROM groups"))
+            db.execute(text("DELETE FROM users"))
+            db.execute(text("DELETE FROM app_metadata"))
+            db.execute(text("PRAGMA foreign_keys = ON"))
+        db.commit()
         yield db
     finally:
+        db.rollback()
         db.close()
-        Base.metadata.drop_all(bind=engine)
 
 
 class TestTaskService:
@@ -375,7 +399,7 @@ class TestTaskService:
         assert any(task.title == "Task Today" for task in upcoming_tasks)
         assert any(task.title == "Task Tomorrow" for task in upcoming_tasks)
 
-    def test_get_today_tasks_skips_future_recurring(self, db_session: "Session") -> None:
+    def test_get_today_task_ids_skips_future_recurring(self, db_session: "Session") -> None:
         """Ensure recurring tasks scheduled in the future are not returned in 'today' view."""
         today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
         future_due = today + timedelta(days=1)
@@ -391,7 +415,7 @@ class TestTaskService:
 
         TaskService.create_task(db_session, future_recurring)
 
-        today_tasks = TaskService.get_today_tasks(db_session)
+        today_task_ids = TaskService.get_today_task_ids(db_session)
 
-        assert today_tasks == []
+        assert today_task_ids == []
 

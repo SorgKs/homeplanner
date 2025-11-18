@@ -36,23 +36,46 @@ engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-@pytest.fixture(scope="function")
-def client() -> Generator[TestClient, None, None]:
-    """Создать FastAPI клиент с изолированной БД."""
+@pytest.fixture(scope="module")
+def db_setup() -> Generator[None, None, None]:
+    """Create test database schema once per module."""
     Base.metadata.create_all(bind=engine)
+    yield
+    Base.metadata.drop_all(bind=engine)
+
+
+@pytest.fixture(scope="function")
+def client(db_setup: None) -> Generator[TestClient, None, None]:
+    """Создать FastAPI клиент с изолированной БД с откатом транзакции для изоляции."""
 
     def override_get_db() -> Generator["Session", None, None]:
+        from sqlalchemy import text
+
         db = TestingSessionLocal()
+        # Clean all tables before each test
+        # Disable foreign key checks for faster deletion, then re-enable
+        with db.begin():
+            db.execute(text("PRAGMA foreign_keys = OFF"))
+            # Delete all data - order doesn't matter with FK checks disabled
+            db.execute(text("DELETE FROM task_users"))
+            db.execute(text("DELETE FROM task_history"))
+            db.execute(text("DELETE FROM tasks"))
+            db.execute(text("DELETE FROM events"))
+            db.execute(text("DELETE FROM groups"))
+            db.execute(text("DELETE FROM users"))
+            db.execute(text("DELETE FROM app_metadata"))
+            db.execute(text("PRAGMA foreign_keys = ON"))
+        db.commit()
         try:
             yield db
         finally:
+            db.rollback()
             db.close()
 
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
-    Base.metadata.drop_all(bind=engine)
 
 
 def _create_user(client: TestClient, name: str, email: str | None = None) -> int:
@@ -90,10 +113,9 @@ def test_today_excludes_tasks_not_assigned_to_selected_user(client: TestClient) 
     # Задача, назначенная Сергею
     _create_task_for_users(client, "Полить цветы", [user_sergey])
 
-    # Имитация выбранного пользователя «Сергей».
-    # Текущее API не принимает user_id, поэтому мы ожидаем,
-    # что корректная реализация вернёт только задачи Сергея.
-    resp = client.get(api_path("/tasks/today"))
+    # Имитация выбранного пользователя «Сергей» через cookie.
+    # Сервер читает выбранного пользователя из cookie 'hp.selectedUserId'.
+    resp = client.get(api_path("/tasks/today"), cookies={"hp.selectedUserId": str(user_sergey)})
     assert resp.status_code == 200
     data = resp.json()
 

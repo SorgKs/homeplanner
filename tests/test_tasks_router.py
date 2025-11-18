@@ -1,20 +1,21 @@
 """Unit tests for tasks API router."""
 
+from collections.abc import Generator
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
+import importlib
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from backend.database import Base, get_db
-import importlib
 from backend.main import create_app
 from backend.models.task import RecurrenceType, TaskType
 from backend.models.user import UserRole
-from tests.utils.api import api_path
 from common.versioning import get_supported_api_versions
+from tests.utils.api import api_path
 
 if TYPE_CHECKING:
     from _pytest.fixtures import FixtureRequest
@@ -30,16 +31,39 @@ engine = create_engine(
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-@pytest.fixture(scope="function")
-def db_session() -> "Session":
-    """Create test database session."""
+@pytest.fixture(scope="module")
+def db_setup() -> Generator[None, None, None]:
+    """Create test database schema once per module."""
     Base.metadata.create_all(bind=engine)
+    yield
+    Base.metadata.drop_all(bind=engine)
+
+
+@pytest.fixture(scope="function")
+def db_session(db_setup: None) -> Generator["Session", None, None]:
+    """Create test database session and clean data between tests using optimized DELETE."""
+    from sqlalchemy import text
+
     db = TestingSessionLocal()
     try:
+        # Clean all tables before each test
+        # Disable foreign key checks for faster deletion, then re-enable
+        with db.begin():
+            db.execute(text("PRAGMA foreign_keys = OFF"))
+            # Delete all data - order doesn't matter with FK checks disabled
+            db.execute(text("DELETE FROM task_users"))
+            db.execute(text("DELETE FROM task_history"))
+            db.execute(text("DELETE FROM tasks"))
+            db.execute(text("DELETE FROM events"))
+            db.execute(text("DELETE FROM groups"))
+            db.execute(text("DELETE FROM users"))
+            db.execute(text("DELETE FROM app_metadata"))
+            db.execute(text("PRAGMA foreign_keys = ON"))
+        db.commit()
         yield db
     finally:
+        db.rollback()
         db.close()
-        Base.metadata.drop_all(bind=engine)
 
 
 @pytest.fixture(params=get_supported_api_versions() or ["0.2"], scope="function")

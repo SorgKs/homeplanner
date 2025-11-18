@@ -89,6 +89,105 @@ uv run pytest tests/ -v
 - Те же команды закреплены в GitHub Actions `.github/workflows/ci-python-tests.yml`, `.github/workflows/ci-frontend-tests.yml` и `.github/workflows/ci-android.yml`. При обновлении workflow необходимо синхронизировать документ.
 - Общие правила расположения артефактов и документов описаны в `docs/ARTIFACTS_LAYOUT.md`; при добавлении новых тестовых пакетов ссылаться на соответствующие разделы.
 
+## 2.1 Оптимизация производительности тестов
+
+### Проблема производительности
+
+Основная проблема производительности тестов связана с созданием и удалением схемы базы данных на каждый тест. Операции `Base.metadata.create_all()` и `Base.metadata.drop_all()` выполняются медленно (около 1.5-2 секунд на каждую операцию) и при большом количестве тестов значительно замедляют выполнение всего набора.
+
+### Решение: оптимизация scope фикстур БД
+
+Для оптимизации производительности тестов используется следующий подход:
+
+1. **Фикстура `db_setup` с `scope="module"`** — создает схему БД один раз для всего модуля тестов:
+   ```python
+   @pytest.fixture(scope="module")
+   def db_setup() -> Generator[None, None, None]:
+       """Create test database schema once per module."""
+       Base.metadata.create_all(bind=engine)
+       yield
+       Base.metadata.drop_all(bind=engine)
+   ```
+
+2. **Фикстура `db_session` с `scope="function"`** — создает новую сессию для каждого теста и очищает данные между тестами:
+   ```python
+   @pytest.fixture(scope="function")
+   def db_session(db_setup: None) -> Generator[Session, None, None]:
+       """Create test database session and clean data between tests using optimized DELETE."""
+       from sqlalchemy import text
+       
+       db = SessionLocal()
+       try:
+           # Clean all tables before each test
+           # Disable foreign key checks for faster deletion, then re-enable
+           with db.begin():
+               db.execute(text("PRAGMA foreign_keys = OFF"))
+               # Delete all data - order doesn't matter with FK checks disabled
+               db.execute(text("DELETE FROM task_users"))
+               db.execute(text("DELETE FROM task_history"))
+               db.execute(text("DELETE FROM tasks"))
+               db.execute(text("DELETE FROM events"))
+               db.execute(text("DELETE FROM groups"))
+               db.execute(text("DELETE FROM users"))
+               db.execute(text("DELETE FROM app_metadata"))
+               db.execute(text("PRAGMA foreign_keys = ON"))
+           db.commit()
+           yield db
+       finally:
+           db.rollback()
+           db.close()
+   ```
+   
+   **Оптимизация**: Использование `PRAGMA foreign_keys = OFF` перед DELETE ускоряет очистку данных, так как SQLite не проверяет внешние ключи при удалении. Это позволяет удалять данные в любом порядке и быстрее выполнять операции.
+
+### Преимущества оптимизации
+
+- **Быстрее**: БД создается один раз для всего модуля, а не на каждый тест
+- **Изоляция**: данные очищаются между тестами через DELETE запросы
+- **Стабильность**: тесты остаются изолированными и детерминированными
+
+### Результаты оптимизации
+
+До оптимизации:
+- 175 вызовов DDL операций за 308 секунд
+- ~1.76 секунды на создание/удаление БД на каждый тест
+
+После оптимизации:
+- DDL операции выполняются один раз на модуль
+- Экономия времени: ~1.5-2 секунды × количество тестов в модуле
+
+### Применение оптимизации
+
+Все тестовые файлы, использующие БД, должны применять этот паттерн:
+- `test_group_service.py`
+- `test_task_service.py`
+- `test_tasks_router.py`
+- `test_tasks.py`
+- `test_task_completion_dates.py`
+- `test_groups_router.py`
+- `test_events.py`
+- `test_today_user_filter.py`
+
+### Профилирование тестов
+
+Для анализа производительности тестов используется `pytest-profiling`:
+
+```bash
+# Установка
+pip install pytest-profiling
+
+# Запуск с профилированием
+pytest tests/ -v --profile
+
+# Генерация SVG графиков
+pytest tests/ -v --profile-svg
+
+# Сохранение профилей в директорию
+pytest tests/ -v --profile --pstats-dir=profiles
+```
+
+Профилирование помогает выявить узкие места в тестах и оптимизировать их производительность.
+
 ## 3. Автоматические тесты клиентских приложений (Android)
 - **Инструментарий**: Kotlin + JUnit5/AndroidX Test для модульных и инструментальных тестов. Для сквозных сценариев — Espresso или UI Automator.
 - **Структура**:

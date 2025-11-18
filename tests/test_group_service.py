@@ -8,7 +8,7 @@ import pytest
 from backend.database import Base
 from backend.schemas.group import GroupCreate, GroupUpdate
 from backend.services.group_service import GroupService
-from tests.utils import create_sqlite_engine, session_scope
+from tests.utils import create_sqlite_engine
 
 if TYPE_CHECKING:
     from _pytest.fixtures import FixtureRequest
@@ -19,11 +19,39 @@ if TYPE_CHECKING:
 engine, SessionLocal = create_sqlite_engine("test_group_service.db")
 
 
+@pytest.fixture(scope="module")
+def db_setup() -> Generator[None, None, None]:
+    """Create test database schema once per module."""
+    Base.metadata.create_all(bind=engine)
+    yield
+    Base.metadata.drop_all(bind=engine)
+
+
 @pytest.fixture(scope="function")
-def db_session() -> Generator["Session", None, None]:
-    """Create test database session."""
-    with session_scope(Base, engine, SessionLocal) as session:
-        yield session
+def db_session(db_setup: None) -> Generator["Session", None, None]:
+    """Create test database session and clean data between tests using optimized DELETE."""
+    from sqlalchemy import text
+
+    db = SessionLocal()
+    try:
+        # Clean all tables before each test
+        # Disable foreign key checks for faster deletion, then re-enable
+        with db.begin():
+            db.execute(text("PRAGMA foreign_keys = OFF"))
+            # Delete all data - order doesn't matter with FK checks disabled
+            db.execute(text("DELETE FROM task_users"))
+            db.execute(text("DELETE FROM task_history"))
+            db.execute(text("DELETE FROM tasks"))
+            db.execute(text("DELETE FROM events"))
+            db.execute(text("DELETE FROM groups"))
+            db.execute(text("DELETE FROM users"))
+            db.execute(text("DELETE FROM app_metadata"))
+            db.execute(text("PRAGMA foreign_keys = ON"))
+        db.commit()
+        yield db
+    finally:
+        db.rollback()
+        db.close()
 
 
 class TestGroupService:
