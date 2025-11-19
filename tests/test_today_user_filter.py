@@ -30,9 +30,16 @@ if TYPE_CHECKING:
     from sqlalchemy.orm import Session
 
 
-# Локальная тестовая БД
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test_today_user_filter.db"
-engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+# Локальная тестовая БД - используем in-memory SQLite для максимальной производительности
+from sqlalchemy.pool import StaticPool
+
+SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL,
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool,  # Переиспользование одного соединения для всех сессий
+    echo=False,  # Отключаем логирование SQL для ускорения
+)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
@@ -44,19 +51,14 @@ def db_setup() -> Generator[None, None, None]:
     Base.metadata.drop_all(bind=engine)
 
 
-@pytest.fixture(scope="function")
-def client(db_setup: None) -> Generator[TestClient, None, None]:
-    """Создать FastAPI клиент с изолированной БД с откатом транзакции для изоляции."""
+def _reset_database() -> None:
+    """Очистить все таблицы in-memory БД, сохраняя структуру."""
+    from sqlalchemy import text
 
-    def override_get_db() -> Generator["Session", None, None]:
-        from sqlalchemy import text
-
-        db = TestingSessionLocal()
-        # Clean all tables before each test
-        # Disable foreign key checks for faster deletion, then re-enable
+    db = TestingSessionLocal()
+    try:
         with db.begin():
             db.execute(text("PRAGMA foreign_keys = OFF"))
-            # Delete all data - order doesn't matter with FK checks disabled
             db.execute(text("DELETE FROM task_users"))
             db.execute(text("DELETE FROM task_history"))
             db.execute(text("DELETE FROM tasks"))
@@ -65,13 +67,22 @@ def client(db_setup: None) -> Generator[TestClient, None, None]:
             db.execute(text("DELETE FROM users"))
             db.execute(text("DELETE FROM app_metadata"))
             db.execute(text("PRAGMA foreign_keys = ON"))
-        db.commit()
+    finally:
+        db.close()
+
+
+@pytest.fixture(scope="function")
+def client(db_setup: None) -> Generator[TestClient, None, None]:
+    """Создать FastAPI клиент с изолированной БД и очисткой данных между тестами."""
+
+    def override_get_db() -> Generator["Session", None, None]:
+        db = TestingSessionLocal()
         try:
             yield db
         finally:
-            db.rollback()
             db.close()
 
+    _reset_database()
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as test_client:
         yield test_client
@@ -115,7 +126,8 @@ def test_today_excludes_tasks_not_assigned_to_selected_user(client: TestClient) 
 
     # Имитация выбранного пользователя «Сергей» через cookie.
     # Сервер читает выбранного пользователя из cookie 'hp.selectedUserId'.
-    resp = client.get(api_path("/tasks/today"), cookies={"hp.selectedUserId": str(user_sergey)})
+    client.cookies.set("hp.selectedUserId", str(user_sergey))
+    resp = client.get(api_path("/tasks/today"))
     assert resp.status_code == 200
     data = resp.json()
 

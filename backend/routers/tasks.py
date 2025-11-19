@@ -2,7 +2,7 @@
 
 from typing import TYPE_CHECKING, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 import logging
 from sqlalchemy.orm import Session
 
@@ -16,6 +16,17 @@ if TYPE_CHECKING:
 
 router = APIRouter()
 logger = logging.getLogger("homeplanner.tasks")
+
+
+def _resolve_selected_user_id(request: Request) -> int | None:
+    """Extract the selected user identifier from cookie."""
+    cookie_value = request.cookies.get("hp.selectedUserId")
+    if not cookie_value:
+        return None
+    try:
+        return int(cookie_value)
+    except (TypeError, ValueError):
+        return None
 
 
 def broadcast_task_update(message: dict[str, Any]) -> None:
@@ -67,45 +78,54 @@ def create_task(
 def get_tasks(
     active_only: bool = Query(False, description="Filter only active tasks"),
     days_ahead: int | None = Query(None, ge=1, description="Get tasks due in next N days"),
-    filter: str | None = Query(None, description="Predefined filter (e.g., 'today')"),
     db: Session = Depends(get_db),
 ) -> list[TaskResponse]:
-    """Get tasks with optional predefined filters.
+    """Get tasks with optional filters.
 
     Supported filters:
-    - filter=today: серверная единая логика видимости «Сегодня»
     - days_ahead: предстоящие задачи за N дней
     - active_only: только активные
+    
+    Note: Для получения задач на сегодня используйте GET /tasks/today/ids
     """
-    if filter == "today":
-        tasks = TaskService.get_today_tasks(db)
-    elif days_ahead:
+    if days_ahead:
         tasks = TaskService.get_upcoming_tasks(db, days_ahead=days_ahead)
+        return [TaskResponse.model_validate(task) for task in tasks]
     else:
         tasks = TaskService.get_all_tasks(db, active_only=active_only)
-    return [TaskResponse.model_validate(task) for task in tasks]
-
+        return [TaskResponse.model_validate(task) for task in tasks]
 
 @router.get("/today", response_model=list[TaskResponse])
-def get_today_tasks(
+def get_today_tasks_view(
+    request: Request,
     db: Session = Depends(get_db),
 ) -> list[TaskResponse]:
-    """Get tasks visible in 'today' view.
+    """Return tasks for the 'today' list filtered by selected user from cookie."""
+    selected_user_id = _resolve_selected_user_id(request)
+    if selected_user_id is None:
+        return []
     
-    Returns tasks that are due today, overdue, or completed today.
-    Logic matches frontend shouldBeVisibleInTodayView for consistency.
-    This is the single source of truth for 'today' view filtering.
-    """
-    tasks = TaskService.get_today_tasks(db)
+    tasks = TaskService.get_today_tasks(db, user_id=selected_user_id)
     return [TaskResponse.model_validate(task) for task in tasks]
 
 
 @router.get("/today/ids", response_model=list[int])
 def get_today_task_ids(
+    request: Request,
     db: Session = Depends(get_db),
 ) -> list[int]:
-    """Get identifiers of tasks visible in 'today' view."""
-    return TaskService.get_today_task_ids(db)
+    """Get identifiers of tasks visible in 'today' view.
+    
+    Returns only array of task IDs (not full objects).
+    Cookie 'hp.selectedUserId' with current user ID is required.
+    Returns only tasks assigned to the specified user.
+    If cookie is missing or invalid, returns empty array [].
+    """
+    selected_user_id = _resolve_selected_user_id(request)
+    if selected_user_id is None:
+        return []
+    
+    return TaskService.get_today_task_ids(db, user_id=selected_user_id)
 
 
 @router.get("/{task_id}", response_model=TaskResponse)

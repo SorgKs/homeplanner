@@ -22,13 +22,44 @@ if TYPE_CHECKING:
     from sqlalchemy.orm import Session
 
 
-# Test database
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test_tasks_router.db"
+# Test database - используем in-memory SQLite для максимальной производительности
+from sqlalchemy.pool import StaticPool
+
+SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+    SQLALCHEMY_DATABASE_URL,
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool,  # Переиспользование одного соединения для всех сессий
+    echo=False,  # Отключаем логирование SQL для ускорения
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
+def _create_user(client: TestClient, name: str, email: str) -> int:
+    """Create a user via API and return its identifier."""
+    response = client.post(api_path("/users/"), json={"name": name, "email": email})
+    assert response.status_code == 201
+    return response.json()["id"]
+
+
+def _create_one_time_task(
+    client: TestClient,
+    title: str,
+    reminder_time: datetime,
+    assigned_user_ids: list[int],
+) -> int:
+    """Create one-time task assigned to provided users."""
+    payload = {
+        "title": title,
+        "task_type": TaskType.ONE_TIME.value,
+        "reminder_time": reminder_time.isoformat(),
+        "is_active": True,
+        "assigned_user_ids": assigned_user_ids,
+    }
+    response = client.post(api_path("/tasks/"), json=payload)
+    assert response.status_code == 201
+    return response.json()["id"]
 
 
 @pytest.fixture(scope="module")
@@ -383,41 +414,43 @@ class TestTasksRouter:
         data = response.json()
         assert len(data) >= 1  # At least tasks due in next 3 days
 
-    def test_get_today_task_ids(self, client: TestClient) -> None:
-        """Test retrieving IDs for tasks visible in 'today' view."""
+    def test_get_today_task_ids_without_cookie_returns_empty(self, client: TestClient) -> None:
+        """Request without cookie should return empty list."""
+        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
+        user_id = _create_user(client, "NoCookie User", "nocookie@example.com")
+
+        _create_one_time_task(client, "Task Today", today, [user_id])
+
+        response = client.get(api_path("/tasks/today/ids"))
+        assert response.status_code == 200
+        assert response.json() == []
+
+    def test_get_today_task_ids_with_unknown_user_returns_empty(self, client: TestClient) -> None:
+        """Cookie with non-existing user ID should yield empty list."""
+        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
+        valid_user_id = _create_user(client, "Known User", "known@example.com")
+        _create_one_time_task(client, "Task Today", today, [valid_user_id])
+
+        client.cookies.set("hp.selectedUserId", str(valid_user_id + 999))
+
+        response = client.get(api_path("/tasks/today/ids"))
+        assert response.status_code == 200
+        assert response.json() == []
+
+    def test_get_today_task_ids_with_valid_user(self, client: TestClient) -> None:
+        """Returned IDs must match tasks assigned to selected user."""
         today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
         yesterday = today - timedelta(days=1)
         tomorrow = today + timedelta(days=1)
+        user_id = _create_user(client, "Today User", "today@example.com")
 
-        # Task due today should be included
-        task_today = {
-            "title": "Task Today",
-            "task_type": TaskType.ONE_TIME.value,
-            "reminder_time": today.isoformat(),
-            "is_active": True,
-        }
-        # Task overdue should be included
-        task_overdue = {
-            "title": "Task Overdue",
-            "task_type": TaskType.ONE_TIME.value,
-            "reminder_time": yesterday.isoformat(),
-            "is_active": True,
-        }
-        # Task due tomorrow should be excluded
-        task_future = {
-            "title": "Task Future",
-            "task_type": TaskType.ONE_TIME.value,
-            "reminder_time": tomorrow.isoformat(),
-            "is_active": True,
-        }
+        id_today = _create_one_time_task(client, "Task Today", today, [user_id])
+        id_overdue = _create_one_time_task(client, "Task Overdue", yesterday, [user_id])
+        _create_one_time_task(client, "Task Future", tomorrow, [user_id])
 
-        id_today = client.post(api_path("/tasks/"), json=task_today).json()["id"]
-        id_overdue = client.post(api_path("/tasks/"), json=task_overdue).json()["id"]
-        client.post(api_path("/tasks/"), json=task_future)
+        client.cookies.set("hp.selectedUserId", str(user_id))
 
         response = client.get(api_path("/tasks/today/ids"))
-
         assert response.status_code == 200
-        data = response.json()
-        assert set(data) == {id_today, id_overdue}
+        assert set(response.json()) == {id_today, id_overdue}
 
