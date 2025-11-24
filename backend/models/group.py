@@ -19,7 +19,7 @@ class Group(Base):
     __tablename__ = "groups"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255), nullable=False, index=True)
+    name = Column(String(255), nullable=False, unique=True, index=True)
     description = Column(String(500), nullable=True)
     created_at = Column(DateTime, default=get_current_time, nullable=False)
     updated_at = Column(DateTime, default=get_current_time, onupdate=get_current_time, nullable=False)

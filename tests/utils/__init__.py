@@ -33,11 +33,22 @@ def isoformat(dt: datetime) -> str:
 
 
 def create_sqlite_engine(db_name: str) -> tuple[Engine, sessionmaker]:
-    """Создать SQLite-движок и фабрику сессий для тестов."""
+    """Создать SQLite-движок и фабрику сессий для тестов.
+    
+    Использует in-memory SQLite для максимальной производительности.
+    Параметр db_name игнорируется, но сохраняется для обратной совместимости.
+    
+    Использует StaticPool для переиспользования одного соединения,
+    что необходимо для in-memory SQLite, чтобы все сессии видели одну БД.
+    """
+
+    from sqlalchemy.pool import StaticPool
 
     engine = create_engine(
-        f"sqlite:///./{db_name}",
+        "sqlite:///:memory:",
         connect_args={"check_same_thread": False},
+        poolclass=StaticPool,  # Переиспользование одного соединения для всех сессий
+        echo=False,  # Отключаем логирование SQL для ускорения
     )
     session_factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     return engine, session_factory

@@ -12,11 +12,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.graphics.Color as ComposeColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -30,6 +33,9 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -42,6 +48,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.RadioButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -66,8 +73,12 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.SwipeToDismiss
 import androidx.compose.material.rememberDismissState
 import com.homeplanner.BuildConfig
+import com.homeplanner.SelectedUser
+import com.homeplanner.UserSettings
 import com.homeplanner.api.TasksApi
 import com.homeplanner.api.GroupsApi
+import com.homeplanner.api.UsersApi
+import com.homeplanner.api.UserSummary
 import com.homeplanner.model.Task
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
@@ -81,6 +92,8 @@ import org.json.JSONObject
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import android.Manifest
 import android.app.AlarmManager
 import android.content.Intent
@@ -177,6 +190,7 @@ fun TasksScreen() {
     var error by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(false) }
     var groups by remember { mutableStateOf<Map<Int, String>>(emptyMap()) }
+    var users by remember { mutableStateOf<List<com.homeplanner.api.UserSummary>>(emptyList()) }
     // Key used to trigger refresh via LaunchedEffect
     var refreshKey by remember { mutableStateOf(0) }
     val scope = rememberCoroutineScope()
@@ -190,10 +204,12 @@ fun TasksScreen() {
     
     // Network settings
     val networkSettings = remember { NetworkSettings(context) }
+    val userSettings = remember { UserSettings(context) }
     val networkConfig by networkSettings.configFlow.collectAsState(initial = null)
     val apiBaseUrl = remember(networkConfig) {
         networkConfig?.toApiBaseUrl()
     }
+    val selectedUser by userSettings.selectedUserFlow.collectAsState(initial = null)
     
     // Function to test notification for a task
     fun testNotificationForTask(task: com.homeplanner.model.Task) {
@@ -225,9 +241,11 @@ fun TasksScreen() {
     var editIntervalDays by remember { mutableStateOf<String>("") }
     var editReminderTime by remember { mutableStateOf("") }
     var editGroupId by remember { mutableStateOf<Int?>(null) }
+    var editAssignedUserIds by remember { mutableStateOf<List<Int>>(emptyList()) }
     var editTaskTypeExpanded by remember { mutableStateOf(false) }
     var editRecurrenceTypeExpanded by remember { mutableStateOf(false) }
     var editGroupExpanded by remember { mutableStateOf(false) }
+    var editUsersExpanded by remember { mutableStateOf(false) }
 
     // Validation state
     var titleError by remember { mutableStateOf<String?>(null) }
@@ -274,16 +292,19 @@ fun TasksScreen() {
     suspend fun loadTasks() {
         // Don't load if network config is not set
         if (networkConfig == null || apiBaseUrl == null) {
+            android.util.Log.w("TasksScreen", "loadTasks: networkConfig or apiBaseUrl is null")
             error = "Настройте подключение к серверу в разделе Настройки"
             isLoading = false
             return
         }
         
+        android.util.Log.d("TasksScreen", "loadTasks: Starting load from $apiBaseUrl")
         isLoading = true
         error = null
         try {
-            val api = TasksApi(baseUrl = apiBaseUrl)
+            val api = TasksApi(baseUrl = apiBaseUrl, selectedUserId = selectedUser?.id)
             val groupsApi = GroupsApi(baseUrl = apiBaseUrl)
+            val usersApi = UsersApi(baseUrl = apiBaseUrl)
             // Always load all tasks, then filter by today IDs if needed
             val allTasks = withContext(Dispatchers.IO) {
                 api.getTasks(activeOnly = false)
@@ -291,20 +312,36 @@ fun TasksScreen() {
             val g = withContext(Dispatchers.IO) {
                 groupsApi.getAll()
             }
+            val u = withContext(Dispatchers.IO) {
+                usersApi.getUsers()
+            }
+            
+            // Remove duplicates by ID (keep first occurrence)
+            val uniqueTasks = allTasks.distinctBy { it.id }
+            if (uniqueTasks.size != allTasks.size) {
+                android.util.Log.w("TasksScreen", "loadTasks: Found ${allTasks.size - uniqueTasks.size} duplicate tasks, removed")
+            }
             
             // Filter tasks for today view if needed
-            val t = if (selectedTab == ViewTab.TODAY) {
-                val todayIds = withContext(Dispatchers.IO) {
-                    api.getTodayTaskIds()
+            val t = when {
+                selectedTab != ViewTab.TODAY -> uniqueTasks
+                selectedUser == null -> {
+                    android.util.Log.w("TasksScreen", "loadTasks: selected user is null, Today view will be empty")
+                    emptyList()
                 }
-                val todayIdsSet = todayIds.toSet()
-                allTasks.filter { it.id in todayIdsSet }
-            } else {
-                allTasks
+                else -> {
+                    val todayIds = withContext(Dispatchers.IO) {
+                        api.getTodayTaskIds()
+                    }
+                    val todayIdsSet = todayIds.toSet()
+                    uniqueTasks.filter { it.id in todayIdsSet }
+                }
             }
             
             tasks = t
             groups = g
+            users = u
+            android.util.Log.d("TasksScreen", "loadTasks: Loaded ${tasks.size} tasks, ${groups.size} groups, ${users.size} users")
             // Reschedule reminders after data refresh (use all tasks for scheduling)
             try {
                 reminderScheduler.cancelAll(allTasks)
@@ -313,15 +350,21 @@ fun TasksScreen() {
                 Log.e("TasksScreen", "Scheduling error", e)
             }
         } catch (e: Exception) {
+            android.util.Log.e("TasksScreen", "loadTasks: Error loading tasks", e)
             error = e.message ?: "Unknown error"
         } finally {
             isLoading = false
+            android.util.Log.d("TasksScreen", "loadTasks: Completed, isLoading=false")
         }
     }
 
     LaunchedEffect(networkConfig) {
-        if (networkConfig != null) {
+        val config = networkConfig
+        if (config != null) {
+            android.util.Log.d("TasksScreen", "Network config changed, loading tasks from ${config.toApiBaseUrl()}")
             loadTasks()
+        } else {
+            android.util.Log.d("TasksScreen", "Network config is null, not loading tasks")
         }
     }
 
@@ -331,6 +374,16 @@ fun TasksScreen() {
             ?: throw IllegalStateException("Отсутствует reminder_time в ответе сервера: $json")
         val activeValue = if (json.isNull("active")) true else json.getBoolean("active")
         val completedValue = if (json.isNull("completed")) false else json.getBoolean("completed")
+        
+        // Extract assigned_user_ids from JSON array
+        val assignedUserIds = mutableListOf<Int>()
+        if (json.has("assigned_user_ids") && !json.isNull("assigned_user_ids")) {
+            val idsArray = json.getJSONArray("assigned_user_ids")
+            for (i in 0 until idsArray.length()) {
+                assignedUserIds.add(idsArray.getInt(i))
+            }
+        }
+        
         return Task(
             id = json.getInt("id"),
             title = json.getString("title"),
@@ -343,6 +396,7 @@ fun TasksScreen() {
             groupId = if (json.isNull("group_id")) null else json.getInt("group_id"),
             active = activeValue,
             completed = completedValue,
+            assignedUserIds = assignedUserIds,
         )
     }
 
@@ -434,25 +488,39 @@ fun TasksScreen() {
         }
     }
 
-    val webSocketUrl = remember(networkConfig) { resolveWebSocketUrl(networkConfig) }
+    val webSocketUrl = remember(networkConfig) { 
+        val url = resolveWebSocketUrl(networkConfig)
+        android.util.Log.d("TasksScreen", "WebSocket URL resolved: $url")
+        url
+    }
 
     // WebSocket auto-refresh with reconnection
     LaunchedEffect(networkConfig) {
         // Don't connect if network config is not set
         if (networkConfig == null || webSocketUrl == null) {
+            android.util.Log.d("TasksScreen", "WebSocket: config or URL is null, not connecting")
             wsConnected = false
             wsConnecting = false
             return@LaunchedEffect
         }
+        
+        android.util.Log.d("TasksScreen", "WebSocket: Starting connection to $webSocketUrl")
         val client = OkHttpClient()
         var currentWs: WebSocket? = null
         var reconnectDelay = 2000L // Start with 2 seconds
+        var shouldReconnect = true
         
         suspend fun connectWebSocket() {
+            if (!shouldReconnect) {
+                android.util.Log.d("TasksScreen", "WebSocket: Reconnection disabled")
+                return
+            }
+            
             try {
+                android.util.Log.d("TasksScreen", "WebSocket: Attempting connection to $webSocketUrl")
                 wsConnecting = true
                 val request = Request.Builder()
-                    .url(webSocketUrl)
+                    .url(webSocketUrl!!)
                     .build()
                 val listener = object : WebSocketListener() {
                     override fun onMessage(webSocket: WebSocket, text: String) {
@@ -489,14 +557,19 @@ fun TasksScreen() {
                     }
                     
                     override fun onFailure(webSocket: WebSocket, t: Throwable, response: okhttp3.Response?) {
-                        android.util.Log.e("TasksScreen", "WS connection failure", t)
+                        android.util.Log.e("TasksScreen", "WS connection failure: ${t.message}", t)
                         scope.launch {
                             appendLog("WS", "connection failed: ${t.message}")
                             wsConnected = false
-                            wsConnecting = true
-                            // Trigger reconnection after delay
+                            wsConnecting = false
+                            // Retry after delay with exponential backoff (max 30 seconds)
+                            reconnectDelay = minOf(reconnectDelay * 2, 30000L)
+                            android.util.Log.d("TasksScreen", "WS: Will retry in ${reconnectDelay}ms")
                             kotlinx.coroutines.delay(reconnectDelay)
-                            connectWebSocket()
+                            if (shouldReconnect) {
+                                wsConnecting = true
+                                connectWebSocket()
+                            }
                         }
                     }
                     
@@ -505,20 +578,34 @@ fun TasksScreen() {
                         scope.launch {
                             appendLog("WS", "connection closed: code=$code, retry in ${reconnectDelay}ms")
                             wsConnected = false
-                            wsConnecting = true
-                            // Reconnect after delay
-                            kotlinx.coroutines.delay(reconnectDelay)
-                            connectWebSocket()
+                            wsConnecting = false
+                            // Reconnect after delay (only if not a normal closure)
+                            if (code != 1000 && shouldReconnect) {
+                                reconnectDelay = minOf(reconnectDelay * 2, 30000L)
+                                android.util.Log.d("TasksScreen", "WS: Will retry in ${reconnectDelay}ms")
+                                kotlinx.coroutines.delay(reconnectDelay)
+                                if (shouldReconnect) {
+                                    wsConnecting = true
+                                    connectWebSocket()
+                                }
+                            }
                         }
                     }
                 }
                 currentWs = client.newWebSocket(request, listener)
+                android.util.Log.d("TasksScreen", "WebSocket: Connection request sent")
             } catch (e: Exception) {
                 android.util.Log.e("TasksScreen", "Failed to create WebSocket", e)
-                // Retry after delay with exponential backoff (max 30 seconds)
-                reconnectDelay = minOf(reconnectDelay * 2, 30000L)
-                kotlinx.coroutines.delay(reconnectDelay)
-                connectWebSocket()
+                scope.launch {
+                    wsConnected = false
+                    wsConnecting = false
+                    // Retry after delay with exponential backoff (max 30 seconds)
+                    reconnectDelay = minOf(reconnectDelay * 2, 30000L)
+                    kotlinx.coroutines.delay(reconnectDelay)
+                    if (shouldReconnect) {
+                        connectWebSocket()
+                    }
+                }
             }
         }
         
@@ -526,8 +613,13 @@ fun TasksScreen() {
         connectWebSocket()
         
         // Keep alive until disposed
-        awaitCancellation()
-        currentWs?.close(1000, null)
+        try {
+            awaitCancellation()
+        } finally {
+            shouldReconnect = false
+            currentWs?.close(1000, "LaunchedEffect cancelled")
+            android.util.Log.d("TasksScreen", "WebSocket: LaunchedEffect cancelled, closing connection")
+        }
     }
 
     Scaffold(
@@ -566,11 +658,13 @@ fun TasksScreen() {
                     editTitle = ""
                     editDescription = ""
                     editTaskType = "one_time"
-                    editRecurrenceType = null
+                    editRecurrenceType = "daily"  // Default value, will be hidden for one_time
                     editRecurrenceInterval = ""
                     editIntervalDays = ""
                     editReminderTime = formatIso(LocalDateTime.now())
                     editGroupId = null
+                    // Set current user as default
+                    editAssignedUserIds = selectedUser?.id?.let { listOf(it) } ?: emptyList()
                     titleError = null
                     reminderTimeError = null
                     recurrenceError = null
@@ -621,6 +715,12 @@ fun TasksScreen() {
                     color = statusColor
                 )
             }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = selectedUser?.let { "Пользователь: ${it.name} (#${it.id})" } ?: "Пользователь не выбран",
+                style = MaterialTheme.typography.bodySmall,
+                color = if (selectedUser == null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+            )
             
             LaunchedEffect(refreshKey) {
                 if (refreshKey > 0) {
@@ -632,19 +732,27 @@ fun TasksScreen() {
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
+            // Для "Все задачи" показываем все задачи без фильтрации по пользователю
+            // Для "Сегодня" задачи уже отфильтрованы по selectedUser на бэкенде
             val visibleTasks = when (selectedTab) {
                 ViewTab.TODAY -> tasks
-                ViewTab.ALL -> tasks
+                ViewTab.ALL -> tasks // Все задачи без фильтрации по пользователю
                 ViewTab.SETTINGS -> emptyList()
                 ViewTab.WEBSOCKET -> emptyList()
             }
+            val isTodayTab = selectedTab == ViewTab.TODAY
+            val isTodayWithoutUser = isTodayTab && selectedUser == null
 
             when (selectedTab) {
                 ViewTab.SETTINGS -> {
                     SettingsScreen(
                         networkSettings = networkSettings,
+                        userSettings = userSettings,
                         networkConfig = networkConfig,
-                        onConfigChanged = { refreshKey += 1 }
+                        selectedUser = selectedUser,
+                        apiBaseUrl = apiBaseUrl,
+                        onConfigChanged = { refreshKey += 1 },
+                        onUserChanged = { refreshKey += 1 }
                     )
                 }
 
@@ -674,6 +782,28 @@ fun TasksScreen() {
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         }
+                    } else if (isTodayWithoutUser) {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Text(
+                                text = "⚠️ Выберите пользователя",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Для просмотра задач на сегодня необходимо выбрать пользователя в настройках.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Button(onClick = { selectedTab = ViewTab.SETTINGS }) {
+                                Text("Открыть настройки")
+                            }
+                        }
                     } else if (visibleTasks.isEmpty()) {
                         Column(
                             modifier = Modifier.weight(1f),
@@ -700,13 +830,22 @@ fun TasksScreen() {
                                             DismissValue.DismissedToEnd -> {
                                                 editingTask = task
                                                 editTitle = task.title
-                                                editDescription = task.description ?: ""
+                                                editDescription = task.description?.takeIf { it != "null" } ?: ""
                                                 editTaskType = task.taskType
-                                                editRecurrenceType = task.recurrenceType
+                                                // Set default to "daily" if recurring and recurrenceType is null
+                                                editRecurrenceType = if (task.taskType == "recurring") {
+                                                    task.recurrenceType ?: "daily"
+                                                } else {
+                                                    "daily"  // Default value, will be hidden for non-recurring
+                                                }
                                                 editRecurrenceInterval = task.recurrenceInterval?.toString() ?: ""
                                                 editIntervalDays = task.intervalDays?.toString() ?: ""
                                                 editReminderTime = task.reminderTime
                                                 editGroupId = task.groupId
+                                                editAssignedUserIds = task.assignedUserIds.ifEmpty { 
+                                                    // Set current user as default if no users assigned
+                                                    selectedUser?.id?.let { listOf(it) } ?: emptyList()
+                                                }
                                                 titleError = null
                                                 reminderTimeError = null
                                                 recurrenceError = null
@@ -742,9 +881,10 @@ fun TasksScreen() {
                                             Spacer(modifier = Modifier.width(12.dp))
 
                                             val groupName = task.groupId?.let { groups[it] } ?: ""
-                                            val titleWithGroup = buildString {
-                                                append("• ").append(task.title)
-                                                if (groupName.isNotEmpty()) append(" (").append(groupName).append(")")
+                                            val titleWithGroup = if (groupName.isNotBlank()) {
+                                                "$groupName ${task.title}"
+                                            } else {
+                                                task.title
                                             }
                                             Text(
                                                 text = titleWithGroup,
@@ -775,7 +915,9 @@ fun TasksScreen() {
                                                         if (apiBaseUrl == null) return@launch
                                                         try {
                                                             appendLog("HTTP->", "POST /tasks/${task.id}/complete")
-                                                            val updated = withContext(Dispatchers.IO) { TasksApi(baseUrl = apiBaseUrl).completeTask(task.id) }
+                                                            val updated = withContext(Dispatchers.IO) {
+                                                                TasksApi(baseUrl = apiBaseUrl, selectedUserId = selectedUser?.id).completeTask(task.id)
+                                                            }
                                                             Log.d("TasksScreen", "Task completed: id=${updated.id}, completed=${updated.completed}")
                                                             val newList = tasks.map { if (it.id == updated.id) updated else it }
                                                             tasks = newList
@@ -791,7 +933,9 @@ fun TasksScreen() {
                                                         if (apiBaseUrl == null) return@launch
                                                         try {
                                                             appendLog("HTTP->", "POST /tasks/${task.id}/uncomplete")
-                                                            val updated = withContext(Dispatchers.IO) { TasksApi(baseUrl = apiBaseUrl).uncompleteTask(task.id) }
+                                                            val updated = withContext(Dispatchers.IO) {
+                                                                TasksApi(baseUrl = apiBaseUrl, selectedUserId = selectedUser?.id).uncompleteTask(task.id)
+                                                            }
                                                             Log.d("TasksScreen", "Task uncompleted: id=${updated.id}, completed=${updated.completed}")
                                                             val newList = tasks.map { if (it.id == updated.id) updated else it }
                                                             tasks = newList
@@ -833,13 +977,22 @@ fun TasksScreen() {
                                                 DismissValue.DismissedToEnd -> {
                                                     editingTask = task
                                                     editTitle = task.title
-                                                    editDescription = task.description ?: ""
+                                                    editDescription = task.description?.takeIf { it != "null" } ?: ""
                                                     editTaskType = task.taskType
-                                                    editRecurrenceType = task.recurrenceType
+                                                    // Set default to "daily" if recurring and recurrenceType is null
+                                                    editRecurrenceType = if (task.taskType == "recurring") {
+                                                        task.recurrenceType ?: "daily"
+                                                    } else {
+                                                        "daily"  // Default value, will be hidden for non-recurring
+                                                    }
                                                     editRecurrenceInterval = task.recurrenceInterval?.toString() ?: ""
                                                     editIntervalDays = task.intervalDays?.toString() ?: ""
                                                     editReminderTime = task.reminderTime
                                                     editGroupId = task.groupId
+                                                    editAssignedUserIds = task.assignedUserIds.ifEmpty { 
+                                                        // Set current user as default if no users assigned
+                                                        selectedUser?.id?.let { listOf(it) } ?: emptyList()
+                                                    }
                                                     titleError = null
                                                     reminderTimeError = null
                                                     recurrenceError = null
@@ -876,9 +1029,10 @@ fun TasksScreen() {
                                                 Spacer(modifier = Modifier.width(12.dp))
 
                                                 val groupName = task.groupId?.let { groups[it] } ?: ""
-                                                val titleWithGroup = buildString {
-                                                    append("• ").append(task.title)
-                                                    if (groupName.isNotEmpty()) append(" (").append(groupName).append(")")
+                                                val titleWithGroup = if (groupName.isNotBlank()) {
+                                                    "$groupName ${task.title}"
+                                                } else {
+                                                    task.title
                                                 }
                                                 Text(
                                                     text = titleWithGroup,
@@ -909,7 +1063,9 @@ fun TasksScreen() {
                                                             if (apiBaseUrl == null) return@launch
                                                             try {
                                                                 appendLog("HTTP->", "POST /tasks/${task.id}/complete")
-                                                                val updated = withContext(Dispatchers.IO) { TasksApi(baseUrl = apiBaseUrl).completeTask(task.id) }
+                                                                val updated = withContext(Dispatchers.IO) {
+                                                                    TasksApi(baseUrl = apiBaseUrl, selectedUserId = selectedUser?.id).completeTask(task.id)
+                                                                }
                                                                 Log.d("TasksScreen", "Task completed: id=${updated.id}, completed=${updated.completed}")
                                                                 val newList = tasks.map { if (it.id == updated.id) updated else it }
                                                                 tasks = newList
@@ -925,7 +1081,9 @@ fun TasksScreen() {
                                                             if (apiBaseUrl == null) return@launch
                                                             try {
                                                                 appendLog("HTTP->", "POST /tasks/${task.id}/uncomplete")
-                                                                val updated = withContext(Dispatchers.IO) { TasksApi(baseUrl = apiBaseUrl).uncompleteTask(task.id) }
+                                                                val updated = withContext(Dispatchers.IO) {
+                                                                    TasksApi(baseUrl = apiBaseUrl, selectedUserId = selectedUser?.id).uncompleteTask(task.id)
+                                                                }
                                                                 Log.d("TasksScreen", "Task uncompleted: id=${updated.id}, completed=${updated.completed}")
                                                                 val newList = tasks.map { if (it.id == updated.id) updated else it }
                                                                 tasks = newList
@@ -959,7 +1117,7 @@ fun TasksScreen() {
                                     return@launch
                                 }
                                 try {
-                                    val api = TasksApi(baseUrl = apiBaseUrl)
+                                    val api = TasksApi(baseUrl = apiBaseUrl, selectedUserId = selectedUser?.id)
                                     if (editingTask == null) {
                                         val reminderForCreate = editReminderTime.ifBlank { formatIso(LocalDateTime.now()) }
                                         val template = Task(
@@ -967,7 +1125,7 @@ fun TasksScreen() {
                                             title = editTitle,
                                             description = if (editDescription.isBlank()) null else editDescription,
                                             taskType = editTaskType,
-                                            recurrenceType = editRecurrenceType,
+                                            recurrenceType = if (editTaskType == "recurring") editRecurrenceType else null,
                                             recurrenceInterval = editRecurrenceInterval.toIntOrNull(),
                                             intervalDays = editIntervalDays.toIntOrNull(),
                                             reminderTime = reminderForCreate,
@@ -979,12 +1137,14 @@ fun TasksScreen() {
                                         titleError = if (template.title.isBlank()) "Укажите название" else null
                                         reminderTimeError = if (parseIsoOrNull(template.reminderTime) == null) "Неверный формат даты-времени" else null
                                         recurrenceError = null
+                                        // For recurring tasks, ensure recurrence type is set (default to daily if not set)
+                                        var finalTemplate = template
                                         if (template.taskType == "recurring" && template.recurrenceType.isNullOrBlank()) {
-                                            recurrenceError = "Укажите тип повторения"
+                                            finalTemplate = template.copy(recurrenceType = "daily")
                                         }
                                         if (titleError != null || reminderTimeError != null || recurrenceError != null) return@launch
                                         // Create via API - WebSocket will handle UI update, but also refresh to ensure consistency
-                                        val created = withContext(Dispatchers.IO) { api.createTask(template) }
+                                        val created = withContext(Dispatchers.IO) { api.createTask(finalTemplate, editAssignedUserIds) }
                                         android.util.Log.d("TasksScreen", "Task created via API: id=${created.id}, refreshing list")
                                         // Refresh tasks list to ensure UI is updated
                                         // WebSocket message will also trigger update, but this ensures immediate update
@@ -997,7 +1157,7 @@ fun TasksScreen() {
                                             title = editTitle,
                                             description = if (editDescription.isBlank()) null else editDescription,
                                             taskType = editTaskType,
-                                            recurrenceType = editRecurrenceType,
+                                            recurrenceType = if (editTaskType == "recurring") editRecurrenceType else null,
                                             recurrenceInterval = editRecurrenceInterval.toIntOrNull(),
                                             intervalDays = editIntervalDays.toIntOrNull(),
                                             reminderTime = reminderForUpdate,
@@ -1008,12 +1168,14 @@ fun TasksScreen() {
                                         titleError = if (updatedPayload.title.isBlank()) "Укажите название" else null
                                         reminderTimeError = if (parseIsoOrNull(updatedPayload.reminderTime) == null) "Неверный формат даты-времени" else null
                                         recurrenceError = null
+                                        // For recurring tasks, ensure recurrence type is set (default to daily if not set)
+                                        var finalPayload = updatedPayload
                                         if (updatedPayload.taskType == "recurring" && updatedPayload.recurrenceType.isNullOrBlank()) {
-                                            recurrenceError = "Укажите тип повторения"
+                                            finalPayload = updatedPayload.copy(recurrenceType = "daily")
                                         }
                                         if (titleError != null || reminderTimeError != null || recurrenceError != null) return@launch
                                         // Update via API - WebSocket will handle UI update, but also refresh to ensure consistency
-                                        val updated = withContext(Dispatchers.IO) { api.updateTask(base.id, updatedPayload) }
+                                        val updated = withContext(Dispatchers.IO) { api.updateTask(base.id, finalPayload, editAssignedUserIds) }
                                         android.util.Log.d("TasksScreen", "Task updated via API: id=${updated.id}, refreshing list")
                                         // Refresh tasks list to ensure UI is updated
                                         // WebSocket message will also trigger update, but this ensures immediate update
@@ -1033,12 +1195,27 @@ fun TasksScreen() {
                         Column {
                             OutlinedTextField(value = editTitle, onValueChange = { editTitle = it }, label = { Text("Название") }, isError = titleError != null, supportingText = { if (titleError != null) Text(titleError!!) })
                             Spacer(modifier = Modifier.height(8.dp))
-                            OutlinedTextField(value = editDescription, onValueChange = { editDescription = it }, label = { Text("Описание") })
+                            
+                            // Group dropdown after title
+                            val groupEntries = groups.entries.sortedBy { it.value }
+                            ExposedDropdownMenuBox(expanded = editGroupExpanded, onExpandedChange = { editGroupExpanded = !editGroupExpanded }) {
+                                OutlinedTextField(
+                                    value = editGroupId?.let { gid -> groups[gid] ?: gid.toString() } ?: "— Не задано —",
+                                    onValueChange = {}, readOnly = true, label = { Text("Группа") }, trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = editGroupExpanded) }, modifier = Modifier.menuAnchor()
+                                )
+                                DropdownMenu(expanded = editGroupExpanded, onDismissRequest = { editGroupExpanded = false }) {
+                                    DropdownMenuItem(text = { Text("— Не задано —") }, onClick = { editGroupId = null; editGroupExpanded = false })
+                                    groupEntries.forEach { e ->
+                                        DropdownMenuItem(text = { Text(e.value) }, onClick = { editGroupId = e.key; editGroupExpanded = false })
+                                    }
+                                }
+                            }
                             Spacer(modifier = Modifier.height(8.dp))
-                            val taskTypeOptions = listOf("one_time","recurring","interval")
+                            
+                            val taskTypeOptions = listOf("one_time" to "Разовая", "recurring" to "Расписание", "interval" to "Интервальная")
                             ExposedDropdownMenuBox(expanded = editTaskTypeExpanded, onExpandedChange = { editTaskTypeExpanded = !editTaskTypeExpanded }) {
                                 OutlinedTextField(
-                                    value = editTaskType,
+                                    value = taskTypeOptions.find { it.first == editTaskType }?.second ?: editTaskType,
                                     onValueChange = {},
                                     readOnly = true,
                                     label = { Text("Тип задачи") },
@@ -1046,35 +1223,56 @@ fun TasksScreen() {
                                     modifier = Modifier.menuAnchor()
                                 )
                                 DropdownMenu(expanded = editTaskTypeExpanded, onDismissRequest = { editTaskTypeExpanded = false }) {
-                                    taskTypeOptions.forEach { opt ->
-                                        DropdownMenuItem(text = { Text(opt) }, onClick = { editTaskType = opt; editTaskTypeExpanded = false })
+                                    taskTypeOptions.forEach { (opt, label) ->
+                                        DropdownMenuItem(text = { Text(label) }, onClick = { 
+                                            editTaskType = opt
+                                            // Set default recurrence type when switching to recurring
+                                            if (opt == "recurring") {
+                                                if (editRecurrenceType.isNullOrBlank()) {
+                                                    editRecurrenceType = "daily"
+                                                }
+                                            }
+                                            editTaskTypeExpanded = false 
+                                        })
                                     }
                                 }
                             }
                             Spacer(modifier = Modifier.height(8.dp))
-                            val recurrenceOptions = listOf("daily","weekly","monthly","yearly")
-                            ExposedDropdownMenuBox(expanded = editRecurrenceTypeExpanded, onExpandedChange = { editRecurrenceTypeExpanded = !editRecurrenceTypeExpanded }) {
-                                OutlinedTextField(
-                                    value = editRecurrenceType ?: "",
-                                    onValueChange = {},
-                                    readOnly = true,
-                                    label = { Text("Тип повторения") },
-                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = editRecurrenceTypeExpanded) },
-                                    modifier = Modifier.menuAnchor(),
-                                    isError = recurrenceError != null,
-                                    supportingText = { if (recurrenceError != null) Text(recurrenceError!!) }
-                                )
-                                DropdownMenu(expanded = editRecurrenceTypeExpanded, onDismissRequest = { editRecurrenceTypeExpanded = false }) {
-                                    DropdownMenuItem(text = { Text("— Не задано —") }, onClick = { editRecurrenceType = null; editRecurrenceTypeExpanded = false })
-                                    recurrenceOptions.forEach { opt ->
-                                        DropdownMenuItem(text = { Text(opt) }, onClick = { editRecurrenceType = opt; editRecurrenceTypeExpanded = false })
+                            // Show recurrence type only for recurring tasks
+                            if (editTaskType == "recurring") {
+                                val recurrenceOptions = listOf("daily" to "Ежедневно", "weekly" to "Еженедельно", "monthly" to "Ежемесячно", "yearly" to "Ежегодно")
+                                // Ensure default value is set
+                                if (editRecurrenceType.isNullOrBlank()) {
+                                    editRecurrenceType = "daily"
+                                }
+                                ExposedDropdownMenuBox(expanded = editRecurrenceTypeExpanded, onExpandedChange = { editRecurrenceTypeExpanded = !editRecurrenceTypeExpanded }) {
+                                    OutlinedTextField(
+                                        value = editRecurrenceType?.let { recType -> recurrenceOptions.find { it.first == recType }?.second ?: recType } ?: "Ежедневно",
+                                        onValueChange = {},
+                                        readOnly = true,
+                                        label = { Text("Тип повторения") },
+                                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = editRecurrenceTypeExpanded) },
+                                        modifier = Modifier.menuAnchor(),
+                                        isError = recurrenceError != null,
+                                        supportingText = { if (recurrenceError != null) Text(recurrenceError!!) }
+                                    )
+                                    DropdownMenu(expanded = editRecurrenceTypeExpanded, onDismissRequest = { editRecurrenceTypeExpanded = false }) {
+                                        recurrenceOptions.forEach { (opt, label) ->
+                                            DropdownMenuItem(text = { Text(label) }, onClick = { editRecurrenceType = opt; editRecurrenceTypeExpanded = false })
+                                        }
                                     }
                                 }
+                                Spacer(modifier = Modifier.height(8.dp))
                             }
-                            Spacer(modifier = Modifier.height(8.dp))
-                            OutlinedTextField(value = editRecurrenceInterval, onValueChange = { editRecurrenceInterval = it }, label = { Text("Интервал повторения (число)") })
-                            Spacer(modifier = Modifier.height(8.dp))
-                            OutlinedTextField(value = editIntervalDays, onValueChange = { editIntervalDays = it }, label = { Text("Дней интервала (число)") })
+                            // Show interval fields only for recurring and interval tasks
+                            if (editTaskType == "recurring") {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                OutlinedTextField(value = editRecurrenceInterval, onValueChange = { editRecurrenceInterval = it }, label = { Text("Интервал") })
+                            }
+                            if (editTaskType == "interval") {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                OutlinedTextField(value = editIntervalDays, onValueChange = { editIntervalDays = it }, label = { Text("Интервал") })
+                            }
                             Spacer(modifier = Modifier.height(8.dp))
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 OutlinedTextField(
@@ -1093,20 +1291,49 @@ fun TasksScreen() {
                                 }) { Text("Выбрать") }
                             }
                             Spacer(modifier = Modifier.height(8.dp))
-                            // Group dropdown from loaded groups
-                            val groupEntries = groups.entries.sortedBy { it.value }
-                            ExposedDropdownMenuBox(expanded = editGroupExpanded, onExpandedChange = { editGroupExpanded = !editGroupExpanded }) {
+                            // User assignment
+                            val activeUsers = users.filter { it.isActive }
+                            ExposedDropdownMenuBox(expanded = editUsersExpanded, onExpandedChange = { editUsersExpanded = !editUsersExpanded }) {
                                 OutlinedTextField(
-                                    value = editGroupId?.let { gid -> groups[gid] ?: gid.toString() } ?: "— Не задано —",
-                                    onValueChange = {}, readOnly = true, label = { Text("Группа") }, trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = editGroupExpanded) }, modifier = Modifier.menuAnchor()
+                                    value = if (editAssignedUserIds.isEmpty()) {
+                                        "— Не назначено —"
+                                    } else {
+                                        editAssignedUserIds.mapNotNull { userId ->
+                                            users.find { it.id == userId }?.name
+                                        }.joinToString(", ")
+                                    },
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    label = { Text("Назначено пользователям") },
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = editUsersExpanded) },
+                                    modifier = Modifier.menuAnchor()
                                 )
-                                DropdownMenu(expanded = editGroupExpanded, onDismissRequest = { editGroupExpanded = false }) {
-                                    DropdownMenuItem(text = { Text("— Не задано —") }, onClick = { editGroupId = null; editGroupExpanded = false })
-                                    groupEntries.forEach { e ->
-                                        DropdownMenuItem(text = { Text(e.value) }, onClick = { editGroupId = e.key; editGroupExpanded = false })
+                                DropdownMenu(expanded = editUsersExpanded, onDismissRequest = { editUsersExpanded = false }) {
+                                    activeUsers.forEach { user ->
+                                        val isSelected = editAssignedUserIds.contains(user.id)
+                                        DropdownMenuItem(
+                                            text = { 
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    if (isSelected) {
+                                                        Text("✓ ", color = MaterialTheme.colorScheme.primary)
+                                                    }
+                                                    Text(user.name)
+                                                }
+                                            },
+                                            onClick = { 
+                                                editAssignedUserIds = if (isSelected) {
+                                                    editAssignedUserIds - user.id
+                                                } else {
+                                                    editAssignedUserIds + user.id
+                                                }
+                                            }
+                                        )
                                     }
                                 }
                             }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            // Description at the end
+                            OutlinedTextField(value = editDescription, onValueChange = { editDescription = it }, label = { Text("Описание") })
                             Spacer(modifier = Modifier.height(8.dp))
                             // Presets quick actions
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -1134,7 +1361,9 @@ fun TasksScreen() {
                                 scope.launch {
                                     if (apiBaseUrl == null) return@launch
                                     try {
-                                        withContext(Dispatchers.IO) { TasksApi(baseUrl = apiBaseUrl).deleteTask(toDelete) }
+                                        withContext(Dispatchers.IO) {
+                                            TasksApi(baseUrl = apiBaseUrl, selectedUserId = selectedUser?.id).deleteTask(toDelete)
+                                        }
                                         tasks = tasks.filter { it.id != toDelete }
                                     } catch (e: Exception) {
                                         Log.e("TasksScreen", "Delete error", e)
@@ -1161,8 +1390,12 @@ fun TasksScreen() {
 @OptIn(ExperimentalMaterial3Api::class)
 fun SettingsScreen(
     networkSettings: NetworkSettings,
+    userSettings: UserSettings,
     networkConfig: NetworkConfig?,
-    onConfigChanged: () -> Unit
+    selectedUser: SelectedUser?,
+    apiBaseUrl: String?,
+    onConfigChanged: () -> Unit,
+    onUserChanged: () -> Unit,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -1172,6 +1405,10 @@ fun SettingsScreen(
     var showConnectionTest by remember { mutableStateOf(false) }
     var connectionTestResult by remember { mutableStateOf<String?>(null) }
     var isLoadingTest by remember { mutableStateOf(false) }
+    var showUserPickerDialog by remember { mutableStateOf(false) }
+    var users by remember(apiBaseUrl) { mutableStateOf<List<UserSummary>>(emptyList()) }
+    var isUsersLoading by remember { mutableStateOf(false) }
+    var usersError by remember { mutableStateOf<String?>(null) }
     
     // Edit dialog state
     var editHost by remember { mutableStateOf("") }
@@ -1195,10 +1432,45 @@ fun SettingsScreen(
         }
     }
     
+    suspend fun refreshUsersList() {
+        val base = apiBaseUrl ?: return
+        usersError = null
+        isUsersLoading = true
+        try {
+            val api = UsersApi(baseUrl = base)
+            val fetched = withContext(Dispatchers.IO) {
+                api.getUsers()
+            }
+            users = fetched
+        } catch (e: Exception) {
+            users = emptyList()
+            usersError = e.message ?: "Не удалось загрузить пользователей"
+        } finally {
+            isUsersLoading = false
+        }
+    }
+    
+    LaunchedEffect(apiBaseUrl) {
+        if (apiBaseUrl != null) {
+            refreshUsersList()
+        } else {
+            users = emptyList()
+        }
+    }
+
+    fun selectUser(user: UserSummary) {
+        scope.launch {
+            userSettings.saveSelectedUser(SelectedUser(user.id, user.name))
+            showUserPickerDialog = false
+            onUserChanged()
+        }
+    }
+    
     Column(
         modifier = Modifier
-            .weight(1f)
+            .fillMaxSize()
             .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -1323,13 +1595,80 @@ fun SettingsScreen(
                             connectionTestResult = null
                             scope.launch {
                                 try {
-                                    val api = TasksApi(baseUrl = networkConfig.toApiBaseUrl())
-                                    withContext(Dispatchers.IO) {
-                                        api.getTasks(activeOnly = true)
+                                    val results = mutableListOf<String>()
+                                    val config = networkConfig
+                                    
+                                    if (config == null) {
+                                        results.add("✗ Настройки сети не заданы")
+                                        connectionTestResult = results.joinToString("\n")
+                                        return@launch
                                     }
-                                    connectionTestResult = "Подключение успешно"
-                                } catch (e: Exception) {
-                                    connectionTestResult = "Ошибка подключения: ${e.message}"
+                                    
+                                    // Test HTTP connection
+                                    try {
+                                        val api = TasksApi(baseUrl = config.toApiBaseUrl())
+                                        withContext(Dispatchers.IO) {
+                                            api.getTasks(activeOnly = true)
+                                        }
+                                        results.add("✓ HTTP подключение успешно")
+                                    } catch (e: Exception) {
+                                        results.add("✗ HTTP ошибка: ${e.message}")
+                                    }
+                                    
+                                    // Test WebSocket connection
+                                    try {
+                                        val wsUrl = config.toWebSocketUrl()
+                                        val client = OkHttpClient.Builder()
+                                            .connectTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
+                                            .build()
+                                        
+                                        var wsConnected = false
+                                        var wsError: String? = null
+                                        val latch = java.util.concurrent.CountDownLatch(1)
+                                        
+                                        val request = Request.Builder()
+                                            .url(wsUrl)
+                                            .build()
+                                        
+                                        val listener = object : WebSocketListener() {
+                                            override fun onOpen(webSocket: WebSocket, response: okhttp3.Response) {
+                                                wsConnected = true
+                                                webSocket.close(1000, "Test connection")
+                                                latch.countDown()
+                                            }
+                                            
+                                            override fun onFailure(webSocket: WebSocket, t: Throwable, response: okhttp3.Response?) {
+                                                wsError = t.message ?: "Unknown error"
+                                                latch.countDown()
+                                            }
+                                            
+                                            override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
+                                                if (!wsConnected) {
+                                                    wsError = "Connection closed: $code $reason"
+                                                }
+                                                latch.countDown()
+                                            }
+                                        }
+                                        
+                                        withContext(Dispatchers.IO) {
+                                            val ws = client.newWebSocket(request, listener)
+                                            // Wait for connection result (max 5 seconds)
+                                            if (!latch.await(5, java.util.concurrent.TimeUnit.SECONDS)) {
+                                                ws.close(1000, "Timeout")
+                                                wsError = "Timeout waiting for connection"
+                                            }
+                                        }
+                                        
+                                        if (wsConnected) {
+                                            results.add("✓ WebSocket подключение успешно")
+                                        } else {
+                                            results.add("✗ WebSocket ошибка: ${wsError ?: "Connection failed"}")
+                                        }
+                                    } catch (e: Exception) {
+                                        results.add("✗ WebSocket ошибка: ${e.message}")
+                                    }
+                                    
+                                    connectionTestResult = results.joinToString("\n")
                                 } finally {
                                     isLoadingTest = false
                                 }
@@ -1343,6 +1682,152 @@ fun SettingsScreen(
                 }
             }
         }
+        
+        // User selection
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Пользователь",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                val currentUserText = selectedUser?.let { "${it.name} (#${it.id})" } ?: "Пользователь не выбран"
+                Text(
+                    text = currentUserText,
+                    color = if (selectedUser == null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                
+                if (apiBaseUrl == null) {
+                    Text(
+                        text = "Сначала настройте подключение, чтобы загрузить список пользователей.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                } else {
+                    if (usersError != null) {
+                        Text(
+                            text = usersError ?: "",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    if (isUsersLoading) {
+                        Text(
+                            text = "Загрузка списка пользователей...",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    } else if (users.isEmpty()) {
+                        Text(
+                            text = "Пользователи не найдены. Создайте пользователя через веб-интерфейс.",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    } else {
+                        Text(
+                            text = "Доступно пользователей: ${users.size}",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = { scope.launch { refreshUsersList() } },
+                            modifier = Modifier.weight(1f),
+                            enabled = !isUsersLoading
+                        ) {
+                            Text(if (isUsersLoading) "Обновление..." else "Обновить список")
+                        }
+                        Button(
+                            onClick = { showUserPickerDialog = true },
+                            modifier = Modifier.weight(1f),
+                            enabled = users.isNotEmpty() && !isUsersLoading
+                        ) {
+                            Text("Выбрать пользователя")
+                        }
+                    }
+                    
+                    if (selectedUser != null) {
+                        TextButton(
+                            onClick = {
+                                scope.launch {
+                                    userSettings.clearSelectedUser()
+                                    onUserChanged()
+                                }
+                            }
+                        ) {
+                            Text("Сбросить выбор")
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // User picker dialog
+    if (showUserPickerDialog) {
+        AlertDialog(
+            onDismissRequest = { showUserPickerDialog = false },
+            title = { Text("Выберите пользователя") },
+            text = {
+                when {
+                    apiBaseUrl == null -> Text("Сначала настройте подключение к серверу.")
+                    isUsersLoading -> Text("Загрузка списка пользователей...")
+                    users.isEmpty() -> Text("Список пользователей пуст. Создайте пользователя через веб-интерфейс.")
+                    else -> {
+                        LazyColumn(
+                            modifier = Modifier
+                                .heightIn(max = 320.dp)
+                                .fillMaxWidth()
+                        ) {
+                            items(users, key = { it.id }) { user ->
+                                val enabled = user.isActive
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable(enabled = enabled) { if (enabled) selectUser(user) }
+                                        .padding(vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    RadioButton(
+                                        selected = user.id == selectedUser?.id,
+                                        onClick = if (enabled) ({ selectUser(user) }) else null,
+                                        enabled = enabled
+                                    )
+                                    Column(modifier = Modifier.padding(start = 8.dp)) {
+                                        Text(user.name)
+                                        val subtitleParts = buildList {
+                                            if (!user.email.isNullOrBlank()) add(user.email!!)
+                                            add("Роль: ${user.role}")
+                                            if (!user.isActive) add("Неактивен")
+                                        }
+                                        if (subtitleParts.isNotEmpty()) {
+                                            Text(
+                                                text = subtitleParts.joinToString(" • "),
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = if (user.isActive) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showUserPickerDialog = false }) {
+                    Text("Закрыть")
+                }
+            }
+        )
     }
     
     // Edit dialog
@@ -1466,7 +1951,7 @@ fun SettingsScreen(
     
     // QR Scanner dialog
     if (showQrScanner) {
-        androidx.compose.material3.AlertDialog(
+        AlertDialog(
             onDismissRequest = { showQrScanner = false },
             title = { Text("Сканер QR-кода") },
             text = {

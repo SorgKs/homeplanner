@@ -7,9 +7,35 @@ import com.android.build.gradle.internal.api.ApkVariantOutputImpl
 
 import java.util.Properties
 
-// Read version from config files (single source of truth)
-val projectVersionFile = project.rootProject.file("common/config/version.json")
-val androidVersionFile = file("version.json")
+// Read version from pyproject (single source of truth for MAJOR/MINOR)
+val pyprojectFile = listOf(
+    "pyproject.toml",
+    "../pyproject.toml",
+    "../../pyproject.toml"
+).map { project.rootProject.file(it) }
+    .firstOrNull { it.exists() }
+    ?: project.rootProject.file("pyproject.toml")
+val androidVersionFile = project.rootProject.file("version.json")
+
+fun loadProjectVersionFromPyproject(file: File, fallback: Map<String, Int>): Map<String, Int> {
+    if (!file.exists()) return fallback
+    return try {
+        val content = file.readText()
+        val majorMatch = Regex("project_major\\s*=\\s*\"?(\\d+)\"?").find(content)
+        val minorMatch = Regex("project_minor\\s*=\\s*\"?(\\d+)\"?").find(content)
+
+        val result = mutableMapOf<String, Int>()
+        if (majorMatch != null) result["major"] = majorMatch.groupValues[1].toInt()
+        if (minorMatch != null) result["minor"] = minorMatch.groupValues[1].toInt()
+
+        fallback.forEach { (key, value) ->
+            if (!result.containsKey(key)) result[key] = value
+        }
+        result
+    } catch (e: Exception) {
+        fallback
+    }
+}
 
 fun loadJsonFile(file: File, fallback: Map<String, Int>): Map<String, Int> {
     if (!file.exists()) return fallback
@@ -35,7 +61,7 @@ fun loadJsonFile(file: File, fallback: Map<String, Int>): Map<String, Int> {
     }
 }
 
-val projectVersion = loadJsonFile(projectVersionFile, mapOf("major" to 0, "minor" to 0))
+val projectVersion = loadProjectVersionFromPyproject(pyprojectFile, mapOf("major" to 0, "minor" to 0))
 val androidVersion = loadJsonFile(androidVersionFile, mapOf("patch" to 0))
 
 val major = projectVersion["major"] ?: 0
@@ -54,8 +80,8 @@ if (buildNumberFile.exists()) {
 buildNumber++
 buildNumberFile.writeText(buildNumber.toString())
 
-// Compose version: MAJOR.MINOR.PATCH.BUILD
-val versionNameStr = "$major.$minor.$patch.$buildNumber"
+// Public version string must remain MAJOR.MINOR.PATCH
+val versionNameStr = "$major.$minor.$patch"
 
 android {
     namespace = "com.homeplanner"
@@ -109,6 +135,14 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+    
+    // Configure Java toolchain to automatically download JDK 17 if not found
+    // This allows the project to work on different machines without manual JDK setup
+    java {
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(17))
+        }
+    }
     buildFeatures {
         compose = true
         buildConfig = true
@@ -144,6 +178,17 @@ dependencies {
     // Networking
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+    
+    // DataStore for network settings
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
+    
+    // ML Kit for QR code scanning
+    implementation("com.google.mlkit:barcode-scanning:17.2.0")
+    
+    // CameraX for camera access
+    implementation("androidx.camera:camera-camera2:1.3.1")
+    implementation("androidx.camera:camera-lifecycle:1.3.1")
+    implementation("androidx.camera:camera-view:1.3.1")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")

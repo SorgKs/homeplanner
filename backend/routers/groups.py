@@ -21,8 +21,14 @@ def create_group(
     db: Session = Depends(get_db),
 ) -> GroupResponse:
     """Create a new group."""
-    created_group = GroupService.create_group(db, group)
-    return GroupResponse.model_validate(created_group)
+    try:
+        created_group = GroupService.create_group(db, group)
+        return GroupResponse.model_validate(created_group)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(e),
+        )
 
 
 @router.get("/", response_model=list[GroupResponse])
@@ -56,13 +62,19 @@ def update_group(
     db: Session = Depends(get_db),
 ) -> GroupResponse:
     """Update a group."""
-    updated_group = GroupService.update_group(db, group_id, group_update)
-    if not updated_group:
+    try:
+        updated_group = GroupService.update_group(db, group_id, group_update)
+        if not updated_group:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Group with id {group_id} not found",
+            )
+        return GroupResponse.model_validate(updated_group)
+    except ValueError as e:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Group with id {group_id} not found",
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(e),
         )
-    return GroupResponse.model_validate(updated_group)
 
 
 @router.delete("/{group_id}", status_code=status.HTTP_204_NO_CONTENT)

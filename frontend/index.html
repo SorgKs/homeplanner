@@ -83,6 +83,12 @@
                             <input type="date" id="history-date-to" style="width: 100%;">
                         </div>
                     </div>
+                    
+                    <div class="sidebar-section" style="margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border-color);">
+                        <button class="btn btn-secondary sidebar-btn" id="logout-btn">
+                            <span>🚪</span> Выход
+                        </button>
+                    </div>
                 </nav>
             </aside>
 
@@ -136,6 +142,21 @@
                             <input id="api-base-input" type="text" placeholder="http://localhost:8000/api/v0.2" style="min-width:320px;">
                             <button class="btn btn-secondary" id="apply-api-base">Сохранить</button>
                             <small style="color:#666;">Сохраняется в localStorage и используется на клиенте.</small>
+                        </div>
+                    </div>
+                    <div class="card" style="margin-bottom:16px; padding:12px;">
+                        <h3 style="margin-top:0;">Настройки подключения для Android</h3>
+                        <div id="network-config-info" style="margin-bottom:12px; padding:8px; background:#f5f5f5; border-radius:4px;">
+                            <div><strong>Текущие настройки:</strong></div>
+                            <div id="network-config-details" style="margin-top:4px; font-size:0.9em; color:#666;"></div>
+                        </div>
+                        <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
+                            <button class="btn btn-primary" id="show-network-config-qr-btn">Показать QR-код с настройками</button>
+                            <div id="network-config-qr" style="display:none; padding:8px; border:1px solid #ddd; border-radius:8px;"></div>
+                        </div>
+                        <div style="margin-top:10px; padding:8px; background:#e3f2fd; border-radius:4px; font-size:0.9em;">
+                            <strong>ℹ️</strong> Отсканируйте QR-код в Android приложении для автоматической настройки подключения к серверу.
+                            <br>Убедитесь, что хост доступен с вашего Android устройства (для LAN используйте IP адрес устройства в сети).
                         </div>
                     </div>
                 </div>
@@ -479,6 +500,61 @@
                     refreshApkUrl().then(render);
                 }
             });
+            
+            // Network config QR code generation
+            function extractApiVersion(apiBaseUrl) {
+                const match = apiBaseUrl.match(/\/api\/v([\d.]+)/);
+                return match ? match[1] : "0.2";
+            }
+            
+            function generateNetworkConfig() {
+                const host = window.HP_BACKEND_HOST || "localhost";
+                const port = window.HP_BACKEND_PORT || 8000;
+                const apiVersion = extractApiVersion(window.HP_API_BASE_URL || "http://localhost:8000/api/v0.2");
+                const useHttps = window.location.protocol === "https:" || false;
+                
+                return {
+                    host: host,
+                    port: port,
+                    apiVersion: apiVersion,
+                    useHttps: useHttps
+                };
+            }
+            
+            function updateNetworkConfigInfo() {
+                const config = generateNetworkConfig();
+                const detailsEl = document.getElementById('network-config-details');
+                if (detailsEl) {
+                    detailsEl.innerHTML = 'Хост: ' + config.host + '<br>Порт: ' + config.port + '<br>API Версия: ' + config.apiVersion + '<br>Протокол: ' + (config.useHttps ? 'HTTPS' : 'HTTP');
+                }
+            }
+            
+            // Update info when settings view is shown
+            const settingsBtn = document.getElementById('view-settings-btn');
+            if (settingsBtn) {
+                settingsBtn.addEventListener('click', function() {
+                    setTimeout(updateNetworkConfigInfo, 100);
+                });
+            }
+            
+            // Generate QR code for network config
+            const showNetworkConfigQrBtn = document.getElementById('show-network-config-qr-btn');
+            if (showNetworkConfigQrBtn) {
+                showNetworkConfigQrBtn.addEventListener('click', function() {
+                    const config = generateNetworkConfig();
+                    const jsonString = JSON.stringify(config);
+                    const qrBox = document.getElementById('network-config-qr');
+                    
+                    if (qrBox) {
+                        qrBox.style.display = 'block';
+                        qrBox.innerHTML = '';
+                        renderQr(jsonString, qrBox);
+                    }
+                });
+            }
+            
+            // Initial update
+            updateNetworkConfigInfo();
         })();
     </script>
 </body>

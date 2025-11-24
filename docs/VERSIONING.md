@@ -1,19 +1,23 @@
 # Схема версионирования HomePlanner
 
-Единая версия проекта состоит из двух чисел `MAJOR.MINOR`. Для каждой подсистемы (backend, web, android) используется собственный patch-компонент, образуя версию `MAJOR.MINOR.PATCH`.
+**ВАЖНО**: Все части проекта (backend, frontend, android) используют единый формат версии: `MAJOR.MINOR.PATCH` (три компонента).
+
+Единая версия проекта состоит из двух чисел `MAJOR.MINOR`. Для каждой подсистемы (backend, frontend, android) используется собственный patch-компонент, образуя версию `MAJOR.MINOR.PATCH`.
 
 - `MAJOR` — несовместимые изменения архитектуры, меняется синхронно для всех подсистем.
 - `MINOR` — функциональные релизы, которые должны быть доступны на всех платформах.
 - `PATCH` — сервисные релизы конкретной подсистемы (например, `0.2.3` для backend).
 
-Мажорная и минорная части задаются в JSON-конфиге `common/config/version.json`. Патч-версии хранятся в отдельных файлах компонентов (`backend/version.json`, `frontend/version.json`, `android/version.json`), чтобы каждая подсистема могла выпускать сервисные релизы независимо.
+**Правило**: Версия всегда состоит из трёх чисел `MAJOR.MINOR.PATCH`. Никакие дополнительные компоненты (например, BUILD номер) не должны быть частью версии. BUILD номера могут использоваться для внутренних целей сборки, но не являются частью версии приложения.
+
+Мажорная и минорная части задаются в `pyproject.toml` в секции `[tool.homeplanner.versions]`. Патч-версии хранятся в отдельных файлах компонентов (`backend/version.json`, `frontend/version.json`, `android/version.json`), чтобы каждая подсистема могла выпускать сервисные релизы независимо.
 
 Суффиксы версий пакетов хранятся в `pyproject.toml` в секции `[tool.homeplanner.package_suffixes]` для каждого компонента (backend, frontend, android, common).
 
 ## Обновление версий
 
 1. При повышении `MAJOR` или `MINOR`:
-   - Обновите `common/config/version.json`
+   - Обновите значения `project_major` и `project_minor` в `pyproject.toml` (секция `[tool.homeplanner.versions]`)
    - Обнулите patch-номера в конфигурациях подсистем (`backend/version.json`, `frontend/version.json`, `android/version.json`)
    - Обнулите суффиксы пакетов в `pyproject.toml` в секции `[tool.homeplanner.package_suffixes]` (backend, frontend, android, common)
 

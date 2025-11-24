@@ -82,7 +82,7 @@ pip install -e ".[dev]"
 
 ### 4. Настройка окружения разработки
 
-Отредактируйте `config/settings.toml` (пример приведен в README) — все параметры теперь считываются только из этого файла.
+Скопируйте `common/config/settings.toml.template` в `common/config/settings.toml` и отредактируйте под свою машину (пример приведен в README) — все параметры теперь считываются только из этого файла.
 
 ## Разработка
 
@@ -92,8 +92,8 @@ pip install -e ".[dev]"
 uv run python -m backend.main
 ```
 
-- Флаг `debug` в `config/settings.toml` управляет автоперезагрузкой (при `true` backend рестартует при изменении файлов).
-- Параметры `host`, `port`, `debug`, `reload` и прочие настройки берутся только из `config/settings.toml`. Добавлять CLI‑флаги (`--host`, `--port`, `--reload` и т. п.) запрещено.
+- Флаг `debug` в вашем `common/config/settings.toml` управляет автоперезагрузкой (при `true` backend рестартует при изменении файлов).
+- Параметры `host`, `port`, `debug`, `reload` и прочие настройки берутся только из `common/config/settings.toml`. Добавлять CLI‑флаги (`--host`, `--port`, `--reload` и т. п.) запрещено.
 
 ### Запуск frontend
 
@@ -241,7 +241,7 @@ uv run alembic downgrade -1
 - **Модуль**: `backend.main`
 - **Параметры**: как при обычном запуске
 - **Рабочая директория**: корень проекта
-- **Конфигурация**: из `config/settings.toml`
+- **Конфигурация**: из `common/config/settings.toml`
 
 ## Полезные команды
 

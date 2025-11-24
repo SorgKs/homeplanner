@@ -13,6 +13,7 @@ data class Task(
     val groupId: Int?,
     val active: Boolean,
     val completed: Boolean,
+    val assignedUserIds: List<Int> = emptyList(),
 )
 
 

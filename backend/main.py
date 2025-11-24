@@ -91,10 +91,10 @@ def create_app() -> FastAPI:
 
     # ===== WebSocket routers (ONLY WebSocket, separate set) =====
     # Create separate router ONLY for WebSocket routes (no HTTP routes)
-    from backend.routers.realtime import ConnectionManager
+    # Use the same manager instance from realtime module so tasks router can broadcast to it
+    from backend.routers.realtime import manager as ws_manager
     
     websocket_router = APIRouter()
-    ws_manager = ConnectionManager()
     
     @websocket_router.websocket("/tasks/stream")
     async def websocket_endpoint(websocket: WebSocket) -> None:
@@ -144,6 +144,9 @@ def create_app() -> FastAPI:
     
     app.include_router(http_realtime_router, prefix=api_version_path, tags=["realtime-http"])
 
+    # Serve common config files (for frontend to read configuration)
+    app.mount("/common/config", HTTPOnlyStaticFiles(directory="common/config", html=False), name="common-config")
+
     # Serve frontend static files (ONLY HTTP requests, rejects WebSocket)
     # Uses HTTPOnlyStaticFiles to ensure WebSocket requests never reach here
     app.mount("/", HTTPOnlyStaticFiles(directory="frontend", html=True), name="frontend")
@@ -156,12 +159,101 @@ app = create_app()
 
 if __name__ == "__main__":
     import uvicorn
+    import re
+    from pathlib import Path
+    from typing import Any
 
     settings = get_settings()
+    
+    # Validate SSL configuration if provided
+    if settings.ssl_certfile or settings.ssl_keyfile:
+        if not settings.ssl_certfile or not settings.ssl_keyfile:
+            raise ValueError(
+                "Both ssl_certfile and ssl_keyfile must be set in settings.toml "
+                "to enable HTTPS. Leave both empty for HTTP mode."
+            )
+        cert_path = Path(settings.ssl_certfile)
+        key_path = Path(settings.ssl_keyfile)
+        if not cert_path.exists():
+            raise FileNotFoundError(f"SSL certificate not found: {cert_path}")
+        if not key_path.exists():
+            raise FileNotFoundError(f"SSL key file not found: {key_path}")
+    
+    # Configure reload exclusions to prevent constant restarts
+    # Ignore Android build outputs, logs, and other temporary files
+    # Note: uvicorn uses fnmatch patterns - only file patterns work reliably
+    reload_excludes = [
+        "*.apk",
+        "*.log",
+        "*.db",
+        "*.db-journal",
+        "*.prof",
+        "*.pyc",
+        "*.txt",  # Exclude test output files
+    ]
+    
+    # Configure logging to show which file triggered reload
+    if settings.debug:
+        # Intercept watchfiles.main logger to show file names
+        watchfiles_logger = logging.getLogger("watchfiles.main")
+        original_info = watchfiles_logger.info
+        
+        def logged_info(msg: str, *args: Any, **kwargs: Any) -> None:
+            """Wrap watchfiles info to show file details when available."""
+            formatted_msg = msg % args if args else msg
+            # watchfiles logs "N change detected" - we need to get actual file paths
+            # The file information is available in uvicorn's reload handler
+            # We'll log the message and let uvicorn show the actual file names
+            original_info(formatted_msg, *args, **kwargs)
+        
+        watchfiles_logger.info = logged_info  # type: ignore[assignment]
+        
+        # Intercept uvicorn.error logger to extract and display file names
+        uvicorn_logger = logging.getLogger("uvicorn.error")
+        original_warning = uvicorn_logger.warning
+        
+        def logged_warning(msg: str, *args: Any, **kwargs: Any) -> None:
+            """Wrap uvicorn warning to extract and display file names from reload messages."""
+            formatted_msg = msg % args if args else msg
+            
+            # uvicorn logs messages like:
+            # "WatchFiles detected changes in 'backend/routers/download.py'. Reloading..."
+            # We extract the file name and format it nicely
+            match = re.search(r"WatchFiles detected changes in '([^']+)'", formatted_msg)
+            if match:
+                file_path = match.group(1)
+                # Convert to relative path for cleaner output and normalize path separators
+                try:
+                    rel_path = Path(file_path).relative_to(Path.cwd())
+                    # Normalize path separators to forward slashes for consistency
+                    normalized_path = str(rel_path).replace("\\", "/")
+                    logging.warning(f"WatchFiles detected changes in '{normalized_path}'. Reloading...")
+                except ValueError:
+                    # If relative path fails, use absolute and normalize
+                    normalized_path = str(Path(file_path)).replace("\\", "/")
+                    logging.warning(f"WatchFiles detected changes in '{normalized_path}'. Reloading...")
+            else:
+                # If pattern doesn't match, use original message
+                original_warning(msg, *args, **kwargs)
+        
+        uvicorn_logger.warning = logged_warning  # type: ignore[assignment]
+    
+    # Prepare SSL configuration if enabled
+    ssl_kwargs = {}
+    if settings.use_ssl:
+        ssl_kwargs["ssl_keyfile"] = settings.ssl_keyfile
+        ssl_kwargs["ssl_certfile"] = settings.ssl_certfile
+        logging.info(f"HTTPS enabled: certfile={settings.ssl_certfile}, keyfile={settings.ssl_keyfile}")
+    else:
+        logging.info("HTTP mode (SSL not configured)")
+    
     uvicorn.run(
         "backend.main:app",
         host=settings.host,
         port=settings.port,
         reload=settings.debug,
+        reload_excludes=reload_excludes if settings.debug else None,
+        reload_delay=0.25,  # Small delay to batch multiple changes
+        **ssl_kwargs
     )
 

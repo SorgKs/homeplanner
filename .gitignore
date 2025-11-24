@@ -38,6 +38,9 @@ ENV/
 .env
 .env.local
 
+# Configuration (use settings.toml.template as template)
+common/config/settings.toml
+
 # Database
 *.db
 *.sqlite

@@ -47,7 +47,7 @@ Set-Location D:\Dev\HomePlanner
 - Если требуется запустить отдельный тест, допустим следующий формат:
 
 ```powershell
-python -m pytest tests\test_task_service.py::TestTaskService::test_get_today_tasks_skips_future_recurring
+python -m pytest tests\test_task_service.py::TestTaskService::test_get_today_task_ids_skips_future_recurring
 ```
 
 ---

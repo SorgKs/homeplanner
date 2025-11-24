@@ -7,10 +7,8 @@ import tomllib
 from pathlib import Path
 from typing import Any, Final, Mapping
 
-_CONFIG_DIR: Final[Path] = Path(__file__).resolve().parent / "config"
-_CONFIG_PATH: Final[Path] = _CONFIG_DIR / "version.json"
-_API_VERSION_CONFIG_PATH: Final[Path] = _CONFIG_DIR / "api_version.json"
 _ROOT_DIR: Final[Path] = Path(__file__).resolve().parent.parent
+_PYPROJECT_PATH: Final[Path] = _ROOT_DIR / "pyproject.toml"
 _COMPONENT_CONFIG_PATHS: Mapping[str, Path] = {
     "backend": _ROOT_DIR / "backend" / "version.json",
     "frontend": _ROOT_DIR / "frontend" / "version.json",
@@ -18,8 +16,7 @@ _COMPONENT_CONFIG_PATHS: Mapping[str, Path] = {
 }
 
 # Cache for lazy-loaded configs
-_VERSION_CONFIG: Mapping[str, Any] | None = None
-_API_VERSION_CONFIG: Mapping[str, Any] | None = None
+_PYPROJECT_CONFIG: Mapping[str, Any] | None = None
 
 
 def _load_json(path: Path) -> Mapping[str, Any]:
@@ -30,52 +27,80 @@ def _load_json(path: Path) -> Mapping[str, Any]:
     return data
 
 
+def _get_pyproject_config() -> Mapping[str, Any]:
+    """Lazy load pyproject configuration."""
+    global _PYPROJECT_CONFIG
+    if _PYPROJECT_CONFIG is None:
+        if not _PYPROJECT_PATH.exists():
+            raise FileNotFoundError(f"pyproject.toml not found at {_PYPROJECT_PATH}")
+        with _PYPROJECT_PATH.open("rb") as fp:
+            _PYPROJECT_CONFIG = tomllib.load(fp)
+    return _PYPROJECT_CONFIG
+
+
+def _get_tool_config(section: str) -> Mapping[str, Any]:
+    tool = _get_pyproject_config().get("tool", {})
+    homeplanner = tool.get("homeplanner", {})
+    return homeplanner.get(section, {})
+
+
 def _get_version_config() -> Mapping[str, Any]:
-    """Lazy load version config."""
-    global _VERSION_CONFIG
-    if _VERSION_CONFIG is None:
-        _VERSION_CONFIG = _load_json(_CONFIG_PATH)
-    return _VERSION_CONFIG
+    """Return project version configuration from pyproject."""
+    return _get_tool_config("versions")
 
 
 def _get_api_version_config() -> Mapping[str, Any]:
-    """Lazy load API version config."""
-    global _API_VERSION_CONFIG
-    if _API_VERSION_CONFIG is None:
-        try:
-            _API_VERSION_CONFIG = _load_json(_API_VERSION_CONFIG_PATH)
-        except FileNotFoundError:
-            # Fallback to project version if API version config doesn't exist
-            version_config = _get_version_config()
-            _API_VERSION_CONFIG = {
-                "major": int(version_config.get("major", 0)),
-                "minor": int(version_config.get("minor", 0)),
-            }
-    return _API_VERSION_CONFIG
+    """Return API version configuration from pyproject."""
+    return _get_tool_config("api")
 
 
 def _get_major_version() -> int:
     """Get major version (lazy loaded)."""
     config = _get_version_config()
-    return int(config.get("major", 0))
+    value = config.get("project_major", config.get("major", 0))
+    return int(value)
 
 
 def _get_minor_version() -> int:
     """Get minor version (lazy loaded)."""
     config = _get_version_config()
-    return int(config.get("minor", 0))
+    value = config.get("project_minor", config.get("minor", 0))
+    return int(value)
 
 
 def _get_api_major_version() -> int:
     """Get API major version (lazy loaded)."""
-    config = _get_api_version_config()
-    return int(config.get("major", 0))
+    return _get_api_version_parts()[0]
 
 
 def _get_api_minor_version() -> int:
     """Get API minor version (lazy loaded)."""
+    return _get_api_version_parts()[1]
+
+
+def _get_primary_api_version() -> str:
     config = _get_api_version_config()
-    return int(config.get("minor", 0))
+    default_version = config.get("current_version")
+    if isinstance(default_version, str):
+        return default_version
+    supported = config.get("supported_versions")
+    if isinstance(supported, list) and supported:
+        first = supported[0]
+        if isinstance(first, str):
+            return first
+    return "0.0"
+
+
+def _get_api_version_parts() -> tuple[int, int]:
+    version_str = _get_primary_api_version()
+    try:
+        major_str, minor_str = version_str.split(".", maxsplit=1)
+    except ValueError:
+        return 0, 0
+    try:
+        return int(major_str), int(minor_str)
+    except ValueError:
+        return 0, 0
 
 
 # Public constants (lazy-loaded functions)
@@ -166,15 +191,11 @@ def get_supported_api_versions() -> list[str]:
     Returns:
         List of supported API version strings (e.g., ["0.2", "0.3"]).
     """
-    _PYPROJECT_PATH = _ROOT_DIR / "pyproject.toml"
-    if not _PYPROJECT_PATH.exists():
-        return []
-    
-    with _PYPROJECT_PATH.open("rb") as fp:
-        config = tomllib.load(fp)
-    
-    api_config = config.get("tool", {}).get("homeplanner", {}).get("api", {})
-    return list(api_config.get("supported_versions", []))
+    api_config = _get_api_version_config()
+    supported = api_config.get("supported_versions", [])
+    if isinstance(supported, list):
+        return [str(item) for item in supported]
+    return []
 
 
 def validate_api_version(api_version: str) -> None:

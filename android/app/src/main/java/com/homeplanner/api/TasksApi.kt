@@ -8,7 +8,6 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.RequestBody
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -16,14 +15,25 @@ import org.json.JSONObject
 class TasksApi(
     private val httpClient: OkHttpClient = OkHttpClient(),
     private val baseUrl: String = BuildConfig.API_BASE_URL,
+    private val selectedUserId: Int? = null,
 ) {
+
+    private fun Request.Builder.applyUserCookie(): Request.Builder {
+        if (selectedUserId != null) {
+            header("Cookie", "hp.selectedUserId=$selectedUserId")
+        }
+        return this
+    }
 
     fun getTasks(activeOnly: Boolean = true): List<Task> {
         val url = buildString {
             append(baseUrl).append("/tasks/")
             if (activeOnly) append("?active_only=true")
         }
-        val request = Request.Builder().url(url).build()
+        val request = Request.Builder()
+            .url(url)
+            .applyUserCookie()
+            .build()
         httpClient.newCall(request).execute().use { response ->
             if (!response.isSuccessful) throw IllegalStateException("HTTP ${response.code}")
             val body = response.body?.string() ?: "[]"
@@ -37,23 +47,25 @@ class TasksApi(
         }
     }
 
-    fun getTodayTasks(): List<Task> {
-        val url = "$baseUrl/tasks/today"
-        val request = Request.Builder().url(url).build()
+    fun getTodayTaskIds(): List<Int> {
+        val url = "$baseUrl/tasks/today/ids"
+        val request = Request.Builder()
+            .url(url)
+            .applyUserCookie()
+            .build()
         httpClient.newCall(request).execute().use { response ->
             if (!response.isSuccessful) throw IllegalStateException("HTTP ${response.code}")
             val body = response.body?.string() ?: "[]"
             val array = JSONArray(body)
-            val result = ArrayList<Task>(array.length())
+            val result = ArrayList<Int>(array.length())
             for (i in 0 until array.length()) {
-                val obj = array.getJSONObject(i)
-                result.add(obj.toTask())
+                result.add(array.getInt(i))
             }
             return result
         }
     }
 
-    fun createTask(task: Task): Task {
+    fun createTask(task: Task, assignedUserIds: List<Int> = emptyList()): Task {
         val url = "$baseUrl/tasks/"
         val json = JSONObject().apply {
             put("title", task.title)
@@ -66,12 +78,16 @@ class TasksApi(
             put("group_id", task.groupId)
             put("active", task.active)
             put("completed", task.completed)
+            if (assignedUserIds.isNotEmpty()) {
+                put("assigned_user_ids", JSONArray(assignedUserIds))
+            }
         }.toString()
         Log.d("TasksApi", "Creating task: url=$url, json=$json")
         val mediaType = "application/json; charset=utf-8".toMediaType()
         val request = Request.Builder()
             .url(url)
             .post(json.toRequestBody(mediaType))
+            .applyUserCookie()
             .build()
         Log.d("TasksApi", "Sending POST request to: $url")
         try {
@@ -99,6 +115,7 @@ class TasksApi(
         val request = Request.Builder()
             .url(url)
             .post("{}".toRequestBody(mediaType))
+            .applyUserCookie()
             .build()
         httpClient.newCall(request).execute().use { response ->
             if (!response.isSuccessful) throw IllegalStateException("HTTP ${response.code}")
@@ -114,6 +131,7 @@ class TasksApi(
         val request = Request.Builder()
             .url(url)
             .post("{}".toRequestBody(mediaType))
+            .applyUserCookie()
             .build()
         httpClient.newCall(request).execute().use { response ->
             if (!response.isSuccessful) throw IllegalStateException("HTTP ${response.code}")
@@ -128,13 +146,14 @@ class TasksApi(
         val request = Request.Builder()
             .url(url)
             .delete()
+            .applyUserCookie()
             .build()
         httpClient.newCall(request).execute().use { response ->
             if (!response.isSuccessful) throw IllegalStateException("HTTP ${response.code}")
         }
     }
 
-    fun updateTask(taskId: Int, task: Task): Task {
+    fun updateTask(taskId: Int, task: Task, assignedUserIds: List<Int> = emptyList()): Task {
         val url = "$baseUrl/tasks/$taskId"
         val json = JSONObject().apply {
             put("title", task.title)
@@ -147,6 +166,11 @@ class TasksApi(
             put("group_id", task.groupId)
             put("active", task.active)
             put("completed", task.completed)
+            if (assignedUserIds.isNotEmpty()) {
+                put("assigned_user_ids", JSONArray(assignedUserIds))
+            } else {
+                put("assigned_user_ids", JSONArray())
+            }
         }.toString()
         Log.d("TasksApi", "Updating task: id=$taskId, url=$url, json=$json")
         val mediaType = "application/json; charset=utf-8".toMediaType()
@@ -154,6 +178,7 @@ class TasksApi(
         val request = Request.Builder()
             .url(url)
             .put(body)
+            .applyUserCookie()
             .build()
         Log.d("TasksApi", "Sending PATCH request to: $url")
         try {
@@ -181,6 +206,16 @@ private fun JSONObject.toTask(): Task {
         ?: throw IllegalStateException("Missing reminder_time in task payload: $this")
     val activeValue = if (isNull("active")) true else getBoolean("active")
     val completedValue = if (isNull("completed")) false else getBoolean("completed")
+    
+    // Extract assigned_user_ids from JSON array
+    val assignedUserIds = mutableListOf<Int>()
+    if (has("assigned_user_ids") && !isNull("assigned_user_ids")) {
+        val idsArray = getJSONArray("assigned_user_ids")
+        for (i in 0 until idsArray.length()) {
+            assignedUserIds.add(idsArray.getInt(i))
+        }
+    }
+    
     return Task(
         id = getInt("id"),
         title = getString("title"),
@@ -193,12 +228,15 @@ private fun JSONObject.toTask(): Task {
         groupId = if (isNull("group_id")) null else getInt("group_id"),
         active = activeValue,
         completed = completedValue,
+        assignedUserIds = assignedUserIds,
     )
 }
 
 /** Simple API client for groups. */
-class GroupsApi(private val httpClient: OkHttpClient = OkHttpClient()) {
+class GroupsApi(
+    private val httpClient: OkHttpClient = OkHttpClient(),
     private val baseUrl: String = BuildConfig.API_BASE_URL
+) {
     fun getAll(): Map<Int, String> {
         val url = "$baseUrl/groups/"
         val request = Request.Builder().url(url).build()

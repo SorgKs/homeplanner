@@ -12,9 +12,11 @@ let filterState = null;
 let currentView = 'today'; // 'today', 'all', 'history', 'settings', 'users'
 let adminMode = false; // Режим администратора
 let ws = null; // WebSocket connection
+let wsReconnectTimer = null; // Таймер переподключения WebSocket
 let timeControlState = null; // Состояние панели управления временем
 let users = []; // Пользователи для назначения
-let selectedUserId = null; // ID выбранного пользователя для фильтра
+let selectedUserId = null; // ID выбранного пользователя для фильтра (для "Сегодня" - из cookie, для "Все задачи" - из UI)
+let allTasksUserFilterId = null; // ID пользователя для фильтра во вкладке "Все задачи" (опционально)
 let appInitialized = false; // Флаг инициализации интерфейса
 const USER_ROLE_LABELS = {
     admin: 'Админ',
@@ -77,7 +79,7 @@ function applySelectedUserFromCookie() {
 
 function getWsUrl() {
     const host =
-        (typeof window !== "undefined" && window.HP_BACKEND_HOST) || "192.168.1.2";
+        (typeof window !== "undefined" && window.HP_BACKEND_HOST) || "localhost";
     const port =
         (typeof window !== "undefined" && window.HP_BACKEND_PORT) || 8000;
     const path =
@@ -98,6 +100,9 @@ function applyTaskEventFromWs(action, taskJson, taskId) {
     // For other views, update locally
     if (action === 'deleted' && taskId != null) {
         allTasks = allTasks.filter(t => t.id !== taskId);
+        // Обновляем кэши
+        allTasksCache = [...allTasks];
+        todayTasksCache = todayTasksCache.filter(t => t.id !== taskId);
         filterAndRenderTasks();
         return;
     }
@@ -134,12 +139,34 @@ function applyTaskEventFromWs(action, taskJson, taskId) {
         assignees: Array.isArray(t.assignees) ? t.assignees : [],
         reminder_time: reminderTime,
     };
-    const idx = allTasks.findIndex(x => x.id === mapped.id);
-    if (idx >= 0) {
-        allTasks[idx] = mapped;
+    // Обновляем кэши напрямую (это источник истины)
+    const cacheIdx = allTasksCache.findIndex(x => x.id === mapped.id);
+    if (cacheIdx >= 0) {
+        allTasksCache[cacheIdx] = mapped;
     } else {
-        allTasks.push(mapped);
+        allTasksCache.push(mapped);
     }
+    
+    // Обновляем кэш для "Сегодня" если задача входит в список todayTaskIds
+    if (todayTaskIds.has(mapped.id)) {
+        const todayIdx = todayTasksCache.findIndex(x => x.id === mapped.id);
+        if (todayIdx >= 0) {
+            todayTasksCache[todayIdx] = mapped;
+        } else {
+            todayTasksCache.push(mapped);
+        }
+    } else {
+        // Удаляем из кэша "Сегодня" если задача больше не должна там быть
+        todayTasksCache = todayTasksCache.filter(t => t.id !== mapped.id);
+    }
+    
+    // Синхронизируем allTasks с кэшем в зависимости от текущего вида
+    if (currentView === 'today') {
+        allTasks = [...todayTasksCache];
+    } else {
+        allTasks = [...allTasksCache];
+    }
+    
     filterAndRenderTasks();
 }
 
@@ -148,6 +175,11 @@ function connectWebSocket() {
         const url = getWsUrl();
         if (ws) {
             try { ws.close(); } catch (_) {}
+        }
+        // Отменяем предыдущий таймер переподключения, если есть
+        if (wsReconnectTimer) {
+            clearTimeout(wsReconnectTimer);
+            wsReconnectTimer = null;
         }
         ws = new WebSocket(url);
         ws.onopen = () => {
@@ -168,13 +200,31 @@ function connectWebSocket() {
         };
         ws.onclose = () => {
             console.log('[WS] connection closed, retry in 2s');
-            setTimeout(connectWebSocket, 2000);
+            // Сохраняем таймер, чтобы можно было его отменить
+            wsReconnectTimer = setTimeout(connectWebSocket, 2000);
         };
         ws.onerror = (e) => {
             console.error('[WS] error', e);
         };
     } catch (e) {
         console.error('[WS] failed to connect', e);
+    }
+}
+
+function disconnectWebSocket() {
+    // Отменяем таймер переподключения
+    if (wsReconnectTimer) {
+        clearTimeout(wsReconnectTimer);
+        wsReconnectTimer = null;
+    }
+    // Закрываем соединение
+    if (ws) {
+        try {
+            ws.close();
+        } catch (e) {
+            console.error('Error closing WebSocket:', e);
+        }
+        ws = null;
     }
 }
 
@@ -264,29 +314,110 @@ async function showUserPickScreen() {
     const pickScreen = document.getElementById('user-pick-screen');
     if (appLayout) appLayout.style.display = 'none';
     if (pickScreen) pickScreen.style.display = 'flex';
+    
+    // Сначала показываем форму создания (мгновенный отклик)
+    // Это нужно, чтобы пользователь не ждал таймаута подключения, если backend недоступен
+    renderUserPickButtons([]);
+    
+    // Затем пытаемся загрузить пользователей в фоне
+    // Если они загрузятся, интерфейс обновится автоматически
     try {
-        // Берём пользователей, если уже загружены — используем локально; иначе — грузим
-        if (!Array.isArray(users) || users.length === 0) {
-            users = await usersAPI.getAll();
+        console.log('Loading users for pick screen...');
+        const startTime = Date.now();
+        users = await usersAPI.getAll();
+        const loadTime = Date.now() - startTime;
+        console.log(`Loaded users in ${loadTime}ms:`, users);
+        
+        // Если пользователи загрузились, обновляем интерфейс
+        if (Array.isArray(users) && users.length > 0) {
+            renderUserPickButtons(users);
         }
-        renderUserPickButtons(users);
+        // Если список пуст, форма уже показана - ничего не делаем
     } catch (e) {
         console.error('Failed to load users for pick screen', e);
-        const list = document.getElementById('user-pick-list');
-        if (list) {
-            list.innerHTML = '<div style="color:#b91c1c;">Не удалось загрузить пользователей. Обновите страницу.</div>';
-        }
+        // Форма уже показана, ничего не делаем
     }
 }
 
 function renderUserPickButtons(userList) {
     const list = document.getElementById('user-pick-list');
-    if (!list) return;
-    list.innerHTML = (userList || []).map(u => {
-        const name = (u && (u.name || u.display_name || `#${u.id}`)) || '—';
-        return `<button class="btn btn-primary" data-user-id="${String(u.id)}" style="flex:1 1 auto; min-width:180px;">${name}</button>`;
-    }).join('');
-    list.querySelectorAll('button[data-user-id]').forEach(btn => {
+    if (!list) {
+        console.error('user-pick-list element not found');
+        return;
+    }
+    // Показываем форму создания, если список пуст или не является массивом
+    if (!Array.isArray(userList) || userList.length === 0) {
+        console.log('No users found, showing create form');
+        // Меняем стиль контейнера для корректного отображения формы
+        list.style.display = 'block';
+        list.style.flexWrap = 'nowrap';
+        list.innerHTML = `
+            <div style="width:100%; text-align:left;">
+                <p style="margin-bottom:12px;">В базе пока нет пользователей. Создайте первого, чтобы продолжить работу.</p>
+                <form id="user-pick-create-form" style="display:flex; flex-direction:column; gap:12px;">
+                    <div style="display:flex; flex-direction:column; gap:4px;">
+                        <label for="user-pick-name" style="font-size:0.9em; color:#374151;">Имя</label>
+                        <input type="text" id="user-pick-name" required placeholder="Например, Сергей" style="padding:10px; border:1px solid #d1d5db; border-radius:6px;">
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:4px;">
+                        <label for="user-pick-email" style="font-size:0.9em; color:#374151;">Почта (необязательно)</label>
+                        <input type="email" id="user-pick-email" placeholder="user@example.com" style="padding:10px; border:1px solid #d1d5db; border-radius:6px;">
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:4px;">
+                        <label for="user-pick-role" style="font-size:0.9em; color:#374151;">Привилегии</label>
+                        <select id="user-pick-role" style="padding:10px; border:1px solid #d1d5db; border-radius:6px;">
+                            <option value="regular" selected>Обычный</option>
+                            <option value="admin">Администратор</option>
+                            <option value="guest">Гость</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="align-self:flex-start;">Создать и продолжить</button>
+                </form>
+            </div>
+        `;
+        const form = document.getElementById('user-pick-create-form');
+        if (form) {
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const nameInput = document.getElementById('user-pick-name');
+                const emailInput = document.getElementById('user-pick-email');
+                const roleSelect = document.getElementById('user-pick-role');
+                const name = nameInput.value.trim();
+                const email = emailInput.value.trim();
+                const role = roleSelect.value || 'regular';
+                if (!name) {
+                    nameInput.focus();
+                    return;
+                }
+                form.querySelector('button[type="submit"]').disabled = true;
+                try {
+                    const created = await usersAPI.create({
+                        name,
+                        email: email || undefined,
+                        role,
+                        is_active: true,
+                    });
+                    users = [created];
+                    setCookie('hp.selectedUserId', created.id);
+                    selectedUserId = created.id;
+                    showToast('Пользователь создан', 'success');
+                    await initializeAppIfNeeded();
+                } catch (err) {
+                    console.error('Failed to create user from pick screen', err);
+                    showToast('Не удалось создать пользователя. Попробуйте ещё раз.', 'error');
+                    form.querySelector('button[type="submit"]').disabled = false;
+                }
+            });
+        }
+        return;
+    }
+    list.innerHTML = userList
+        .map((u) => {
+            const name = (u && (u.name || u.display_name || `#${u.id}`)) || '—';
+            return `<button class="btn btn-primary" data-user-id="${String(u.id)}" style="flex:1 1 auto; min-width:180px;">${name}</button>`;
+        })
+        .join('');
+    list.querySelectorAll('button[data-user-id]').forEach((btn) => {
         btn.addEventListener('click', async (e) => {
             const id = parseInt(e.currentTarget.getAttribute('data-user-id'), 10);
             if (!Number.isFinite(id)) return;
@@ -386,11 +517,19 @@ function setupEventListeners() {
     if (userFilter) {
         userFilter.addEventListener('change', (e) => {
             const value = e.target.value;
-            selectedUserId = value ? parseInt(value, 10) : null;
-            if (value) {
-                setCookie('hp.selectedUserId', selectedUserId);
+            const userId = value ? parseInt(value, 10) : null;
+            
+            // Для вкладки "Все задачи" используем отдельный фильтр (не сохраняем в cookie)
+            if (currentView === 'all') {
+                allTasksUserFilterId = userId;
             } else {
-                deleteCookie('hp.selectedUserId');
+                // Для других вкладок (включая "Сегодня") используем selectedUserId и сохраняем в cookie
+                selectedUserId = userId;
+                if (value) {
+                    setCookie('hp.selectedUserId', selectedUserId);
+                } else {
+                    deleteCookie('hp.selectedUserId');
+                }
             }
             filterAndRenderTasks();
         });
@@ -398,12 +537,42 @@ function setupEventListeners() {
     const resetUserBtn = document.getElementById('user-reset-btn');
     if (resetUserBtn) {
         resetUserBtn.addEventListener('click', () => {
-            deleteCookie('hp.selectedUserId');
-            const select = document.getElementById('user-filter');
-            if (select) select.value = '';
-            selectedUserId = null;
-            showToast('Выбор пользователя сброшен', 'info');
+            if (currentView === 'all') {
+                // Для "Все задачи" просто сбрасываем фильтр
+                const select = document.getElementById('user-filter');
+                if (select) select.value = '';
+                allTasksUserFilterId = null;
+                showToast('Фильтр по пользователю сброшен', 'info');
+            } else {
+                // Для других вкладок (включая "Сегодня") сбрасываем selectedUserId и cookie
+                deleteCookie('hp.selectedUserId');
+                const select = document.getElementById('user-filter');
+                if (select) select.value = '';
+                selectedUserId = null;
+                showToast('Выбор пользователя сброшен', 'info');
+            }
             filterAndRenderTasks();
+        });
+    }
+
+    // Logout button
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
+            // Закрываем WebSocket соединение и отменяем переподключение
+            disconnectWebSocket();
+            
+            // Удаляем cookie с выбранным пользователем
+            deleteCookie('hp.selectedUserId');
+            selectedUserId = null;
+            
+            // Сбрасываем состояние приложения
+            appInitialized = false;
+            
+            // Показываем экран выбора пользователя
+            await showUserPickScreen();
+            
+            showToast('Вы вышли из системы', 'info');
         });
     }
 
@@ -579,7 +748,9 @@ async function loadData() {
         const now = new Date();
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         
-        allTasks = tasks.map(t => {
+        // Map tasks and remove duplicates by ID (keep first occurrence)
+        const tasksMap = new Map();
+        tasks.forEach(t => {
             // Определяем статус выполнения: задача выполнена если:
             // 1. Для разовых задач: неактивна (active = false)
             // 2. Для повторяющихся и интервальных: completed = true
@@ -594,7 +765,7 @@ async function loadData() {
                 isCompleted = t.completed === true;
             }
             
-            return {
+            const mappedTask = {
                 ...t, 
                 type: 'task', 
                 is_recurring: t.task_type === 'recurring',
@@ -605,7 +776,18 @@ async function loadData() {
                 assigned_user_ids: Array.isArray(t.assigned_user_ids) ? t.assigned_user_ids.map(Number) : [],
                 assignees: Array.isArray(t.assignees) ? t.assignees : []
             };
+            
+            // Keep first occurrence if duplicate
+            if (!tasksMap.has(mappedTask.id)) {
+                tasksMap.set(mappedTask.id, mappedTask);
+            }
         });
+        
+        allTasks = Array.from(tasksMap.values());
+        
+        if (allTasks.length !== tasks.length) {
+            console.warn(`Found ${tasks.length - allTasks.length} duplicate tasks, removed`);
+        }
         
         // Сохраняем задачи в кэш для разных видов
         allTasksCache = [...allTasks];
@@ -863,6 +1045,12 @@ function switchView(view) {
         tasksFilters.style.display = 'block';
         // показать элементы фильтра пользователя только в этом виде
         toggleUserFilterControls(true);
+        // Сбрасываем фильтр пользователя для "Все задачи" при переключении (показываем все задачи)
+        const userFilterSelect = document.getElementById('user-filter');
+        if (userFilterSelect) {
+            userFilterSelect.value = '';
+            allTasksUserFilterId = null;
+        }
         if (settingsView) settingsView.style.display = 'none';
         if (tasksList) tasksList.style.display = 'block';
         applyCurrentViewData();
@@ -1096,7 +1284,14 @@ function filterAndRenderTasks() {
             (filterState === 'completed' && (task.is_completed || !task.is_active)) ||
             (filterState === 'active' && !task.is_completed && task.is_active);
 
-        const matchesUser = !selectedUserId || (task.assigned_user_ids || []).includes(selectedUserId);
+        // Для "Сегодня" используем selectedUserId (из cookie), для "Все задачи" - allTasksUserFilterId (из UI, опционально)
+        let userIdToFilter = null;
+        if (currentView === 'today') {
+            userIdToFilter = selectedUserId; // Обязательный фильтр для "Сегодня"
+        } else if (currentView === 'all') {
+            userIdToFilter = allTasksUserFilterId; // Опциональный фильтр для "Все задачи"
+        }
+        const matchesUser = !userIdToFilter || (task.assigned_user_ids || []).includes(userIdToFilter);
         
         return matchesSearch && matchesFilter && matchesUser;
     });

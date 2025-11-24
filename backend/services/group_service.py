@@ -16,6 +16,11 @@ class GroupService:
     @staticmethod
     def create_group(db: Session, group_data: "GroupCreate") -> Group:
         """Create a new group."""
+        # Check if group with same name already exists
+        existing = db.query(Group).filter(Group.name == group_data.name).first()
+        if existing:
+            raise ValueError(f"Group with name '{group_data.name}' already exists")
+        
         group = Group(**group_data.model_dump())
         db.add(group)
         db.commit()
@@ -40,6 +45,16 @@ class GroupService:
             return None
 
         update_data = group_data.model_dump(exclude_unset=True)
+        
+        # Check if name is being updated and if it conflicts with existing group
+        if "name" in update_data:
+            existing = db.query(Group).filter(
+                Group.name == update_data["name"],
+                Group.id != group_id
+            ).first()
+            if existing:
+                raise ValueError(f"Group with name '{update_data['name']}' already exists")
+        
         for key, value in update_data.items():
             setattr(group, key, value)
 

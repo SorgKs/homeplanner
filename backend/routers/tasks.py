@@ -34,26 +34,44 @@ def broadcast_task_update(message: dict[str, Any]) -> None:
     
     This function safely handles async broadcasting from sync context.
     """
-    # Try AnyIO safe path first (works from worker threads)
+    # Try AnyIO safe path first (works from worker threads and sync contexts)
     try:
         import anyio
         logger.info("Broadcast via anyio.from_thread: %s", message)
         anyio.from_thread.run(ws_manager.broadcast, message)  # type: ignore[arg-type]
         return
     except Exception as e_anyio:
-        logger.error("Broadcast via anyio failed: %s", e_anyio)
-    # Fallbacks using asyncio (may fail in worker threads)
+        logger.warning("Broadcast via anyio failed: %s, trying asyncio", e_anyio)
+    
+    # Fallbacks using asyncio
     try:
         import asyncio
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
+        try:
+            loop = asyncio.get_running_loop()
+            # If we're in an async context, schedule the coroutine
             logger.info("Broadcast enqueue (running loop): %s", message)
-            asyncio.ensure_future(ws_manager.broadcast(message))
-        else:
-            logger.info("Broadcast immediate (no loop): %s", message)
-            loop.run_until_complete(ws_manager.broadcast(message))
+            asyncio.create_task(ws_manager.broadcast(message))
+        except RuntimeError:
+            # No running loop, try to get or create one
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    logger.info("Broadcast enqueue (running loop): %s", message)
+                    asyncio.ensure_future(ws_manager.broadcast(message))
+                else:
+                    logger.info("Broadcast immediate (no loop): %s", message)
+                    loop.run_until_complete(ws_manager.broadcast(message))
+            except RuntimeError:
+                # No event loop at all, create a new one
+                logger.info("Broadcast creating new event loop: %s", message)
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    loop.run_until_complete(ws_manager.broadcast(message))
+                finally:
+                    loop.close()
     except Exception as e:
-        logging.error(f"Failed to broadcast WS message: {e}")
+        logger.error(f"Failed to broadcast WS message: {e}", exc_info=True)
 
 
 @router.post("/", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)

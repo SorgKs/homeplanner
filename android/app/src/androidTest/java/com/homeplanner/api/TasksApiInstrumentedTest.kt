@@ -121,16 +121,18 @@ class TasksApiInstrumentedTest {
     }
 
     @Test
-    fun getTodayTasks_hitsTodayEndpoint() {
+    fun getTodayTaskIds_hitsTodayIdsEndpoint() {
         server.enqueue(
             MockResponse()
                 .setResponseCode(200)
-                .setBody("[]"),
+                .setBody("[1, 2, 3]"),
         )
 
-        client.getTodayTasks()
+        val ids = client.getTodayTaskIds()
         val recordedRequest = server.takeRequest()
-        assertEquals("/api/v0.2/tasks/today", recordedRequest.path)
+        assertEquals("/api/v0.2/tasks/today/ids", recordedRequest.path)
+        assertEquals(3, ids.size)
+        assertEquals(listOf(1, 2, 3), ids)
     }
 
     @Test

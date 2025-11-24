@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import json
 from functools import lru_cache
 from pathlib import Path
-from typing import TypedDict
+import tomllib
+from typing import Any, TypedDict
 
 
 class NetworkConfig(TypedDict):
@@ -15,21 +15,27 @@ class NetworkConfig(TypedDict):
     port: int
 
 
-_NETWORK_CONFIG_PATH: Path = Path(__file__).resolve().parent.parent / "config" / "network.json"
+_SETTINGS_PATH: Path = Path(__file__).resolve().parent / "config" / "settings.toml"
 _DEFAULT_HOST = "localhost"
 _DEFAULT_PORT = 8000
+
+
+@lru_cache(maxsize=1)
+def _load_settings() -> dict[str, Any]:
+    if not _SETTINGS_PATH.exists():
+        raise FileNotFoundError(f"Settings file not found: {_SETTINGS_PATH}")
+    with _SETTINGS_PATH.open("rb") as settings_file:
+        return tomllib.load(settings_file)
 
 
 @lru_cache(maxsize=1)
 def get_network_config() -> NetworkConfig:
     """Load network configuration shared across components."""
 
-    if not _NETWORK_CONFIG_PATH.exists():
-        return NetworkConfig(host=_DEFAULT_HOST, port=_DEFAULT_PORT)
-    with _NETWORK_CONFIG_PATH.open("r", encoding="utf-8") as config_file:
-        data = json.load(config_file)
-    host = str(data.get("host", _DEFAULT_HOST))
-    port = int(data.get("port", _DEFAULT_PORT))
+    settings = _load_settings()
+    section = settings.get("network", {})
+    host = str(section.get("host", settings.get("server", {}).get("host", _DEFAULT_HOST)))
+    port = int(section.get("port", settings.get("server", {}).get("port", _DEFAULT_PORT)))
     return NetworkConfig(host=host, port=port)
 
 

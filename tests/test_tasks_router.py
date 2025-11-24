@@ -132,8 +132,17 @@ def client(db_session: "Session", api_version: str, monkeypatch: "FixtureRequest
     # Также синхронизируем версию для tests.utils.api (get_api_prefix),
     # чтобы префикс путей совпадал с конфигом.
     import common.versioning as ver
-    major, minor = api_version.split(".")
-    monkeypatch.setattr(ver, "_API_VERSION_CONFIG", {"major": int(major), "minor": int(minor)})
+
+    # Мокируем _get_primary_api_version() чтобы возвращала нужную версию
+    def mock_get_primary_api_version() -> str:
+        return api_version
+
+    monkeypatch.setattr(ver, "_get_primary_api_version", mock_get_primary_api_version)
+
+    # Сбрасываем кеш в tests.utils.api, так как там используется @lru_cache
+    import tests.utils.api as test_api
+
+    test_api._api_prefix.cache_clear()
 
     # Пересоздаём приложение с новой версией API
     test_app = create_app()
