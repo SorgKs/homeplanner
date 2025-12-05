@@ -1,0 +1,15 @@
+# Local machine-specific properties
+# This file is not tracked by git. Copy this template to local.properties and configure for your machine.
+
+# Android SDK location
+sdk.dir=D:\\Dev\\HomePlanner\\android\\.android-sdk
+
+# Java Development Kit (JDK) location
+# Required: JDK 17 or higher
+# Uncomment and set the path to your JDK installation:
+# java.home=C:\\Program Files\\Java\\jdk-17
+# Or use JAVA_HOME environment variable instead
+
+# API Base URL for backend (optional, can also use HP_API_BASE_URL environment variable)
+# apiBaseUrl=http://192.168.1.2:8000/api/v1
+
