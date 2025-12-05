@@ -2,6 +2,7 @@
 
 from typing import Any, List
 from datetime import datetime
+from enum import Enum
 
 from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
 
@@ -154,4 +155,38 @@ class TaskResponse(TaskBase):
                 instance.assigned_user_ids = []
         
         return instance
+
+
+class TaskOperationType(str, Enum):
+    """Supported operation types for batched task sync."""
+
+    CREATE = "create"
+    UPDATE = "update"
+    DELETE = "delete"
+    COMPLETE = "complete"
+    UNCOMPLETE = "uncomplete"
+
+
+class TaskSyncOperation(BaseModel):
+    """Single operation in sync queue batch."""
+
+    operation: TaskOperationType
+    timestamp: datetime = Field(..., description="Client timestamp of operation")
+    task_id: int | None = Field(
+        None,
+        description="Target task identifier (None for create)",
+    )
+    payload: dict[str, Any] | None = Field(
+        default=None,
+        description="Optional payload for create/update operations",
+    )
+
+
+class TaskSyncRequest(BaseModel):
+    """Request payload for /tasks/sync-queue endpoint."""
+
+    operations: list[TaskSyncOperation] = Field(
+        default_factory=list,
+        description="List of operations to apply in chronological order",
+    )
 

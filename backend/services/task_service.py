@@ -215,9 +215,9 @@ class TaskService:
                 # Task date is in the past and task was completed
                 # Update the date based on task type and reset completed flag for recurring/interval tasks
                 if task.task_type == TaskType.ONE_TIME:
-                    # One-time tasks stay as they are (already inactive)
-                    # Date is not changed for one-time tasks
-                    pass
+                    # One-time tasks: date never changes, но завершённые задачи
+                    # должны стать неактивными при наступлении нового дня
+                    task.active = False
                 elif task.task_type == TaskType.INTERVAL:
                     # Interval tasks: always shift from confirmation day start
                     interval_days = task.interval_days or 1
@@ -276,62 +276,12 @@ class TaskService:
 
     @staticmethod
     def get_tasks_for_today(db: Session) -> list[Task]:
-        """Return tasks visible in 'today' view per unified rules.
+        """Return tasks visible in 'today' view (deprecated wrapper).
 
-        Rules:
-        - one_time: if inactive (completed) — visible only if due date is today;
-          if active — visible if due today or overdue.
-        - recurring/interval: if completed — visible only if completed today;
-          if not completed — visible if due today or overdue.
-        
-        Also ensures tasks are updated if new day has started.
+        Использует единые канонические правила фильтрации из get_today_tasks().
+        Оставлен для обратной совместимости.
         """
-        from backend.models.task import TaskType
-
-        # Ensure tasks are updated if new day started (using last_update check)
-        if TaskService._is_new_day(db):
-            # Trigger update by calling get_all_tasks (it handles the update and sets last_update)
-            TaskService.get_all_tasks(db, active_only=False)
-
-        now = get_current_time()
-        today = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        tomorrow = today + timedelta(days=1)
-
-        tasks = (
-            db.query(Task)
-            .options(selectinload(Task.assignees))
-            .order_by(Task.reminder_time)
-            .all()
-        )
-
-        result: list[Task] = []
-        for task in tasks:
-            task_date = TaskService._get_day_start(task.reminder_time)
-            is_due_today_or_overdue = task_date < tomorrow
-
-            if task.task_type == TaskType.ONE_TIME:
-                if not task.active:
-                    # Completed one-time task visible only if due today
-                    if task_date == today:
-                        result.append(task)
-                else:
-                    if is_due_today_or_overdue:
-                        result.append(task)
-            else:
-                # recurring or interval
-                # completed flag indicates if task was completed today
-                # (get_all_tasks resets completed flag at day_start_hour)
-                if task.completed:
-                    # Completed task visible if reminder_time is today or overdue (completed today)
-                    # This ensures completed tasks remain visible until next day
-                    if is_due_today_or_overdue:
-                        result.append(task)
-                else:
-                    # Not completed — visible if due today or overdue
-                    if is_due_today_or_overdue:
-                        result.append(task)
-
-        return result
+        return TaskService.get_today_tasks(db, user_id=None)
 
     @staticmethod
     def update_task(db: Session, task_id: int, task_data: "TaskUpdate") -> Task | None:
@@ -1306,8 +1256,8 @@ class TaskService:
             TaskService.get_all_tasks(db, active_only=False)
         
         now = get_current_time()
-        today = TaskService._get_day_start(now)
-        tomorrow = today + timedelta(days=1)
+        today_start = TaskService._get_day_start(now)
+        tomorrow_start = today_start + timedelta(days=1)
         
         tasks = (
             db.query(Task)
@@ -1320,23 +1270,36 @@ class TaskService:
         for task in tasks:
             if task.reminder_time is None:
                 continue
-            
+
             task_day_start = TaskService._get_day_start(task.reminder_time)
-            if task_day_start >= tomorrow:
-                continue
-            
+
+            # Положение reminder_time относительно текущего логического дня
+            if task_day_start < today_start:
+                pos = "PAST"
+            elif task_day_start == today_start:
+                pos = "TODAY"
+            else:
+                pos = "FUTURE"
+
             include = False
             if task.task_type == TaskType.ONE_TIME:
-                include = task.active or task_day_start == today
+                # Канонические правила:
+                # 1. Видна, если reminder_time сегодня или в прошлом — независимо от completed/active.
+                # 2. Видна, если completed = True, даже если reminder_time в будущем.
+                if pos in ("PAST", "TODAY") or task.completed:
+                    include = True
             else:
-                include = task.completed or task.active
-            
+                # recurring / interval:
+                # Видна, если reminder_time сегодня или в прошлом (completed не влияет).
+                if pos in ("PAST", "TODAY"):
+                    include = True
+
             if not include:
                 continue
-            
+
             if user_id is not None and user_id not in {user.id for user in task.assignees}:
                 continue
-            
+
             today_tasks.append(task)
         
         return today_tasks

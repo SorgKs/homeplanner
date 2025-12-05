@@ -109,7 +109,8 @@
         const tomlContent = loadText("/common/config/settings.toml");
         settings = parseToml(tomlContent);
     } catch (error) {
-        console.warn("Failed to load settings.toml, using fallbacks", error);
+        console.error("Failed to load required settings.toml", error);
+        throw new Error("Не удалось загрузить common/config/settings.toml для frontend");
     }
 
     const major = projectConfig.major ?? 0;
@@ -118,33 +119,70 @@
     const FRONTEND_VERSION = `${major}.${minor}.${FRONTEND_PATCH_VERSION}`;
     const PROJECT_VERSION = `${major}.${minor}`;
 
-    const serverConfig = settings.server ?? {};
-    const networkConfig = settings.network ?? {};
-    const frontendConfig = settings.frontend ?? {};
-    const apiConfig = settings.api ?? {};
-    const websocketConfig = settings.websocket ?? {};
+    const apiConfig = settings.api;
+    const websocketConfig = settings.websocket;
 
-    const apiVersion = typeof apiConfig.version === "string" ? apiConfig.version : "0.2";
+    if (!apiConfig || typeof apiConfig.version !== "string") {
+        throw new Error(
+            "Отсутствует обязательная настройка [api].version в common/config/settings.toml",
+        );
+    }
+    if (!websocketConfig || typeof websocketConfig.tasks_stream_path !== "string") {
+        throw new Error(
+            "Отсутствует обязательная настройка [websocket].tasks_stream_path в common/config/settings.toml",
+        );
+    }
+
+    const apiVersion = apiConfig.version;
     const API_VERSION_PATH = `/api/v${apiVersion}`;
 
-    const hostCandidate =
-        frontendConfig.host ??
-        networkConfig.host ??
-        (serverConfig.host === "0.0.0.0" ? "localhost" : serverConfig.host);
-    const HOST = hostCandidate || "localhost";
+    /**
+     * Определяем хост и порт backend по фактическому origin браузера.
+     *
+     * Важно:
+     * - фронтенд всегда обращается к API по тому же host/port, откуда был загружен
+     *   (window.location), то есть JS никогда не берёт IP/порт backend из settings.toml;
+     * - файл настроек влияет только на версию API (/api/vX) и путь WebSocket
+     *   (секции [api] и [websocket]), но не на IP-адрес для HTTP-запросов.
+     */
+    if (typeof window === "undefined" || !window.location) {
+        throw new Error("frontend/config.js должен выполняться в браузере (window.location)");
+    }
 
-    const portCandidate = Number(
-        frontendConfig.port ?? networkConfig.port ?? serverConfig.port ?? 8000,
-    );
-    const PORT = Number.isNaN(portCandidate) ? 8000 : portCandidate;
+    const { protocol, hostname, port: locationPort } = window.location;
 
-    const wsSuffixRaw =
-        typeof websocketConfig.tasks_stream_path === "string"
-            ? websocketConfig.tasks_stream_path
-            : "/tasks/stream";
+    if (!protocol || !hostname) {
+        throw new Error("Невозможно определить origin из window.location");
+    }
+
+    const PROTOCOL = protocol;
+    const HOST = hostname;
+
+    let PORT;
+    if (locationPort) {
+        // Порт явно указан в URL (например, :8000)
+        const numericPort = Number(locationPort);
+        if (Number.isNaN(numericPort)) {
+            throw new Error(`Некорректный порт в window.location: "${locationPort}"`);
+        }
+        PORT = numericPort;
+    } else if (protocol === "https:") {
+        // Стандартный порт для HTTPS
+        PORT = 443;
+    } else if (protocol === "http:") {
+        // Стандартный порт для HTTP
+        PORT = 80;
+    } else {
+        throw new Error(
+            `Неизвестный протокол "${protocol}" без явного порта в window.location; ` +
+                "укажите порт в URL явно",
+        );
+    }
+
+    const wsSuffixRaw = websocketConfig.tasks_stream_path;
     const wsSuffix = wsSuffixRaw.startsWith("/") ? wsSuffixRaw : `/${wsSuffixRaw}`;
     const WS_PATH = `${API_VERSION_PATH}${wsSuffix}`;
-    const API_BASE_URL = `http://${HOST}:${PORT}${API_VERSION_PATH}`;
+    const API_BASE_URL = `${PROTOCOL}//${HOST}:${PORT}${API_VERSION_PATH}`;
 
     window.HP_BACKEND_HOST = HOST;
     window.HP_BACKEND_PORT = PORT;

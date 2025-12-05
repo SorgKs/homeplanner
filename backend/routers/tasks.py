@@ -7,7 +7,14 @@ import logging
 from sqlalchemy.orm import Session
 
 from backend.database import get_db
-from backend.schemas.task import TaskCreate, TaskResponse, TaskUpdate
+from backend.schemas.task import (
+    TaskCreate,
+    TaskResponse,
+    TaskUpdate,
+    TaskSyncRequest,
+    TaskSyncOperation,
+    TaskOperationType,
+)
 from backend.services.task_service import TaskRevisionConflictError, TaskService
 from backend.routers.realtime import manager as ws_manager
 
@@ -144,6 +151,65 @@ def get_today_task_ids(
         return []
     
     return TaskService.get_today_task_ids(db, user_id=selected_user_id)
+
+
+@router.post("/sync-queue", response_model=list[TaskResponse])
+def sync_task_queue(
+    payload: TaskSyncRequest,
+    db: Session = Depends(get_db),
+) -> list[TaskResponse]:
+    """Apply a batch of task operations in chronological order and return current state.
+
+    Ожидает массив операций (create/update/delete/complete/uncomplete) с timestamp.
+    Операции сортируются по времени и применяются последовательно.
+    Перед началом обработки выполняется возможный пересчёт задач по новому дню.
+    """
+    logger.info("HTTP sync-queue: %s operations", len(payload.operations))
+
+    # Возможный пересчёт по новому дню единым местом
+    if TaskService._is_new_day(db):
+        TaskService.get_all_tasks(db, active_only=False)
+
+    # Сортировка операций по timestamp (на случай, если клиент прислал неотсортированный список)
+    operations: list[TaskSyncOperation] = sorted(
+        payload.operations, key=lambda op: op.timestamp
+    )
+
+    for op in operations:
+        try:
+            if op.operation == TaskOperationType.CREATE:
+                if op.payload is None:
+                    continue
+                create_data = TaskCreate.model_validate(op.payload)
+                TaskService.create_task(db, create_data)
+            elif op.operation == TaskOperationType.UPDATE:
+                if op.task_id is None or op.payload is None:
+                    continue
+                update_data = TaskUpdate.model_validate(op.payload)
+                TaskService.update_task(db, op.task_id, update_data)
+            elif op.operation == TaskOperationType.DELETE:
+                if op.task_id is None:
+                    continue
+                TaskService.delete_task(db, op.task_id)
+            elif op.operation == TaskOperationType.COMPLETE:
+                if op.task_id is None:
+                    continue
+                TaskService.complete_task(db, op.task_id)
+            elif op.operation == TaskOperationType.UNCOMPLETE:
+                if op.task_id is None:
+                    continue
+                TaskService.uncomplete_task(db, op.task_id)
+        except Exception as exc:  # Логируем, но продолжаем остальные операции
+            logger.error(
+                "sync-queue: failed to apply op %s for task %s: %s",
+                op.operation,
+                op.task_id,
+                exc,
+            )
+
+    # Возвращаем актуальное состояние задач после применения всех операций
+    tasks = TaskService.get_all_tasks(db, active_only=False)
+    return [TaskResponse.model_validate(task) for task in tasks]
 
 
 @router.get("/{task_id}", response_model=TaskResponse)

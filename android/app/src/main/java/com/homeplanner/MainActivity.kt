@@ -1,5 +1,9 @@
 package com.homeplanner
 
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -14,10 +18,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.graphics.Color as ComposeColor
@@ -32,6 +38,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.Divider
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.rememberScrollState
@@ -62,7 +70,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.List
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Terminal
@@ -79,9 +89,16 @@ import com.homeplanner.api.TasksApi
 import com.homeplanner.api.GroupsApi
 import com.homeplanner.api.UsersApi
 import com.homeplanner.api.UserSummary
+import com.homeplanner.api.TasksApiOffline
+import com.homeplanner.database.AppDatabase
+import com.homeplanner.repository.OfflineRepository
+import com.homeplanner.sync.SyncService
 import com.homeplanner.model.Task
+import com.homeplanner.utils.TodayTaskFilter
+import com.homeplanner.ui.AppStatusBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -94,6 +111,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.security.MessageDigest
 import android.Manifest
 import android.app.AlarmManager
 import android.content.Intent
@@ -105,7 +123,15 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.rememberLauncherForActivityResult
 
 // View tabs for bottom navigation
-enum class ViewTab { TODAY, ALL, SETTINGS, WEBSOCKET }
+enum class ViewTab { TODAY, ALL, SETTINGS, LOG }
+
+// Connection status enum
+enum class ConnectionStatus {
+    UNKNOWN,    // Серая иконка - начальное состояние при старте
+    ONLINE,     // Зеленая иконка - есть успешная попытка и не превышено время
+    DEGRADED,   // Желтая иконка - есть неуспешные попытки, но меньше 5 подряд
+    OFFLINE     // Красная иконка - 5 неуспешных подряд или превышено время
+}
 
 class MainActivity : ComponentActivity() {
     // Activity Result Launcher for notification permission
@@ -193,6 +219,12 @@ fun TasksScreen() {
     var users by remember { mutableStateOf<List<com.homeplanner.api.UserSummary>>(emptyList()) }
     // Key used to trigger refresh via LaunchedEffect
     var refreshKey by remember { mutableStateOf(0) }
+    // Store all tasks separately from filtered tasks
+    var allTasks by remember { mutableStateOf<List<Task>>(emptyList()) }
+    // Store last known today task IDs for offline mode
+    var lastTodayTaskIds by remember { mutableStateOf<Set<Int>>(emptySet()) }
+    // Storage info for settings
+    var cachedTasksCount by remember { mutableStateOf(0) }
     val scope = rememberCoroutineScope()
 
     var selectedTab by remember { mutableStateOf(ViewTab.TODAY) }
@@ -210,6 +242,207 @@ fun TasksScreen() {
         networkConfig?.toApiBaseUrl()
     }
     val selectedUser by userSettings.selectedUserFlow.collectAsState(initial = null)
+    
+    // Offline support: инициализация базы данных и репозиториев
+    val database = remember(context) { AppDatabase.getDatabase(context) }
+    val offlineRepository = remember(database, context) { OfflineRepository(database, context) }
+    var storagePercentage by remember { mutableStateOf(0f) }
+    var pendingOperations by remember { mutableStateOf(0) }
+    var isOnline by remember { mutableStateOf(false) } // Для обратной совместимости с существующим кодом
+    var isSyncing by remember { mutableStateOf(false) }
+    var statusBarCompactMode by remember { mutableStateOf(getStatusBarCompactMode(context)) }
+    
+    // Connection status tracking
+    // При старте: если нет конфигурации - OFFLINE, иначе UNKNOWN до первой попытки
+    var connectionStatus by remember(networkConfig, apiBaseUrl) { 
+        mutableStateOf(
+            if (networkConfig == null || apiBaseUrl == null) ConnectionStatus.OFFLINE 
+            else ConnectionStatus.UNKNOWN
+        )
+    }
+    var lastSuccessfulRequestTime by remember { mutableStateOf<Long?>(null) }
+    var consecutiveFailures by remember { mutableStateOf(0) }
+    var connectionCheckIntervalMinutes by remember { mutableStateOf(5) }
+    
+    // Hash tracking for data version validation
+    var localDataHash by remember { mutableStateOf<String?>(null) }
+    var markedChangedTaskIds by remember { mutableStateOf(setOf<Int>()) }
+    
+    // Function to mark successful request
+    fun markSuccessfulRequest() {
+        lastSuccessfulRequestTime = System.currentTimeMillis()
+        consecutiveFailures = 0
+        connectionStatus = ConnectionStatus.ONLINE
+        isOnline = true
+        android.util.Log.d("TasksScreen", "Marked successful request, status=ONLINE")
+    }
+    
+    // Function to mark failed request
+    fun markFailedRequest() {
+        consecutiveFailures++
+        android.util.Log.d("TasksScreen", "Marked failed request, consecutive failures=$consecutiveFailures")
+        
+        // Обновляем статус на основе количества неудач
+        connectionStatus = when {
+            consecutiveFailures >= 5 -> {
+                android.util.Log.d("TasksScreen", "5+ consecutive failures, status=OFFLINE")
+                ConnectionStatus.OFFLINE
+            }
+            consecutiveFailures > 0 -> {
+                android.util.Log.d("TasksScreen", "1-4 consecutive failures, status=DEGRADED")
+                ConnectionStatus.DEGRADED
+            }
+            else -> connectionStatus // Не должно случиться, но на всякий случай
+        }
+        isOnline = false
+    }
+    
+    val baseTasksApi = remember(apiBaseUrl, selectedUser) {
+        TasksApi(baseUrl = apiBaseUrl ?: BuildConfig.API_BASE_URL, selectedUserId = selectedUser?.id)
+    }
+    val syncService = remember(baseTasksApi, offlineRepository) {
+        SyncService(offlineRepository, baseTasksApi, context)
+    }
+    val tasksApiOffline = remember(baseTasksApi, offlineRepository, syncService, scope) {
+        TasksApiOffline(
+            baseTasksApi, 
+            offlineRepository, 
+            syncService, 
+            scope,
+            onSyncStateChanged = { syncing ->
+                isSyncing = syncing
+            },
+            onSyncSuccess = {
+                // Уведомление об успешной синхронизации для обновления статуса соединения
+                markSuccessfulRequest()
+            }
+        )
+    }
+    
+    // Load connection check interval from settings
+    LaunchedEffect(userSettings) {
+        scope.launch {
+            connectionCheckIntervalMinutes = userSettings.getConnectionCheckIntervalMinutes()
+        }
+    }
+    
+    // Also observe flow for real-time updates
+    val connectionCheckIntervalFlow by userSettings.connectionCheckIntervalMinutesFlow.collectAsState(initial = 5)
+    LaunchedEffect(connectionCheckIntervalFlow) {
+        connectionCheckIntervalMinutes = connectionCheckIntervalFlow
+    }
+    // Function to update connection status based on time since last success
+    fun updateConnectionStatusByTime() {
+        val hasConfig = networkConfig != null && apiBaseUrl != null
+        if (!hasConfig) {
+            connectionStatus = ConnectionStatus.OFFLINE
+            isOnline = false
+            return
+        }
+        
+        val now = System.currentTimeMillis()
+        val intervalMs = connectionCheckIntervalMinutes * 60 * 1000L
+        
+        // Если есть последняя успешная попытка, проверяем время
+        if (lastSuccessfulRequestTime != null) {
+            val timeSinceLastSuccess = now - lastSuccessfulRequestTime!!
+            if (timeSinceLastSuccess >= intervalMs) {
+                // Превышено время с последней успешной попытки
+                android.util.Log.d("TasksScreen", "Time exceeded since last success (${timeSinceLastSuccess / 1000}s), status=OFFLINE")
+                connectionStatus = ConnectionStatus.OFFLINE
+                isOnline = false
+                return
+            }
+        }
+        
+        // Если статус еще UNKNOWN и нет успешных попыток, оставляем UNKNOWN
+        // Иначе статус уже установлен markSuccessfulRequest/markFailedRequest
+    }
+    
+    // Function to perform diagnostic request
+    suspend fun performDiagnosticRequest(): Boolean {
+        if (apiBaseUrl == null) return false
+        return try {
+            val api = UsersApi(baseUrl = apiBaseUrl)
+            withContext(Dispatchers.IO) {
+                api.getUsers()
+                true
+            }
+        } catch (e: Exception) {
+            android.util.Log.d("TasksScreen", "Diagnostic request failed: ${e.message}")
+            false
+        }
+    }
+    
+    // Обновляем статус при изменении конфигурации
+    LaunchedEffect(networkConfig, apiBaseUrl) {
+        if (networkConfig == null || apiBaseUrl == null) {
+            connectionStatus = ConnectionStatus.OFFLINE
+            isOnline = false
+            lastSuccessfulRequestTime = null
+            consecutiveFailures = 0
+        } else if (connectionStatus == ConnectionStatus.OFFLINE && lastSuccessfulRequestTime == null) {
+            // Если конфигурация появилась, но еще не было попыток - статус UNKNOWN
+            connectionStatus = ConnectionStatus.UNKNOWN
+        }
+    }
+    
+    LaunchedEffect(syncService, offlineRepository, networkConfig, apiBaseUrl, lastSuccessfulRequestTime, connectionCheckIntervalMinutes, consecutiveFailures) {
+        while (true) {
+            storagePercentage = offlineRepository.getStoragePercentage()
+            pendingOperations = offlineRepository.getPendingOperationsCount()
+            // Update cached tasks count for settings
+            scope.launch {
+                cachedTasksCount = offlineRepository.getCachedTasksCount()
+            }
+            
+            // Обновляем статус на основе времени с последней успешной попытки
+            updateConnectionStatusByTime()
+            
+            // Если статус ONLINE и прошло больше интервала - делаем диагностический запрос
+            val now = System.currentTimeMillis()
+            val intervalMs = connectionCheckIntervalMinutes * 60 * 1000L
+            if (connectionStatus == ConnectionStatus.ONLINE && 
+                lastSuccessfulRequestTime != null && 
+                (now - lastSuccessfulRequestTime!!) >= intervalMs) {
+                android.util.Log.d("TasksScreen", "Performing diagnostic request (${(now - lastSuccessfulRequestTime!!) / 1000}s since last request)")
+                val diagnosticSuccess = performDiagnosticRequest()
+                if (diagnosticSuccess) {
+                    markSuccessfulRequest()
+                } else {
+                    markFailedRequest()
+                }
+            }
+            
+            delay(5000)
+        }
+    }
+    
+    // Периодическая фоновая синхронизация (offline-first стратегия)
+    LaunchedEffect(syncService, offlineRepository, connectionStatus) {
+        while (true) {
+            delay(30_000L) // Синхронизация каждые 30 секунд
+            
+            // Синхронизируем только если есть соединение и есть операции в очереди
+            if (connectionStatus == ConnectionStatus.ONLINE && pendingOperations > 0) {
+                android.util.Log.d("TasksScreen", "Periodic sync: syncing ${pendingOperations} pending operations")
+                isSyncing = true
+                try {
+                    val syncResult = syncService.syncQueue()
+                    if (syncResult.isSuccess) {
+                        markSuccessfulRequest()
+                        android.util.Log.d("TasksScreen", "Periodic sync: completed successfully")
+                    } else {
+                        android.util.Log.w("TasksScreen", "Periodic sync: had failures")
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.w("TasksScreen", "Periodic sync: error", e)
+                } finally {
+                    isSyncing = false
+                }
+            }
+        }
+    }
     
     // Function to test notification for a task
     fun testNotificationForTask(task: com.homeplanner.model.Task) {
@@ -288,26 +521,129 @@ fun TasksScreen() {
         val entry = "[$ts][$direction] $payload"
         wsLog = (wsLog + entry).takeLast(500)
     }
+    
+    // Calculate SHA-256 hash of tasks list for version validation
+    fun calculateTasksHash(tasks: List<Task>): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        // Sort tasks by ID for consistent hashing
+        val sortedTasks = tasks.sortedBy { it.id }
+        val data = sortedTasks.joinToString("|") { task ->
+            "${task.id}:${task.revision}:${task.title}:${task.reminderTime}:${task.completed}:${task.active}"
+        }
+        val hashBytes = digest.digest(data.toByteArray(Charsets.UTF_8))
+        return hashBytes.joinToString("") { "%02x".format(it) }
+    }
+    
+    // Compare hashes and handle mismatch
+    // Returns true if hash mismatch was detected and full refresh is needed
+    suspend fun handleHashMismatch(serverHash: String, currentTasks: List<Task>): Boolean {
+        val newLocalHash = calculateTasksHash(currentTasks)
+        if (newLocalHash != serverHash) {
+            appendLog("HASH", "Несовпадение хешей! Локальный: ${newLocalHash.take(16)}..., Серверный: ${serverHash.take(16)}...")
+            android.util.Log.w("TasksScreen", "Hash mismatch detected. Local: ${newLocalHash.take(16)}..., Server: ${serverHash.take(16)}...")
+            
+            // Mark all tasks as changed for full update
+            val changedIds = currentTasks.map { it.id }.toSet()
+            markedChangedTaskIds = markedChangedTaskIds + changedIds
+            
+            // Return true to indicate full refresh is needed
+            return true
+        } else {
+            // Hashes match, but don't clear marks - they should be cleared manually by user
+            return false
+        }
+    }
 
     suspend fun loadTasks() {
-        // Don't load if network config is not set
+        // Если сеть не настроена, всё равно пытаемся показать локальный кэш (офлайн-режим).
         if (networkConfig == null || apiBaseUrl == null) {
-            android.util.Log.w("TasksScreen", "loadTasks: networkConfig or apiBaseUrl is null")
-            error = "Настройте подключение к серверу в разделе Настройки"
-            isLoading = false
+            android.util.Log.w(
+                "TasksScreen",
+                "loadTasks: networkConfig or apiBaseUrl is null, loading from offline cache only"
+            )
+            isLoading = true
+            // Не перетираем возможные ошибки сети здесь — это чисто локальная загрузка.
+            try {
+                val dayStartHour = 4
+                val cachedTasks = withContext(Dispatchers.IO) {
+                    // Обновляем рекуррентные задачи по новому дню даже без сети
+                    try {
+                        offlineRepository.updateRecurringTasksForNewDay(dayStartHour)
+                    } catch (e: Exception) {
+                        Log.e("TasksScreen", "loadTasks (offline-only): error during local new-day recalculation", e)
+                    }
+                    offlineRepository.loadTasksFromCache()
+                }
+
+                val uniqueTasks = cachedTasks.distinctBy { it.id }
+                allTasks = uniqueTasks
+                android.util.Log.d(
+                    "TasksScreen",
+                    "loadTasks (offline-only): Loaded ${uniqueTasks.size} tasks from cache"
+                )
+
+                val t = when {
+                    selectedTab != ViewTab.TODAY -> uniqueTasks
+                    selectedUser == null -> {
+                        android.util.Log.w(
+                            "TasksScreen",
+                            "loadTasks (offline-only): selected user is null, Today view will be empty"
+                        )
+                        emptyList()
+                    }
+                    else -> TodayTaskFilter.filterTodayTasks(
+                        tasks = uniqueTasks,
+                        selectedUser = selectedUser,
+                        dayStartHour = dayStartHour
+                    )
+                }
+
+                tasks = t
+                groups = emptyMap()
+                users = emptyList()
+
+                // Перепланировка напоминаний по локальным данным
+                try {
+                    reminderScheduler.cancelAll(allTasks)
+                    reminderScheduler.scheduleForTasks(allTasks)
+                } catch (e: Exception) {
+                    Log.e("TasksScreen", "loadTasks (offline-only): Scheduling error", e)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("TasksScreen", "loadTasks (offline-only): Error loading tasks from cache", e)
+            } finally {
+                isLoading = false
+            }
             return
         }
-        
+
         android.util.Log.d("TasksScreen", "loadTasks: Starting load from $apiBaseUrl")
         isLoading = true
         error = null
         try {
-            val api = TasksApi(baseUrl = apiBaseUrl, selectedUserId = selectedUser?.id)
+            // Использование TasksApiOffline и OfflineRepository для поддержки оффлайн-режима
             val groupsApi = GroupsApi(baseUrl = apiBaseUrl)
             val usersApi = UsersApi(baseUrl = apiBaseUrl)
-            // Always load all tasks, then filter by today IDs if needed
-            val allTasks = withContext(Dispatchers.IO) {
-                api.getTasks(activeOnly = false)
+
+            // Перед возможным пересчётом проверяем, не наступил ли новый логический день.
+            // Если наступил и есть сеть — сначала синхронизируемся с сервером.
+            val dayStartHour = 4
+            withContext(Dispatchers.IO) {
+                try {
+                    val isNewDay = offlineRepository.updateRecurringTasksForNewDay(dayStartHour)
+                    if (isNewDay && syncService.isOnline()) {
+                        // После локального пересчёта выполняем полную синхронизацию состояния с сервером
+                        syncService.syncStateBeforeRecalculation()
+                    }
+                } catch (e: Exception) {
+                    Log.e("TasksScreen", "loadTasks: error during local new-day recalculation", e)
+                }
+                Unit
+            }
+
+            // Always load all tasks, затем локально фильтруем для вкладки «Сегодня»
+            val loadedTasks = withContext(Dispatchers.IO) {
+                tasksApiOffline.getTasks(activeOnly = false)
             }
             val g = withContext(Dispatchers.IO) {
                 groupsApi.getAll()
@@ -317,12 +653,17 @@ fun TasksScreen() {
             }
             
             // Remove duplicates by ID (keep first occurrence)
-            val uniqueTasks = allTasks.distinctBy { it.id }
-            if (uniqueTasks.size != allTasks.size) {
-                android.util.Log.w("TasksScreen", "loadTasks: Found ${allTasks.size - uniqueTasks.size} duplicate tasks, removed")
+            val uniqueTasks = loadedTasks.distinctBy { it.id }
+            if (uniqueTasks.size != loadedTasks.size) {
+                android.util.Log.w("TasksScreen", "loadTasks: Found ${loadedTasks.size - uniqueTasks.size} duplicate tasks, removed")
             }
             
-            // Filter tasks for today view if needed
+            // Store ALL tasks for filtering when switching tabs (CRITICAL: before any filtering!)
+            // This ensures that allTasks always contains all tasks, not filtered ones
+            allTasks = uniqueTasks
+            android.util.Log.d("TasksScreen", "loadTasks: Stored ${uniqueTasks.size} tasks in allTasks")
+            
+            // Apply initial filtering based on current tab (only for tasks variable, allTasks stays unfiltered)
             val t = when {
                 selectedTab != ViewTab.TODAY -> uniqueTasks
                 selectedUser == null -> {
@@ -330,18 +671,27 @@ fun TasksScreen() {
                     emptyList()
                 }
                 else -> {
-                    val todayIds = withContext(Dispatchers.IO) {
-                        api.getTodayTaskIds()
-                    }
-                    val todayIdsSet = todayIds.toSet()
-                    uniqueTasks.filter { it.id in todayIdsSet }
+                    TodayTaskFilter.filterTodayTasks(
+                        tasks = uniqueTasks,
+                        selectedUser = selectedUser,
+                        dayStartHour = dayStartHour
+                    )
                 }
             }
             
             tasks = t
+            android.util.Log.d("TasksScreen", "loadTasks: Filtered to ${tasks.size} tasks for current tab (allTasks=${allTasks.size})")
             groups = g
             users = u
-            android.util.Log.d("TasksScreen", "loadTasks: Loaded ${tasks.size} tasks, ${groups.size} groups, ${users.size} users")
+            android.util.Log.d("TasksScreen", "loadTasks: Loaded ${tasks.size} tasks from cache (offline-first), ${groups.size} groups, ${users.size} users")
+            
+            // Note: markSuccessfulRequest() вызывается только при успешной синхронизации в фоне
+            // Здесь мы не ждем ответа сервера, так как работаем в offline-first режиме
+            
+            // Calculate and store local hash after loading
+            localDataHash = calculateTasksHash(tasks)
+            android.util.Log.d("TasksScreen", "loadTasks: Calculated local hash: ${localDataHash?.take(16)}...")
+            
             // Reschedule reminders after data refresh (use all tasks for scheduling)
             try {
                 reminderScheduler.cancelAll(allTasks)
@@ -352,6 +702,7 @@ fun TasksScreen() {
         } catch (e: Exception) {
             android.util.Log.e("TasksScreen", "loadTasks: Error loading tasks", e)
             error = e.message ?: "Unknown error"
+            markFailedRequest()
         } finally {
             isLoading = false
             android.util.Log.d("TasksScreen", "loadTasks: Completed, isLoading=false")
@@ -408,14 +759,16 @@ fun TasksScreen() {
                 
                 // For today view, reload from backend to ensure correct filtering
                 // (backend filters tasks based on unified logic)
+                // But also update allTasks to keep it in sync
                 if (selectedTab == ViewTab.TODAY) {
-                    // Reload tasks from /today endpoint to ensure correct filtering
+                    // Reload tasks from backend to ensure correct filtering
                     android.util.Log.d("TasksScreen", "Today tab: reloading from backend")
                     refreshKey += 1
+                    // Note: loadTasks() will update both allTasks and tasks
                     // Also reschedule reminders after reload
                     try {
-                        reminderScheduler.cancelAll(tasks)
-                        reminderScheduler.scheduleForTasks(tasks)
+                        reminderScheduler.cancelAll(allTasks)
+                        reminderScheduler.scheduleForTasks(allTasks)
                     } catch (e: Exception) {
                         Log.e("TasksScreen", "Reschedule error after WebSocket update", e)
                     }
@@ -423,6 +776,8 @@ fun TasksScreen() {
                 }
                 
                 // For other views, update locally
+                // Update both allTasks and tasks to keep them in sync
+                val currentAllTasksList = allTasks.toMutableList()
                 val currentList = tasks.toMutableList()
                 var needsReschedule = false
                 when (action) {
@@ -430,6 +785,16 @@ fun TasksScreen() {
                         if (taskJson != null) {
                             val updatedTask = parseTaskFromJson(taskJson)
                             android.util.Log.d("TasksScreen", "Updating task locally: id=${updatedTask.id}, title=${updatedTask.title}")
+                            
+                            // Update in allTasks
+                            val allIndex = currentAllTasksList.indexOfFirst { it.id == updatedTask.id }
+                            if (allIndex >= 0) {
+                                currentAllTasksList[allIndex] = updatedTask
+                            } else {
+                                currentAllTasksList.add(updatedTask)
+                            }
+                            
+                            // Update in tasks (filtered list)
                             val index = currentList.indexOfFirst { it.id == updatedTask.id }
                             if (index >= 0) {
                                 currentList[index] = updatedTask
@@ -438,6 +803,8 @@ fun TasksScreen() {
                                 currentList.add(updatedTask)
                                 android.util.Log.d("TasksScreen", "Task added to list")
                             }
+                            
+                            allTasks = currentAllTasksList.toList()
                             tasks = currentList.toList()
                             needsReschedule = true
                         } else {
@@ -447,22 +814,46 @@ fun TasksScreen() {
                     "completed", "uncompleted", "shown" -> {
                         if (taskJson != null) {
                             val updatedTask = parseTaskFromJson(taskJson)
+                            
+                            // Update in allTasks
+                            val allIndex = currentAllTasksList.indexOfFirst { it.id == updatedTask.id }
+                            if (allIndex >= 0) {
+                                currentAllTasksList[allIndex] = updatedTask
+                            } else {
+                                currentAllTasksList.add(updatedTask)
+                            }
+                            
+                            // Update in tasks (filtered list)
                             val index = currentList.indexOfFirst { it.id == updatedTask.id }
                             if (index >= 0) {
                                 currentList[index] = updatedTask
                             } else {
                                 currentList.add(updatedTask)
                             }
+                            
+                            allTasks = currentAllTasksList.toList()
                             tasks = currentList.toList()
                         }
                     }
                     "deleted" -> {
                         taskId?.let { id ->
+                            val removedFromAll = currentAllTasksList.removeAll { it.id == id }
                             val removed = currentList.removeAll { it.id == id }
-                            android.util.Log.d("TasksScreen", "Task deleted: id=$id, removed=$removed")
+                            android.util.Log.d("TasksScreen", "Task deleted: id=$id, removed from all=$removedFromAll, removed from filtered=$removed")
+                            allTasks = currentAllTasksList.toList()
                             tasks = currentList.toList()
                             needsReschedule = true
+                            
+                            // Remove from marked list if it was there (task no longer exists)
+                            markedChangedTaskIds = markedChangedTaskIds - id
                         }
+                    }
+                    "hash_mismatch" -> {
+                        // Server detected hash mismatch, trigger full refresh
+                        android.util.Log.w("TasksScreen", "Server reported hash mismatch, doing full refresh")
+                        appendLog("HASH", "Сервер сообщил о несовпадении хешей, выполняется полное обновление")
+                        refreshKey += 1
+                        return@launch
                     }
                     else -> {
                         // Unknown action, do full refresh
@@ -530,14 +921,38 @@ fun TasksScreen() {
                         
                         try {
                             val msg = JSONObject(text)
-                            if (msg.getString("type") == "task_update") {
+                            val msgType = msg.optString("type", "")
+                            
+                            if (msgType == "task_update") {
                                 val action = msg.getString("action")
                                 val taskId = if (msg.has("task_id")) msg.getInt("task_id") else null
                                 val taskJson = if (msg.has("task")) msg.getJSONObject("task") else null
                                 android.util.Log.d("TasksScreen", "WS message: action=$action, taskId=$taskId")
                                 updateTasksFromEvent(action, taskJson, taskId)
+                                
+                                // After updating tasks, check hash if provided
+                                if (msg.has("data_hash")) {
+                                    val serverHash = msg.getString("data_hash")
+                                    scope.launch {
+                                        // Wait a bit for tasks to update
+                                        delay(100)
+                                        val needsRefresh = handleHashMismatch(serverHash, tasks)
+                                        if (needsRefresh) {
+                                            loadTasks()
+                                        }
+                                    }
+                                }
+                            } else if (msgType == "hash_check" && msg.has("data_hash")) {
+                                // Standalone hash check message
+                                val serverHash = msg.getString("data_hash")
+                                scope.launch {
+                                    val needsRefresh = handleHashMismatch(serverHash, tasks)
+                                    if (needsRefresh) {
+                                        loadTasks()
+                                    }
+                                }
                             } else {
-                                android.util.Log.d("TasksScreen", "WS message type ignored: ${msg.optString("type", "unknown")}")
+                                android.util.Log.d("TasksScreen", "WS message type ignored: $msgType")
                             }
                         } catch (e: Exception) {
                             // If parsing fails, do full refresh
@@ -552,6 +967,7 @@ fun TasksScreen() {
                             appendLog("WS", "connection opened")
                             wsConnected = true
                             wsConnecting = false
+                            markSuccessfulRequest()
                         }
                         reconnectDelay = 2000L // Reset delay on successful connection
                     }
@@ -562,6 +978,7 @@ fun TasksScreen() {
                             appendLog("WS", "connection failed: ${t.message}")
                             wsConnected = false
                             wsConnecting = false
+                            markFailedRequest()
                             // Retry after delay with exponential backoff (max 30 seconds)
                             reconnectDelay = minOf(reconnectDelay * 2, 30000L)
                             android.util.Log.d("TasksScreen", "WS: Will retry in ${reconnectDelay}ms")
@@ -579,6 +996,10 @@ fun TasksScreen() {
                             appendLog("WS", "connection closed: code=$code, retry in ${reconnectDelay}ms")
                             wsConnected = false
                             wsConnecting = false
+                            // Если закрытие не нормальное (не код 1000) - считаем неуспешной попыткой
+                            if (code != 1000) {
+                                markFailedRequest()
+                            }
                             // Reconnect after delay (only if not a normal closure)
                             if (code != 1000 && shouldReconnect) {
                                 reconnectDelay = minOf(reconnectDelay * 2, 30000L)
@@ -599,6 +1020,7 @@ fun TasksScreen() {
                 scope.launch {
                     wsConnected = false
                     wsConnecting = false
+                    markFailedRequest()
                     // Retry after delay with exponential backoff (max 30 seconds)
                     reconnectDelay = minOf(reconnectDelay * 2, 30000L)
                     kotlinx.coroutines.delay(reconnectDelay)
@@ -644,10 +1066,10 @@ fun TasksScreen() {
                     label = { Text("Настройки") }
                 )
                 NavigationBarItem(
-                    selected = selectedTab == ViewTab.WEBSOCKET,
-                    onClick = { selectedTab = ViewTab.WEBSOCKET },
-                    icon = { Icon(Icons.Outlined.Terminal, contentDescription = "WebSocket") },
-                    label = { Text("WebSocket") }
+                    selected = selectedTab == ViewTab.LOG,
+                    onClick = { selectedTab = ViewTab.LOG },
+                    icon = { Icon(Icons.Outlined.Terminal, contentDescription = "Лог") },
+                    label = { Text("Лог") }
                 )
             }
         },
@@ -682,40 +1104,49 @@ fun TasksScreen() {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Connection status indicator
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                val statusColor = when {
-                    wsConnected -> ComposeColor(0xFF4CAF50) // Green
-                    wsConnecting -> ComposeColor(0xFFFFC107) // Yellow/Orange
-                    else -> ComposeColor(0xFFF44336) // Red
-                }
-                val statusText = when {
-                    wsConnected -> "Подключено"
-                    wsConnecting -> "Подключение..."
-                    else -> "Отключено"
-                }
-                Canvas(
-                    modifier = Modifier
-                        .width(12.dp)
-                        .height(12.dp)
-                ) {
-                    drawCircle(
-                        color = statusColor,
-                        radius = size.minDimension / 2
-                    )
-                }
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = statusText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = statusColor
-                )
+            val currentTitle = when (selectedTab) {
+                ViewTab.TODAY -> "Сегодня"
+                ViewTab.ALL -> "Все задачи"
+                ViewTab.SETTINGS -> "Настройки"
+                ViewTab.LOG -> "Лог"
             }
-            Spacer(modifier = Modifier.height(4.dp))
+            AppStatusBar(
+                appIcon = Icons.Filled.Home,
+                screenTitle = currentTitle,
+                isOnline = isOnline,
+                connectionStatus = connectionStatus,
+                isSyncing = isSyncing,
+                storagePercentage = storagePercentage,
+                pendingOperations = pendingOperations,
+                wsConnected = wsConnected,
+                wsConnecting = wsConnecting,
+                compactMode = statusBarCompactMode,
+                onNetworkClick = {
+                    scope.launch {
+                        isSyncing = true
+                        try {
+                            syncService.syncQueue()
+                            refreshKey += 1
+                        } finally {
+                            isSyncing = false
+                        }
+                    }
+                },
+                onStorageClick = { selectedTab = ViewTab.SETTINGS },
+                onSyncClick = {
+                    scope.launch {
+                        isSyncing = true
+                        try {
+                            syncService.syncQueue()
+                            refreshKey += 1
+                        } finally {
+                            isSyncing = false
+                        }
+                    }
+                },
+                onWebSocketClick = { selectedTab = ViewTab.LOG }
+            )
+            
             Text(
                 text = selectedUser?.let { "Пользователь: ${it.name} (#${it.id})" } ?: "Пользователь не выбран",
                 style = MaterialTheme.typography.bodySmall,
@@ -727,18 +1158,36 @@ fun TasksScreen() {
                     loadTasks()
                 }
             }
-            if (error != null) {
-                Text(text = "Ошибка: $error", color = MaterialTheme.colorScheme.error)
-                Spacer(modifier = Modifier.height(8.dp))
-            }
 
-            // Для "Все задачи" показываем все задачи без фильтрации по пользователю
-            // Для "Сегодня" задачи уже отфильтрованы по selectedUser на бэкенде
-            val visibleTasks = when (selectedTab) {
-                ViewTab.TODAY -> tasks
-                ViewTab.ALL -> tasks // Все задачи без фильтрации по пользователю
-                ViewTab.SETTINGS -> emptyList()
-                ViewTab.WEBSOCKET -> emptyList()
+            // Filter tasks based on current tab (recalculate when tab changes)
+            // This ensures correct filtering when switching tabs, especially in offline mode
+            val visibleTasks = remember(selectedTab, allTasks, lastTodayTaskIds, selectedUser) {
+                when (selectedTab) {
+                    ViewTab.TODAY -> {
+                        android.util.Log.d("TasksScreen", "visibleTasks: TODAY tab, allTasks.size=${allTasks.size}, lastTodayTaskIds.size=${lastTodayTaskIds.size}")
+                        if (selectedUser == null) {
+                            android.util.Log.w("TasksScreen", "visibleTasks: selected user is null, Today view will be empty")
+                            emptyList()
+                        } else {
+                            // Use cached today IDs for offline mode
+                            val todayIdsSet = lastTodayTaskIds
+                            if (todayIdsSet.isEmpty()) {
+                                android.util.Log.w("TasksScreen", "visibleTasks: No today IDs available, showing empty list")
+                                emptyList()
+                            } else {
+                                val filtered = allTasks.filter { it.id in todayIdsSet }
+                                android.util.Log.d("TasksScreen", "visibleTasks: Filtered ${allTasks.size} tasks to ${filtered.size} for Today view (IDs: ${todayIdsSet.take(5)})")
+                                filtered
+                            }
+                        }
+                    }
+                    ViewTab.ALL -> {
+                        android.util.Log.d("TasksScreen", "visibleTasks: ALL tab, showing all ${allTasks.size} tasks")
+                        allTasks
+                    }
+                    ViewTab.SETTINGS -> emptyList()
+                    ViewTab.LOG -> emptyList()
+                }
             }
             val isTodayTab = selectedTab == ViewTab.TODAY
             val isTodayWithoutUser = isTodayTab && selectedUser == null
@@ -752,11 +1201,19 @@ fun TasksScreen() {
                         selectedUser = selectedUser,
                         apiBaseUrl = apiBaseUrl,
                         onConfigChanged = { refreshKey += 1 },
-                        onUserChanged = { refreshKey += 1 }
+                        onUserChanged = { refreshKey += 1 },
+                        statusBarCompactMode = statusBarCompactMode,
+                        onStatusBarCompactModeChanged = { enabled ->
+                            statusBarCompactMode = enabled
+                            setStatusBarCompactMode(context, enabled)
+                        },
+                        storagePercentage = storagePercentage,
+                        pendingOperations = pendingOperations,
+                        cachedTasksCount = cachedTasksCount
                     )
                 }
 
-                ViewTab.WEBSOCKET -> {
+                ViewTab.LOG -> {
                     LazyColumn(modifier = Modifier.weight(1f)) {
                         items(wsLog) { line ->
                             Text(text = line)
@@ -863,7 +1320,8 @@ fun TasksScreen() {
                                     background = {},
                                     dismissContent = {
                                         Row(
-                                            modifier = Modifier.fillMaxWidth(),
+                                            modifier = Modifier
+                                                .fillMaxWidth(),
                                             verticalAlignment = Alignment.CenterVertically,
                                         ) {
                                             fun formatTime(dt: String?): String {
@@ -890,6 +1348,20 @@ fun TasksScreen() {
                                                 text = titleWithGroup,
                                                 modifier = Modifier.weight(1f),
                                             )
+                                            val isMarkedChanged = task.id in markedChangedTaskIds
+                                            if (isMarkedChanged) {
+                                                Text(
+                                                    text = "●",
+                                                    color = ComposeColor(0xFF2196F3),
+                                                    modifier = Modifier
+                                                        .padding(start = 4.dp)
+                                                        .clickable {
+                                                            // Confirm and remove mark
+                                                            markedChangedTaskIds = markedChangedTaskIds - task.id
+                                                        },
+                                                    style = MaterialTheme.typography.bodyLarge
+                                                )
+                                            }
 
                                             TextButton(
                                                 onClick = { testNotificationForTask(task) },
@@ -916,8 +1388,9 @@ fun TasksScreen() {
                                                         try {
                                                             appendLog("HTTP->", "POST /tasks/${task.id}/complete")
                                                             val updated = withContext(Dispatchers.IO) {
-                                                                TasksApi(baseUrl = apiBaseUrl, selectedUserId = selectedUser?.id).completeTask(task.id)
+                                                                tasksApiOffline.completeTask(task.id)
                                                             }
+                                                            markSuccessfulRequest()
                                                             Log.d("TasksScreen", "Task completed: id=${updated.id}, completed=${updated.completed}")
                                                             val newList = tasks.map { if (it.id == updated.id) updated else it }
                                                             tasks = newList
@@ -925,6 +1398,7 @@ fun TasksScreen() {
                                                         } catch (e: Exception) {
                                                             Log.e("TasksScreen", "Error completing task", e)
                                                             appendLog("HTTP<-", "error: ${e.message}")
+                                                            markFailedRequest()
                                                             e.printStackTrace()
                                                         }
                                                     }
@@ -934,8 +1408,9 @@ fun TasksScreen() {
                                                         try {
                                                             appendLog("HTTP->", "POST /tasks/${task.id}/uncomplete")
                                                             val updated = withContext(Dispatchers.IO) {
-                                                                TasksApi(baseUrl = apiBaseUrl, selectedUserId = selectedUser?.id).uncompleteTask(task.id)
+                                                                tasksApiOffline.uncompleteTask(task.id)
                                                             }
+                                                            markSuccessfulRequest()
                                                             Log.d("TasksScreen", "Task uncompleted: id=${updated.id}, completed=${updated.completed}")
                                                             val newList = tasks.map { if (it.id == updated.id) updated else it }
                                                             tasks = newList
@@ -943,6 +1418,7 @@ fun TasksScreen() {
                                                         } catch (e: Exception) {
                                                             Log.e("TasksScreen", "Error uncompleting task", e)
                                                             appendLog("HTTP<-", "error: ${e.message}")
+                                                            markFailedRequest()
                                                             e.printStackTrace()
                                                         }
                                                     }
@@ -1011,7 +1487,8 @@ fun TasksScreen() {
                                         background = {},
                                         dismissContent = {
                                             Row(
-                                                modifier = Modifier.fillMaxWidth(),
+                                                modifier = Modifier
+                                                    .fillMaxWidth(),
                                                 verticalAlignment = Alignment.CenterVertically,
                                             ) {
                                                 fun formatTime(dt: String?): String {
@@ -1038,6 +1515,20 @@ fun TasksScreen() {
                                                     text = titleWithGroup,
                                                     modifier = Modifier.weight(1f),
                                                 )
+                                                val isMarkedChanged = task.id in markedChangedTaskIds
+                                                if (isMarkedChanged) {
+                                                    Text(
+                                                        text = "●",
+                                                        color = ComposeColor(0xFF2196F3),
+                                                        modifier = Modifier
+                                                            .padding(start = 4.dp)
+                                                            .clickable {
+                                                                // Confirm and remove mark
+                                                                markedChangedTaskIds = markedChangedTaskIds - task.id
+                                                            },
+                                                        style = MaterialTheme.typography.bodyLarge
+                                                    )
+                                                }
 
                                                 TextButton(
                                                     onClick = { testNotificationForTask(task) },
@@ -1064,7 +1555,7 @@ fun TasksScreen() {
                                                             try {
                                                                 appendLog("HTTP->", "POST /tasks/${task.id}/complete")
                                                                 val updated = withContext(Dispatchers.IO) {
-                                                                    TasksApi(baseUrl = apiBaseUrl, selectedUserId = selectedUser?.id).completeTask(task.id)
+                                                                    tasksApiOffline.completeTask(task.id)
                                                                 }
                                                                 Log.d("TasksScreen", "Task completed: id=${updated.id}, completed=${updated.completed}")
                                                                 val newList = tasks.map { if (it.id == updated.id) updated else it }
@@ -1073,6 +1564,7 @@ fun TasksScreen() {
                                                             } catch (e: Exception) {
                                                                 Log.e("TasksScreen", "Error completing task", e)
                                                                 appendLog("HTTP<-", "error: ${e.message}")
+                                                                markFailedRequest()
                                                                 e.printStackTrace()
                                                             }
                                                         }
@@ -1082,7 +1574,7 @@ fun TasksScreen() {
                                                             try {
                                                                 appendLog("HTTP->", "POST /tasks/${task.id}/uncomplete")
                                                                 val updated = withContext(Dispatchers.IO) {
-                                                                    TasksApi(baseUrl = apiBaseUrl, selectedUserId = selectedUser?.id).uncompleteTask(task.id)
+                                                                    tasksApiOffline.uncompleteTask(task.id)
                                                                 }
                                                                 Log.d("TasksScreen", "Task uncompleted: id=${updated.id}, completed=${updated.completed}")
                                                                 val newList = tasks.map { if (it.id == updated.id) updated else it }
@@ -1091,6 +1583,7 @@ fun TasksScreen() {
                                                             } catch (e: Exception) {
                                                                 Log.e("TasksScreen", "Error uncompleting task", e)
                                                                 appendLog("HTTP<-", "error: ${e.message}")
+                                                                markFailedRequest()
                                                                 e.printStackTrace()
                                                             }
                                                         }
@@ -1117,7 +1610,7 @@ fun TasksScreen() {
                                     return@launch
                                 }
                                 try {
-                                    val api = TasksApi(baseUrl = apiBaseUrl, selectedUserId = selectedUser?.id)
+                                    val api = tasksApiOffline
                                     if (editingTask == null) {
                                         val reminderForCreate = editReminderTime.ifBlank { formatIso(LocalDateTime.now()) }
                                         val template = Task(
@@ -1144,11 +1637,17 @@ fun TasksScreen() {
                                         }
                                         if (titleError != null || reminderTimeError != null || recurrenceError != null) return@launch
                                         // Create via API - WebSocket will handle UI update, but also refresh to ensure consistency
-                                        val created = withContext(Dispatchers.IO) { api.createTask(finalTemplate, editAssignedUserIds) }
-                                        android.util.Log.d("TasksScreen", "Task created via API: id=${created.id}, refreshing list")
-                                        // Refresh tasks list to ensure UI is updated
-                                        // WebSocket message will also trigger update, but this ensures immediate update
-                                        refreshKey += 1
+                                        try {
+                                            val created = withContext(Dispatchers.IO) { api.createTask(finalTemplate, editAssignedUserIds) }
+                                            markSuccessfulRequest()
+                                            android.util.Log.d("TasksScreen", "Task created via API: id=${created.id}, refreshing list")
+                                            // Refresh tasks list to ensure UI is updated
+                                            // WebSocket message will also trigger update, but this ensures immediate update
+                                            refreshKey += 1
+                                        } catch (e: Exception) {
+                                            Log.e("TasksScreen", "Error creating task", e)
+                                            markFailedRequest()
+                                        }
                                     } else {
                                         val base = editingTask!!
                                         // Для обновления также гарантируем наличие reminderTime
@@ -1175,14 +1674,21 @@ fun TasksScreen() {
                                         }
                                         if (titleError != null || reminderTimeError != null || recurrenceError != null) return@launch
                                         // Update via API - WebSocket will handle UI update, but also refresh to ensure consistency
-                                        val updated = withContext(Dispatchers.IO) { api.updateTask(base.id, finalPayload, editAssignedUserIds) }
-                                        android.util.Log.d("TasksScreen", "Task updated via API: id=${updated.id}, refreshing list")
-                                        // Refresh tasks list to ensure UI is updated
-                                        // WebSocket message will also trigger update, but this ensures immediate update
-                                        refreshKey += 1
+                                        try {
+                                            val updated = withContext(Dispatchers.IO) { tasksApiOffline.updateTask(base.id, finalPayload, editAssignedUserIds) }
+                                            markSuccessfulRequest()
+                                            android.util.Log.d("TasksScreen", "Task updated via API: id=${updated.id}, refreshing list")
+                                            // Refresh tasks list to ensure UI is updated
+                                            // WebSocket message will also trigger update, but this ensures immediate update
+                                            refreshKey += 1
+                                        } catch (e: Exception) {
+                                            Log.e("TasksScreen", "Error updating task", e)
+                                            markFailedRequest()
+                                        }
                                     }
                                 } catch (e: Exception) {
                                     Log.e("TasksScreen", "Save task error", e)
+                                    markFailedRequest()
                                 } finally {
                                     showEditDialog = false
                                 }
@@ -1362,11 +1868,13 @@ fun TasksScreen() {
                                     if (apiBaseUrl == null) return@launch
                                     try {
                                         withContext(Dispatchers.IO) {
-                                            TasksApi(baseUrl = apiBaseUrl, selectedUserId = selectedUser?.id).deleteTask(toDelete)
+                                            tasksApiOffline.deleteTask(toDelete)
                                         }
+                                        markSuccessfulRequest()
                                         tasks = tasks.filter { it.id != toDelete }
                                     } catch (e: Exception) {
                                         Log.e("TasksScreen", "Delete error", e)
+                                        markFailedRequest()
                                     } finally {
                                         showDeleteConfirm = false
                                         pendingDeleteTaskId = null
@@ -1396,6 +1904,11 @@ fun SettingsScreen(
     apiBaseUrl: String?,
     onConfigChanged: () -> Unit,
     onUserChanged: () -> Unit,
+    statusBarCompactMode: Boolean,
+    onStatusBarCompactModeChanged: (Boolean) -> Unit,
+    storagePercentage: Float,
+    pendingOperations: Int,
+    cachedTasksCount: Int
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -1445,12 +1958,13 @@ fun SettingsScreen(
         } catch (e: Exception) {
             users = emptyList()
             usersError = e.message ?: "Не удалось загрузить пользователей"
+            // Note: markFailedRequest() не вызываем здесь, так как это SettingsScreen, а функция определена в TasksScreen
         } finally {
             isUsersLoading = false
         }
     }
     
-    LaunchedEffect(apiBaseUrl) {
+    LaunchedEffect(apiBaseUrl, networkConfig) {
         if (apiBaseUrl != null) {
             refreshUsersList()
         } else {
@@ -1495,6 +2009,75 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.titleSmall
                 )
                 Text(text = "Версия: ${BuildConfig.VERSION_NAME}")
+            }
+        }
+        
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Строка состояния",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Компактный режим",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Text(
+                            text = "Отображать только иконки без текста",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = statusBarCompactMode,
+                        onCheckedChange = onStatusBarCompactModeChanged
+                    )
+                }
+                
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Заполненность хранилища: ${storagePercentage.toInt()}%",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    LinearProgressIndicator(
+                        progress = (storagePercentage / 100f).coerceIn(0f, 1f),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp)
+                    )
+                    
+                    // Информация о хранилище
+                    Divider(modifier = Modifier.padding(vertical = 8.dp))
+                    Text(
+                        text = "Информация о хранилище",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = "Задач в хранилище: $cachedTasksCount",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text(
+                        text = "Операций в очереди: $pendingOperations",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
             }
         }
         
@@ -1710,13 +2293,6 @@ fun SettingsScreen(
                         style = MaterialTheme.typography.bodyMedium
                     )
                 } else {
-                    if (usersError != null) {
-                        Text(
-                            text = usersError ?: "",
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
                     if (isUsersLoading) {
                         Text(
                             text = "Загрузка списка пользователей...",
@@ -1734,24 +2310,12 @@ fun SettingsScreen(
                         )
                     }
                     
-                    Row(
+                    Button(
+                        onClick = { showUserPickerDialog = true },
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        enabled = users.isNotEmpty() && !isUsersLoading
                     ) {
-                        Button(
-                            onClick = { scope.launch { refreshUsersList() } },
-                            modifier = Modifier.weight(1f),
-                            enabled = !isUsersLoading
-                        ) {
-                            Text(if (isUsersLoading) "Обновление..." else "Обновить список")
-                        }
-                        Button(
-                            onClick = { showUserPickerDialog = true },
-                            modifier = Modifier.weight(1f),
-                            enabled = users.isNotEmpty() && !isUsersLoading
-                        ) {
-                            Text("Выбрать пользователя")
-                        }
+                        Text("Выбрать пользователя")
                     }
                     
                     if (selectedUser != null) {
@@ -1982,6 +2546,16 @@ fun SettingsScreen(
             }
         )
     }
+}
+
+private fun getStatusBarCompactMode(context: Context): Boolean {
+    val prefs = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+    return prefs.getBoolean("status_bar_compact_mode", false)
+}
+
+private fun setStatusBarCompactMode(context: Context, enabled: Boolean) {
+    val prefs = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+    prefs.edit().putBoolean("status_bar_compact_mode", enabled).apply()
 }
 
 

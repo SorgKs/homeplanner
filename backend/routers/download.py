@@ -40,8 +40,14 @@ def _resolve_version_string() -> str:
     return sanitized
 
 
-APK_DOWNLOAD_FILENAME = f"homeplanner_v{_resolve_version_string()}.apk"
-APK_BUILD_PATH = REPO_ROOT / "android/app/build/outputs/apk/debug" / APK_DOWNLOAD_FILENAME
+def _get_apk_filename() -> str:
+    """Get current APK filename based on current version (dynamic)."""
+    return f"homeplanner_v{_resolve_version_string()}.apk"
+
+
+def _get_apk_build_path() -> Path:
+    """Get current APK build path based on current version (dynamic)."""
+    return REPO_ROOT / "android/app/build/outputs/apk/debug" / _get_apk_filename()
 
 
 def _find_apk_file() -> Path | None:
@@ -54,9 +60,10 @@ def _find_apk_file() -> Path | None:
     if not apk_dir.exists():
         return None
     
-    # First, try the versioned filename
-    if APK_BUILD_PATH.exists():
-        return APK_BUILD_PATH
+    # First, try the versioned filename (read dynamically)
+    apk_build_path = _get_apk_build_path()
+    if apk_build_path.exists():
+        return apk_build_path
     
     # Fallback: find any APK file in the directory
     apk_files = list(apk_dir.glob("*.apk"))
@@ -73,15 +80,17 @@ def _apk_response(apk_path: Path) -> FileResponse:
         raise HTTPException(status_code=404, detail="APK not found. Build it first: ./gradlew :app:assembleDebug")
 
     file_size = apk_path.stat().st_size
+    # Use actual filename from path, or current version if different
+    apk_filename = apk_path.name if apk_path.name.endswith('.apk') else _get_apk_filename()
 
     return FileResponse(
         path=str(apk_path),
         media_type="application/vnd.android.package-archive",
-        filename=APK_DOWNLOAD_FILENAME,
+        filename=apk_filename,
         headers={
             "Content-Disposition": (
-                f"attachment; filename={APK_DOWNLOAD_FILENAME}; "
-                f"filename*=UTF-8''{APK_DOWNLOAD_FILENAME}"
+                f"attachment; filename={apk_filename}; "
+                f"filename*=UTF-8''{apk_filename}"
             ),
             "Content-Length": str(file_size),
             "X-Content-Type-Options": "nosniff",
@@ -93,29 +102,6 @@ def _apk_response(apk_path: Path) -> FileResponse:
             "Access-Control-Allow-Headers": "*",
         },
     )
-
-
-@router.get("/apk", response_class=FileResponse, summary="Download Android APK")
-def download_apk() -> FileResponse:
-    """Return the built debug APK if available.
-
-    Looks for the versioned APK file created by :app:assembleDebug.
-    APK is renamed to homeplanner_v{version}.apk format according to build.gradle.kts.
-    Falls back to any APK file if versioned one is not found.
-    """
-    apk_path = _find_apk_file()
-    if apk_path is None:
-        raise HTTPException(status_code=404, detail="APK not found. Build it first: ./gradlew :app:assembleDebug")
-    return _apk_response(apk_path)
-
-
-@router.get(f"/{APK_DOWNLOAD_FILENAME}", response_class=FileResponse, summary="Download Android APK (versioned filename)")
-def download_versioned_apk() -> FileResponse:
-    """Download APK using the versioned filename."""
-    apk_path = _find_apk_file()
-    if apk_path is None:
-        raise HTTPException(status_code=404, detail="APK not found. Build it first: ./gradlew :app:assembleDebug")
-    return _apk_response(apk_path)
 
 
 @router.get("/apk/meta", response_class=JSONResponse, summary="Get APK download metadata")
@@ -133,8 +119,38 @@ def download_apk_meta() -> JSONResponse:
     )
 
 
-@router.options(f"/{APK_DOWNLOAD_FILENAME}")
-def options_versioned_apk() -> Response:
+@router.get("/apk", response_class=FileResponse, summary="Download Android APK")
+def download_apk() -> FileResponse:
+    """Return the built debug APK if available.
+
+    Looks for the versioned APK file created by :app:assembleDebug.
+    APK is renamed to homeplanner_v{version}.apk format according to build.gradle.kts.
+    Falls back to any APK file if versioned one is not found.
+    """
+    apk_path = _find_apk_file()
+    if apk_path is None:
+        raise HTTPException(status_code=404, detail="APK not found. Build it first: ./gradlew :app:assembleDebug")
+    return _apk_response(apk_path)
+
+
+@router.get("/{filename:path}", response_class=FileResponse, summary="Download Android APK (versioned filename)")
+def download_versioned_apk(filename: str) -> FileResponse:
+    """Download APK using the versioned filename.
+    
+    Supports any APK filename pattern (e.g., homeplanner_v0_2_78.apk).
+    """
+    # Validate that it's an APK filename
+    if not filename.endswith('.apk') or not filename.startswith('homeplanner_v'):
+        raise HTTPException(status_code=404, detail="Invalid APK filename")
+    
+    apk_path = _find_apk_file()
+    if apk_path is None:
+        raise HTTPException(status_code=404, detail="APK not found. Build it first: ./gradlew :app:assembleDebug")
+    return _apk_response(apk_path)
+
+
+@router.options("/{filename:path}")
+def options_versioned_apk(filename: str) -> Response:
     """Handle OPTIONS request for CORS preflight on the versioned filename."""
     return Response(
         status_code=200,

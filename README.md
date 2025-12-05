@@ -169,14 +169,21 @@ python3 -m http.server 8080
 
 ### Настройка API Base URL
 
-Веб-интерфейс автоматически определяет адрес API:
-1. Из `localStorage` (ключ `apiBaseUrl`) - если был сохранен ранее
-2. По умолчанию: `http://192.168.1.2:8000/api/v1`
+Почти во всех типичных сценариях (когда фронтенд отдаётся тем же backend), веб-интерфейс **автоматически** определяет адрес API по фактическому origin браузера:
 
-Для изменения адреса API:
+- если страница открыта по адресу `http://10.9.8.146:8000/`, все запросы пойдут на `http://10.9.8.146:8000/api/v0.2/...`;
+- если страница открыта по адресу `https://example.com/`, запросы пойдут на `https://example.com/api/v0.2/...`.
+
+В этом режиме:
+
+- JS не использует IP/порт из `common/config/settings.toml` для HTTP-вызовов;
+- файл настроек влияет только на версию API (`[api].version`, префикс `/api/vX`) и путь WebSocket (`[websocket].tasks_stream_path`).
+
+При необходимости адрес API можно переопределить вручную (например, для отладки через другой прокси):
+
 1. Откройте веб-интерфейс
 2. Перейдите в **Настройки** (⚙️)
-3. В поле "API Base URL (frontend)" укажите правильный адрес (например: `http://192.168.1.10:8000/api/v1`)
+3. В поле "API Base URL (frontend)" укажите нужный адрес (например: `http://192.168.1.10:8000/api/v0.2`)
 4. Нажмите "Сохранить"
 5. Обновите страницу
 
@@ -276,10 +283,12 @@ alembic upgrade head
 
 ```bash
 cd android
-./gradlew :app:assembleDebug
+./gradlew :app:assembleDebug    # debug-сборка для разработки
+./gradlew :app:assembleRelease  # release-сборка для продакшена
 ```
 
-Собранный APK будет находиться в: `android/app/build/outputs/apk/debug/app-debug.apk`
+Собранный debug APK будет находиться в: `android/app/build/outputs/apk/debug/app-debug.apk`  
+Собранный release APK — в: `android/app/build/outputs/apk/release/app-release.apk`
 
 ### Скачивание и установка APK
 
@@ -305,15 +314,28 @@ cd android
 
 **Примечание**: APK должен быть собран перед скачиванием (см. раздел "Сборка APK")
 
-### Настройка API Base URL в Android приложении
+### Настройка сетевых параметров в Android приложении
 
-Приложение по умолчанию ожидает backend по адресу `http://192.168.1.2:8000/api/v1`.
+В проекте действует единый источник правды для настроек сети и версии API — файл `common/config/settings.toml`.
 
-Для изменения адреса:
-1. Откройте файл `android/app/build.gradle.kts`
-2. Найдите строку с `buildConfigField("String", "API_BASE_URL", ...)`
-3. Измените IP-адрес на нужный
-4. Пересоберите APK
+- **Debug‑сборка (`assembleDebug`)**
+  - При сборке Android‑клиента Gradle‑скрипт читает `common/config/settings.toml` и извлекает:
+    - `[api].version` → версия API (`0.2` и т.п.)
+    - `[network].host` → хост backend
+    - `[network].port` → порт backend
+  - На основе этих значений формируется базовый URL по умолчанию:
+    - `http://<network.host>:<network.port>/api/v<api.version>`
+  - Порядок приоритета для `BuildConfig.API_BASE_URL` в debug‑сборке:
+    1. `apiBaseUrl` в `android/local.properties` (если указан)
+    2. Переменная окружения `HP_API_BASE_URL` (если указана)
+    3. Значения из `common/config/settings.toml` (по умолчанию)
+  - Это позволяет быстро запускать приложение в локальной сети, не правя код, достаточно настроить `settings.toml`.
+
+- **Release‑сборка (`assembleRelease`)**
+  - В релизном APK **никакие сетевые параметры по умолчанию не зашиваются**:
+    - `BuildConfig.API_BASE_URL` всегда равен пустой строке (`""`).
+    - Ни `local.properties`, ни переменные окружения в релизе не используются для автозаполнения адреса.
+  - Приложение в продакшене должно быть явно сконфигурировано пользователем/администратором через экран настроек или QR‑код с параметрами сети (`host`, `port`, `apiVersion`, `useHttps`).
 
 ### Ключевые возможности Android‑клиента
 

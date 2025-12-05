@@ -3,6 +3,7 @@ package com.homeplanner.api
 import android.util.Log
 import com.homeplanner.BuildConfig
 import com.homeplanner.model.Task
+import com.homeplanner.database.entity.SyncQueueItem
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -197,6 +198,65 @@ class TasksApi(
         } catch (e: Exception) {
             Log.e("TasksApi", "Error updating task", e)
             throw e
+        }
+    }
+
+    /**
+     * Отправка батча операций очереди синхронизации на сервер.
+     *
+     * Серверный эндпоинт: POST /tasks/sync-queue
+     * Тело: { "operations": [ { "operation": "...", "timestamp": "...", "task_id": ..., "payload": { ... } }, ... ] }
+     * Ответ: массив задач в актуальном состоянии.
+     */
+    fun syncQueue(items: List<SyncQueueItem>): List<Task> {
+        if (items.isEmpty()) return emptyList()
+
+        val url = "$baseUrl/tasks/sync-queue"
+        val opsArray = JSONArray()
+
+        // Сортируем по timestamp на клиенте для предсказуемости
+        val sorted = items.sortedBy { it.timestamp }
+        for (item in sorted) {
+            val obj = JSONObject().apply {
+                put("operation", item.operation)
+                put("timestamp", java.time.Instant.ofEpochMilli(item.timestamp).toString())
+                if (item.entityId != null) {
+                    put("task_id", item.entityId)
+                }
+                if (item.payload != null) {
+                    // payload уже хранится как JSON-строка с полями Task
+                    put("payload", JSONObject(item.payload))
+                }
+            }
+            opsArray.put(obj)
+        }
+
+        val root = JSONObject().apply {
+            put("operations", opsArray)
+        }
+
+        val mediaType = "application/json; charset=utf-8".toMediaType()
+        val body = root.toString().toRequestBody(mediaType)
+
+        val request = Request.Builder()
+            .url(url)
+            .post(body)
+            .applyUserCookie()
+            .build()
+
+        httpClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                val errorBody = response.body?.string() ?: "No error body"
+                throw IllegalStateException("HTTP ${response.code}: $errorBody")
+            }
+            val respBody = response.body?.string() ?: "[]"
+            val array = JSONArray(respBody)
+            val result = ArrayList<Task>(array.length())
+            for (i in 0 until array.length()) {
+                val obj = array.getJSONObject(i)
+                result.add(obj.toTask())
+            }
+            return result
         }
     }
 }

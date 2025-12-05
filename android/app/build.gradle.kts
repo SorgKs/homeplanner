@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("kotlin-kapt")
 }
 
 import com.android.build.gradle.internal.api.ApkVariantOutputImpl
@@ -15,7 +16,77 @@ val pyprojectFile = listOf(
 ).map { project.rootProject.file(it) }
     .firstOrNull { it.exists() }
     ?: project.rootProject.file("pyproject.toml")
+// Try to find version.json in android/ directory (root of android project)
+// project.rootProject.dir is android/ directory
 val androidVersionFile = project.rootProject.file("version.json")
+
+// Load shared backend/frontend configuration from common/config/settings.toml
+// to keep Android app settings (API version, default backend host/port) in sync.
+val settingsTomlFileCandidates = listOf(
+    // Typical monorepo layout: this android/ directory is sibling to common/
+    project.rootProject.file("../common/config/settings.toml"),
+    project.rootProject.file("common/config/settings.toml")
+)
+val settingsTomlFile = settingsTomlFileCandidates.firstOrNull { it.exists() }
+
+data class ApiAndNetworkConfig(
+    val apiVersion: String,
+    val backendHost: String,
+    val backendPort: Int
+)
+
+fun loadApiAndNetworkConfigFromSettingsToml(file: File?): ApiAndNetworkConfig {
+    if (file == null || !file.exists()) {
+        println("WARNING: common/config/settings.toml not found, using hardcoded defaults for API config")
+        // Fallback matches template defaults in common/config/settings.toml.template
+        return ApiAndNetworkConfig(
+            apiVersion = "0.2",
+            backendHost = "localhost",
+            backendPort = 8000
+        )
+    }
+
+    return try {
+        val content = file.readText()
+
+        // [api].version = "0.2"
+        val apiVersionRegex = Regex("""\[api\][^\[]*?version\s*=\s*"([^"]+)"""", RegexOption.DOT_MATCHES_ALL)
+        val apiMatch = apiVersionRegex.find(content)
+        val apiVersion = apiMatch?.groupValues?.getOrNull(1) ?: "0.2"
+
+        // [network].host = "...."
+        val hostRegex = Regex("""\[network\][^\[]*?host\s*=\s*"([^"]+)"""", RegexOption.DOT_MATCHES_ALL)
+        val hostMatch = hostRegex.find(content)
+        val backendHost = hostMatch?.groupValues?.getOrNull(1) ?: "localhost"
+
+        // [network].port = 8000
+        val portRegex = Regex("""\[network\][^\[]*?port\s*=\s*(\d+)""", RegexOption.DOT_MATCHES_ALL)
+        val portMatch = portRegex.find(content)
+        val backendPort = portMatch?.groupValues?.getOrNull(1)?.toIntOrNull() ?: 8000
+
+        println("Loaded API/network config from settings.toml: apiVersion=$apiVersion, host=$backendHost, port=$backendPort")
+        ApiAndNetworkConfig(
+            apiVersion = apiVersion,
+            backendHost = backendHost,
+            backendPort = backendPort
+        )
+    } catch (e: Exception) {
+        println("WARNING: Failed to parse settings.toml for API config: ${e.message}. Falling back to defaults.")
+        ApiAndNetworkConfig(
+            apiVersion = "0.2",
+            backendHost = "localhost",
+            backendPort = 8000
+        )
+    }
+}
+
+val apiAndNetworkConfig = loadApiAndNetworkConfigFromSettingsToml(settingsTomlFile)
+
+println("Looking for version.json at: ${androidVersionFile.absolutePath}")
+println("File exists: ${androidVersionFile.exists()}")
+if (androidVersionFile.exists()) {
+    println("File content preview: ${androidVersionFile.readText().take(100)}")
+}
 
 fun loadProjectVersionFromPyproject(file: File, fallback: Map<String, Int>): Map<String, Int> {
     if (!file.exists()) return fallback
@@ -38,25 +109,47 @@ fun loadProjectVersionFromPyproject(file: File, fallback: Map<String, Int>): Map
 }
 
 fun loadJsonFile(file: File, fallback: Map<String, Int>): Map<String, Int> {
-    if (!file.exists()) return fallback
+    if (!file.exists()) {
+        println("WARNING: version.json not found at ${file.absolutePath}, using fallback: $fallback")
+        return fallback
+    }
     return try {
         val content = file.readText()
-        // Simple JSON parsing for version files (format: {"major": 0, "minor": 2})
+        println("Reading version.json from ${file.absolutePath}")
+        println("Content: $content")
+        
+        // Simple JSON parsing for version files (format: {"major": 0, "minor": 2, "patch": 77})
+        // Use more flexible regex that handles whitespace and formatting
         val majorMatch = Regex("\"major\"\\s*:\\s*(\\d+)").find(content)
         val minorMatch = Regex("\"minor\"\\s*:\\s*(\\d+)").find(content)
         val patchMatch = Regex("\"patch\"\\s*:\\s*(\\d+)").find(content)
         
         val result = mutableMapOf<String, Int>()
-        if (majorMatch != null) result["major"] = majorMatch.groupValues[1].toInt()
-        if (minorMatch != null) result["minor"] = minorMatch.groupValues[1].toInt()
-        if (patchMatch != null) result["patch"] = patchMatch.groupValues[1].toInt()
+        if (majorMatch != null) {
+            result["major"] = majorMatch.groupValues[1].toInt()
+            println("Found major: ${result["major"]}")
+        }
+        if (minorMatch != null) {
+            result["minor"] = minorMatch.groupValues[1].toInt()
+            println("Found minor: ${result["minor"]}")
+        }
+        if (patchMatch != null) {
+            result["patch"] = patchMatch.groupValues[1].toInt()
+            println("Found patch: ${result["patch"]}")
+        } else {
+            println("WARNING: patch not found in version.json")
+        }
         
         // Merge with fallback for missing values
         fallback.forEach { (key, value) ->
             if (!result.containsKey(key)) result[key] = value
         }
+        
+        println("Final version map: $result")
         result
     } catch (e: Exception) {
+        println("ERROR: Failed to parse version.json: ${e.message}")
+        e.printStackTrace()
         fallback
     }
 }
@@ -67,6 +160,14 @@ val androidVersion = loadJsonFile(androidVersionFile, mapOf("patch" to 0))
 val major = projectVersion["major"] ?: 0
 val minor = projectVersion["minor"] ?: 0
 val patch = androidVersion["patch"] ?: 0
+
+println("========================================")
+println("Version information:")
+println("  Major: $major (from pyproject.toml)")
+println("  Minor: $minor (from pyproject.toml)")
+println("  Patch: $patch (from version.json)")
+println("  Full version: $major.$minor.$patch")
+println("========================================")
 
 // Read and increment build number
 val buildNumberFile = file("build_number.txt")
@@ -97,13 +198,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // Resolve API base URL from local.properties or environment to keep Android and Web on the same backend
-        val localProps = project.rootProject.file("local.properties").takeIf { it.exists() }?.reader()?.use {
-            Properties().apply { load(it) }
-        }
-        val apiBaseUrlFromLocal = localProps?.getProperty("apiBaseUrl")
-        val apiBaseUrlFromEnv = System.getenv("HP_API_BASE_URL")
-        val resolvedApiBaseUrl = (apiBaseUrlFromLocal ?: apiBaseUrlFromEnv) ?: "http://192.168.1.2:8000/api/v1"
-        buildConfigField("String", "API_BASE_URL", "\"$resolvedApiBaseUrl\"")
+        // VERSION_NAME is shared for all build types
         buildConfigField("String", "VERSION_NAME", "\"$versionNameStr\"")
     }
 
@@ -114,15 +209,23 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+
+            // Release build: network settings must be strictly empty.
+            // API_BASE_URL is always an empty string; the app must be configured
+            // explicitly at runtime via Settings/QR and must not rely on any
+            // compile-time defaults or environment variables.
+            buildConfigField("String", "API_BASE_URL", "\"\"")
         }
         debug {
-            // Use same resolved API base URL in debug
+            // Debug build: use shared settings.toml as the default network config,
+            // so that developers can run the app without manual host/port setup.
             val localProps = project.rootProject.file("local.properties").takeIf { it.exists() }?.reader()?.use {
                 Properties().apply { load(it) }
             }
             val apiBaseUrlFromLocal = localProps?.getProperty("apiBaseUrl")
             val apiBaseUrlFromEnv = System.getenv("HP_API_BASE_URL")
-            val resolvedApiBaseUrl = (apiBaseUrlFromLocal ?: apiBaseUrlFromEnv) ?: "http://192.168.1.2:8000/api/v1"
+            val defaultApiBaseUrlFromSettings = "http://${apiAndNetworkConfig.backendHost}:${apiAndNetworkConfig.backendPort}/api/v${apiAndNetworkConfig.apiVersion}"
+            val resolvedApiBaseUrl = (apiBaseUrlFromLocal ?: apiBaseUrlFromEnv) ?: defaultApiBaseUrlFromSettings
             buildConfigField("String", "API_BASE_URL", "\"$resolvedApiBaseUrl\"")
             buildConfigField("String", "VERSION_NAME", "\"$versionNameStr\"")
         }
@@ -182,6 +285,13 @@ dependencies {
     // DataStore for network settings
     implementation("androidx.datastore:datastore-preferences:1.0.0")
     
+    // Room / offline cache
+    val roomVersion = "2.6.1"
+    implementation("androidx.room:room-runtime:$roomVersion")
+    implementation("androidx.room:room-ktx:$roomVersion")
+    kapt("androidx.room:room-compiler:$roomVersion")
+    implementation("androidx.sqlite:sqlite-ktx:2.4.0")
+    
     // ML Kit for QR code scanning
     implementation("com.google.mlkit:barcode-scanning:17.2.0")
     
@@ -194,6 +304,8 @@ dependencies {
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    // MockWebServer for instrumented tests (API/sync tests)
+    androidTestImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
 }
 
 @Suppress("UnstableApiUsage")

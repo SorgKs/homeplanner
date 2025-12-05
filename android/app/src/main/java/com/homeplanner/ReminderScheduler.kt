@@ -7,6 +7,7 @@ import android.content.Intent
 import android.os.Build
 import android.util.Log
 import com.homeplanner.model.Task
+import com.homeplanner.utils.TaskDateCalculator
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -75,21 +76,46 @@ class ReminderScheduler(private val context: Context) {
         // But we'll be more permissive: schedule if reminder time is in future, regardless of completion status
         // (completed tasks shouldn't show reminders, but we'll let the time check handle it)
         
-        val reminderTimeStr = task.reminderTime
-        Log.d("ReminderScheduler", "Using reminderTimeStr=$reminderTimeStr for task ${task.id}")
+        var effectiveReminderTimeStr = task.reminderTime
+        Log.d("ReminderScheduler", "Using reminderTimeStr=$effectiveReminderTimeStr for task ${task.id}")
         
-        val whenMs = parseDateTime(reminderTimeStr)
+        var whenMs = parseDateTime(effectiveReminderTimeStr)
         
         if (whenMs == null) {
-            Log.w("ReminderScheduler", "Failed to parse reminder time for task ${task.id}, reminderTimeStr=$reminderTimeStr")
+            Log.w("ReminderScheduler", "Failed to parse reminder time for task ${task.id}, reminderTimeStr=$effectiveReminderTimeStr")
             return
         }
         
         val now = System.currentTimeMillis()
-        val delayMs = whenMs - now
-        val delayMinutes = delayMs / 60000.0
+        var delayMs = whenMs - now
+        var delayMinutes = delayMs / 60000.0
         
         Log.d("ReminderScheduler", "Task ${task.id}: now=$now, when=$whenMs, delay=${delayMinutes} minutes")
+        
+        // Если время напоминания в прошлом и задача повторяющаяся/интервальная и ещё не завершена,
+        // пересчитываем ближайшее будущее время через TaskDateCalculator, не меняя кэш.
+        if (whenMs <= now &&
+            (task.taskType == "recurring" || task.taskType == "interval") &&
+            !task.completed
+        ) {
+            Log.d("ReminderScheduler", "Task ${task.id} reminder time in past, recalculating next occurrence")
+            val dayStartHour = 4
+            val nextReminder = TaskDateCalculator.calculateNextReminderTime(
+                task = task,
+                nowMillis = now,
+                dayStartHour = dayStartHour
+            )
+            val nextWhenMs = parseDateTime(nextReminder)
+            if (nextWhenMs == null || nextWhenMs <= now) {
+                Log.w("ReminderScheduler", "Recalculated reminder time for task ${task.id} is invalid or still in past: $nextReminder")
+                return
+            }
+            effectiveReminderTimeStr = nextReminder
+            whenMs = nextWhenMs
+            delayMs = whenMs - now
+            delayMinutes = delayMs / 60000.0
+            Log.d("ReminderScheduler", "Task ${task.id}: rescheduled when=$whenMs, delay=${delayMinutes} minutes")
+        }
         
         if (whenMs <= now) {
             Log.d("ReminderScheduler", "Task ${task.id} reminder time is in the past (${-delayMinutes} minutes ago), skipping")

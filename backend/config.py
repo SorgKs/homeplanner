@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import re
 import tomllib
 from typing import Any
 
@@ -100,9 +101,24 @@ class Settings:
     api_version_path: str
 
     @property
-    def cors_origins_list(self) -> list[str]:
-        """Return the list of configured CORS origins."""
-        return self.cors_origins
+    def cors_origins_list(self) -> list[str | re.Pattern[str]]:
+        """Return the list of configured CORS origins.
+        
+        Supports both exact origins and wildcard patterns (e.g., "http://192.168.1.*:8080").
+        Wildcard patterns are converted to regular expressions.
+        """
+        result: list[str | re.Pattern[str]] = []
+        for origin in self.cors_origins:
+            if "*" in origin:
+                # Convert wildcard pattern to regex
+                # First escape all special regex characters, then replace escaped * with .*
+                escaped = re.escape(origin)
+                # Replace escaped asterisk (\*) with regex wildcard (.*)
+                pattern = escaped.replace(r"\*", r".*")
+                result.append(re.compile(pattern))
+            else:
+                result.append(origin)
+        return result
     
     @property
     def use_ssl(self) -> bool:

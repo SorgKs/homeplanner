@@ -12,6 +12,7 @@ from backend.database import Base
 from backend.models.task import RecurrenceType, TaskType
 from backend.schemas.task import TaskCreate, TaskUpdate
 from backend.services.task_service import TaskService
+from backend.services.time_manager import get_current_time
 
 if TYPE_CHECKING:
     from _pytest.capture import CaptureFixture
@@ -308,6 +309,24 @@ class TestTaskService:
 
         # Эмулируем наступление нового дня: заставляем сервис считать, что день сменился
         monkeypatch.setattr(TaskService, "_is_new_day", staticmethod(lambda _db: True))
+        
+        # Мокаем текущее время на первую минуту нового дня
+        # Вычисляем начало нового дня (завтра) с учетом day_start_hour
+        from backend.config import get_settings
+        settings = get_settings()
+        day_start_hour = settings.day_start_hour
+        
+        # Завтра в day_start_hour + 1 минута (первая минута нового дня)
+        tomorrow_start = (now + timedelta(days=1)).replace(
+            hour=day_start_hour, 
+            minute=1, 
+            second=0, 
+            microsecond=0
+        )
+        
+        # Мокаем get_current_time чтобы возвращать время нового дня
+        monkeypatch.setattr("backend.services.task_service.get_current_time", lambda: tomorrow_start)
+        
         # Вызов централизованного обновления
         updated = TaskService.get_all_tasks(db_session)
         # Находим нашу задачу
@@ -423,4 +442,63 @@ class TestTaskService:
         today_task_ids = TaskService.get_today_task_ids(db_session)
 
         assert today_task_ids == []
+
+    def test_today_view_one_time_past_visible_even_if_inactive_and_completed(
+        self, db_session: "Session"
+    ) -> None:
+        """One-time task with past reminder_time must be visible regardless of active/completed."""
+        now = datetime.now().replace(second=0, microsecond=0)
+        past = now - timedelta(days=1)
+
+        task_data = TaskCreate(
+            title="Past one-time",
+            task_type=TaskType.ONE_TIME,
+            reminder_time=past,
+        )
+        created = TaskService.create_task(db_session, task_data)
+
+        # Имитация завершения и деактивации
+        update = TaskUpdate(active=False, completed=True)
+        TaskService.update_task(db_session, created.id, update)
+
+        today_task_ids = TaskService.get_today_task_ids(db_session)
+        assert created.id in today_task_ids
+
+    def test_today_view_one_time_future_completed_still_visible(
+        self, db_session: "Session"
+    ) -> None:
+        """Completed one-time task with future reminder_time must still be visible."""
+        now = datetime.now().replace(second=0, microsecond=0)
+        future = now + timedelta(days=1)
+
+        task_data = TaskCreate(
+            title="Future completed one-time",
+            task_type=TaskType.ONE_TIME,
+            reminder_time=future,
+        )
+        created = TaskService.create_task(db_session, task_data)
+
+        # Завершаем задачу (complete_task также сделает её неактивной)
+        completed = TaskService.complete_task(db_session, created.id)
+        assert completed is not None and completed.completed is True
+
+        today_task_ids = TaskService.get_today_task_ids(db_session)
+        assert created.id in today_task_ids
+
+    def test_today_view_one_time_future_not_completed_not_visible(
+        self, db_session: "Session"
+    ) -> None:
+        """Non-completed one-time task with future reminder_time must not be visible."""
+        now = datetime.now().replace(second=0, microsecond=0)
+        future = now + timedelta(days=1)
+
+        task_data = TaskCreate(
+            title="Future one-time not completed",
+            task_type=TaskType.ONE_TIME,
+            reminder_time=future,
+        )
+        created = TaskService.create_task(db_session, task_data)
+
+        today_task_ids = TaskService.get_today_task_ids(db_session)
+        assert created.id not in today_task_ids
 
