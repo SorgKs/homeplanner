@@ -106,14 +106,12 @@ def test_update_task_sets_active_flag(client: TestClient) -> None:
     created = _create_task(client, payload)
 
     update_body = {
-        "revision": created["revision"],
         "active": False,
     }
     response = client.put(api_path(f"/tasks/{created['id']}"), json=update_body)
     assert response.status_code == 200
     updated = response.json()
     assert updated["active"] is False
-    assert updated["revision"] == created["revision"] + 1
 
 
 def test_complete_task_marks_completed(client: TestClient) -> None:

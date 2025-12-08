@@ -38,60 +38,101 @@ class TasksApiInstrumentedTest {
 
     @Before
     fun setUp() {
-        StrictMode.setThreadPolicy(
-            StrictMode.ThreadPolicy.Builder()
-                .permitAll()
-                .build(),
-        )
-        server = MockWebServer()
-        server.start()
-        val baseUrl = server.url("/api/v0.2").toString().trimEnd('/')
-        client = TasksApi(
-            httpClient = OkHttpClient.Builder().build(),
-            baseUrl = baseUrl,
-        )
+        try {
+            StrictMode.setThreadPolicy(
+                StrictMode.ThreadPolicy.Builder()
+                    .permitAll()
+                    .build(),
+            )
+            server = MockWebServer()
+            // Пытаемся запустить сервер, если не получается - пробуем другой порт
+            try {
+                server.start()
+            } catch (e: java.net.BindException) {
+                // Если порт занят, пробуем с портом 0 (случайный свободный порт)
+                android.util.Log.w("TasksApiInstrumentedTest", "Port busy, retrying with random port", e)
+                server.shutdown()
+                server = MockWebServer()
+                server.start(0) // Случайный свободный порт
+            }
+            val baseUrl = server.url("/api/v0.2").toString().trimEnd('/')
+            client = TasksApi(
+                httpClient = OkHttpClient.Builder().build(),
+                baseUrl = baseUrl,
+            )
+            android.util.Log.d("TasksApiInstrumentedTest", "MockWebServer started at $baseUrl")
+        } catch (e: Exception) {
+            android.util.Log.e("TasksApiInstrumentedTest", "setUp failed", e)
+            e.printStackTrace()
+            throw e
+        }
     }
 
     @After
     fun tearDown() {
-        server.shutdown()
+        try {
+            server.shutdown()
+        } catch (e: Exception) {
+            // Игнорируем ошибки при закрытии сервера
+        }
     }
 
     @Test
     fun getTasks_returnsParsedList() {
-        server.enqueue(
-            MockResponse()
-                .setResponseCode(200)
-                .setBody(
-                    """
-                    [
-                      {
-                        "id": 1,
-                        "title": "Позвонить родителям",
-                        "description": null,
-                        "task_type": "one_time",
-                        "recurrence_type": null,
-                        "recurrence_interval": null,
-                        "interval_days": null,
-                        "reminder_time": "2025-11-05T19:00:00",
-                        "group_id": null,
-                        "active": true,
-                        "completed": false
-                      }
-                    ]
-                    """.trimIndent(),
-                ),
-        )
+        try {
+            android.util.Log.d("TasksApiInstrumentedTest", "Starting getTasks_returnsParsedList test")
+            
+            server.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(
+                        """
+                        [
+                          {
+                            "id": 1,
+                            "title": "Позвонить родителям",
+                            "description": null,
+                            "task_type": "one_time",
+                            "recurrence_type": null,
+                            "recurrence_interval": null,
+                            "interval_days": null,
+                            "reminder_time": "2025-11-05T19:00:00",
+                            "group_id": null,
+                            "active": true,
+                            "completed": false,
+                            "assigned_user_ids": []
+                          }
+                        ]
+                        """.trimIndent(),
+                    ),
+            )
 
-        val tasks = client.getTasks(activeOnly = false)
-        val recordedRequest = server.takeRequest()
+            android.util.Log.d("TasksApiInstrumentedTest", "Calling client.getTasks()")
+            val tasks = client.getTasks(activeOnly = false)
+            android.util.Log.d("TasksApiInstrumentedTest", "Received ${tasks.size} tasks")
+            
+            val recordedRequest = server.takeRequest()
+            android.util.Log.d("TasksApiInstrumentedTest", "Recorded request path: ${recordedRequest.path}")
 
-        assertEquals("/api/v0.2/tasks/", recordedRequest.path)
-        assertEquals(1, tasks.size)
-        val task = tasks.first()
-        assertEquals("Позвонить родителям", task.title)
-        assertTrue(task.active)
-        assertFalse(task.completed)
+            assertEquals("/api/v0.2/tasks/", recordedRequest.path)
+            assertEquals(1, tasks.size)
+            val task = tasks.first()
+            assertEquals("Позвонить родителям", task.title)
+            assertTrue(task.active)
+            assertFalse(task.completed)
+            
+            android.util.Log.d("TasksApiInstrumentedTest", "Test completed successfully")
+        } catch (e: Exception) {
+            // Логируем исключение для диагностики
+            android.util.Log.e("TasksApiInstrumentedTest", "Test failed with exception", e)
+            e.printStackTrace()
+            throw e
+        } catch (e: Error) {
+            // Логируем ошибки (не исключения)
+            android.util.Log.e("TasksApiInstrumentedTest", "Test failed with error", e)
+            e.printStackTrace()
+            throw e
+        }
     }
 
     @Test

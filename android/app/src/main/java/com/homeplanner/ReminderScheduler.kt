@@ -39,7 +39,18 @@ class ReminderScheduler(private val context: Context) {
 
     fun scheduleForTasks(tasks: List<Task>) {
         Log.d("ReminderScheduler", "Scheduling reminders for ${tasks.size} tasks")
-        tasks.forEach { scheduleForTaskIfUpcoming(it) }
+        var scheduledCount = 0
+        var skippedCount = 0
+        var errorCount = 0
+        tasks.forEach { task ->
+            val wasScheduled = scheduleForTaskIfUpcoming(task)
+            when {
+                wasScheduled == true -> scheduledCount++
+                wasScheduled == false -> skippedCount++
+                else -> errorCount++
+            }
+        }
+        Log.d("ReminderScheduler", "Планирование завершено: запланировано=$scheduledCount, пропущено=$skippedCount, ошибок=$errorCount из ${tasks.size} задач")
     }
 
     private fun parseDateTime(dt: String?): Long? {
@@ -63,7 +74,7 @@ class ReminderScheduler(private val context: Context) {
         }
     }
 
-    fun scheduleForTaskIfUpcoming(task: Task) {
+    fun scheduleForTaskIfUpcoming(task: Task): Boolean? {
         val isEligible = task.shouldScheduleReminder()
         Log.d(
             "ReminderScheduler",
@@ -82,15 +93,20 @@ class ReminderScheduler(private val context: Context) {
         var whenMs = parseDateTime(effectiveReminderTimeStr)
         
         if (whenMs == null) {
-            Log.w("ReminderScheduler", "Failed to parse reminder time for task ${task.id}, reminderTimeStr=$effectiveReminderTimeStr")
-            return
+            val msg = "ОПОВЕЩЕНИЕ НЕ ЗАПЛАНИРОВАНО: задача ${task.id} (${task.title}) - не удалось распарсить время напоминания: $effectiveReminderTimeStr"
+            Log.w("ReminderScheduler", msg)
+            return null // ошибка
         }
         
         val now = System.currentTimeMillis()
         var delayMs = whenMs - now
         var delayMinutes = delayMs / 60000.0
         
-        Log.d("ReminderScheduler", "Task ${task.id}: now=$now, when=$whenMs, delay=${delayMinutes} minutes")
+        val timeFormatter = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault())
+        val whenFormatted = timeFormatter.format(java.util.Date(whenMs))
+        val nowFormatted = timeFormatter.format(java.util.Date(now))
+        
+        Log.d("ReminderScheduler", "Task ${task.id}: now=$nowFormatted, when=$whenFormatted, delay=${String.format("%.1f", delayMinutes)} минут")
         
         // Если время напоминания в прошлом и задача повторяющаяся/интервальная и ещё не завершена,
         // пересчитываем ближайшее будущее время через TaskDateCalculator, не меняя кэш.
@@ -107,26 +123,30 @@ class ReminderScheduler(private val context: Context) {
             )
             val nextWhenMs = parseDateTime(nextReminder)
             if (nextWhenMs == null || nextWhenMs <= now) {
-                Log.w("ReminderScheduler", "Recalculated reminder time for task ${task.id} is invalid or still in past: $nextReminder")
-                return
+                val msg = "ОПОВЕЩЕНИЕ НЕ ЗАПЛАНИРОВАНО: задача ${task.id} (${task.title}) - пересчитанное время напоминания невалидно или в прошлом: $nextReminder"
+                Log.w("ReminderScheduler", msg)
+                return null // ошибка
             }
             effectiveReminderTimeStr = nextReminder
             whenMs = nextWhenMs
             delayMs = whenMs - now
             delayMinutes = delayMs / 60000.0
-            Log.d("ReminderScheduler", "Task ${task.id}: rescheduled when=$whenMs, delay=${delayMinutes} minutes")
+            val nextWhenFormatted = timeFormatter.format(java.util.Date(whenMs))
+            Log.d("ReminderScheduler", "Task ${task.id}: rescheduled when=$nextWhenFormatted, delay=${String.format("%.1f", delayMinutes)} минут")
         }
         
         if (whenMs <= now) {
-            Log.d("ReminderScheduler", "Task ${task.id} reminder time is in the past (${-delayMinutes} minutes ago), skipping")
-            return
+            val msg = "ОПОВЕЩЕНИЕ НЕ ЗАПЛАНИРОВАНО: задача ${task.id} (${task.title}) - время напоминания в прошлом (${String.format("%.1f", -delayMinutes)} минут назад)"
+            Log.d("ReminderScheduler", msg)
+            return false // пропущено
         }
         
         // Only schedule if task is not completed (active)
         // Completed tasks shouldn't show reminders
         if (!isEligible) {
-            Log.d("ReminderScheduler", "Task ${task.id} is completed, skipping reminder registration")
-            return
+            val msg = "ОПОВЕЩЕНИЕ НЕ ЗАПЛАНИРОВАНО: задача ${task.id} (${task.title}) - задача завершена или неактивна (active=${task.active}, completed=${task.completed})"
+            Log.d("ReminderScheduler", msg)
+            return false // пропущено
         }
         
         val pi = pendingIntentFor(task)
@@ -136,9 +156,13 @@ class ReminderScheduler(private val context: Context) {
             } else {
                 alarmManager.setExact(AlarmManager.RTC_WAKEUP, whenMs, pi)
             }
-            Log.d("ReminderScheduler", "Scheduled reminder for task ${task.id} in ${delayMinutes} minutes")
+            val msg = "ОПОВЕЩЕНИЕ ЗАПЛАНИРОВАНО: задача ${task.id} (${task.title}) - сработает через ${String.format("%.1f", delayMinutes)} минут (${whenFormatted})"
+            Log.d("ReminderScheduler", msg)
+            return true // успешно запланировано
         } catch (e: Exception) {
-            Log.e("ReminderScheduler", "Failed to schedule reminder for task ${task.id}", e)
+            val msg = "ОПОВЕЩЕНИЕ НЕ ЗАПЛАНИРОВАНО: задача ${task.id} (${task.title}) - ошибка при установке будильника"
+            Log.e("ReminderScheduler", msg, e)
+            return null // ошибка
         }
     }
 }

@@ -167,21 +167,8 @@ const tasksAPI = {
                 const errorData = await response.json();
                 console.error("API Error Response:", errorData);
 
-                if (
-                    errorData &&
-                    errorData.detail &&
-                    typeof errorData.detail === "object" &&
-                    errorData.detail.code === "conflict_revision"
-                ) {
-                    const conflictError = new Error(
-                        errorData.detail.message ||
-                            "Конфликт версий. Обновите данные и повторите попытку."
-                    );
-                    conflictError.serverPayload = errorData.detail.server_payload;
-                    conflictError.serverRevision = errorData.detail.server_revision;
-                    conflictError.code = "conflict_revision";
-                    throw conflictError;
-                }
+                // Конфликты обрабатываются только на сервере
+                // Сервер - источник истины, клиент получает актуальные данные после синхронизации
 
                 if (Array.isArray(errorData.detail)) {
                     // Pydantic validation errors
@@ -197,14 +184,8 @@ const tasksAPI = {
                     errorMessage = errorData.message;
                 }
             } catch (e) {
-                if (e instanceof Error && e.code === "conflict_revision") {
-                    console.log(
-                        "[HTTP<-] PUT",
-                        `${API_BASE_URL}/tasks/${id}`,
-                        "ERROR conflict_revision"
-                    );
-                    throw e;
-                }
+                // Конфликты обрабатываются только на сервере
+                // Сервер - источник истины, клиент получает актуальные данные после синхронизации
                 console.error("Failed to parse error response:", e);
             }
             console.log(

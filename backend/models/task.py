@@ -44,8 +44,6 @@ class Task(Base):
     __tablename__ = "tasks"
 
     id = Column(Integer, primary_key=True, index=True)
-    # Optimistic concurrency control: monotonically increasing revision
-    revision = Column(Integer, nullable=False, default=0, index=True)
     title = Column(String(255), nullable=False, index=True)
     description = Column(Text, nullable=True)
     task_type = Column(SQLEnum(TaskType), nullable=False, default=TaskType.ONE_TIME)

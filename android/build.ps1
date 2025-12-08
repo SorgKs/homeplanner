@@ -30,9 +30,9 @@ foreach ($arg in $args) {
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
 if ($buildDebug) {
-    Write-Host "Building debug version" -ForegroundColor Cyan
+    Write-Host "Building debug version (patch will be incremented)" -ForegroundColor Cyan
 } else {
-    Write-Host "Building new release version" -ForegroundColor Cyan
+    Write-Host "Building release version (patch will be incremented)" -ForegroundColor Cyan
 }
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""

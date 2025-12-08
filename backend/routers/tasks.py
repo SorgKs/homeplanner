@@ -15,7 +15,8 @@ from backend.schemas.task import (
     TaskSyncOperation,
     TaskOperationType,
 )
-from backend.services.task_service import TaskRevisionConflictError, TaskService
+from backend.services.task_service import TaskService
+from backend.models.task import Task
 from backend.routers.realtime import manager as ws_manager
 
 if TYPE_CHECKING:
@@ -88,7 +89,6 @@ def create_task(
 ) -> TaskResponse:
     """Create a new recurring task."""
     created_task = TaskService.create_task(db, task)
-    # Broadcast creation event
     logger.info("HTTP create: task_id=%s", created_task.id)
     broadcast_task_update({
         "type": "task_update",
@@ -163,6 +163,12 @@ def sync_task_queue(
     Ожидает массив операций (create/update/delete/complete/uncomplete) с timestamp.
     Операции сортируются по времени и применяются последовательно.
     Перед началом обработки выполняется возможный пересчёт задач по новому дню.
+    
+    Конфликты разрешаются на сервере по времени обновления (updated_at):
+    - Если серверная версия задачи новее, чем timestamp операции → операция пропускается
+    - Сервер сам решает, какие операции применить, а какие пропустить
+    - После обработки всех операций возвращается актуальное состояние всех задач
+    - Сервер является источником истины для всех данных
     """
     logger.info("HTTP sync-queue: %s operations", len(payload.operations))
 
@@ -175,30 +181,63 @@ def sync_task_queue(
         payload.operations, key=lambda op: op.timestamp
     )
 
+    # Отслеживаем задачи, созданные в этом батче, чтобы не применять проверку конфликта
+    # для UPDATE операций на только что созданные задачи
+    tasks_created_in_batch: set[int] = set()
+
     for op in operations:
         try:
             if op.operation == TaskOperationType.CREATE:
                 if op.payload is None:
                     continue
                 create_data = TaskCreate.model_validate(op.payload)
-                TaskService.create_task(db, create_data)
+                # Вызываем эндпоинт напрямую - он сам вызовет сервис и отправит WebSocket
+                created_task_response = create_task(create_data, db)
+                # Запоминаем ID созданной задачи для последующих операций в батче
+                tasks_created_in_batch.add(created_task_response.id)
             elif op.operation == TaskOperationType.UPDATE:
                 if op.task_id is None or op.payload is None:
                     continue
+                # Проверка конфликта по времени обновления
+                # Сервер - источник истины: если серверная версия задачи новее, чем timestamp операции,
+                # операция пропускается, серверная версия остается актуальной
+                # ИСКЛЮЧЕНИЕ: если задача была создана в этом же батче, не применяем проверку конфликта,
+                # так как задача только что создана и её updated_at установлен текущим временем сервера
+                task = TaskService.get_task(db, op.task_id)
+                if task and op.task_id not in tasks_created_in_batch:
+                    # Нормализуем timezone для сравнения: система использует только локальное время
+                    # Убираем timezone если есть (на случай, если клиент отправил с timezone)
+                    task_updated_at = task.updated_at.replace(tzinfo=None) if task.updated_at.tzinfo else task.updated_at
+                    op_timestamp = op.timestamp.replace(tzinfo=None) if op.timestamp.tzinfo else op.timestamp
+                    
+                    if task_updated_at > op_timestamp:
+                        # Конфликт: серверная версия новее - пропускаем операцию
+                        logger.warning(
+                            "sync-queue: conflict for task %s: server updated_at=%s > operation timestamp=%s, skipping operation",
+                            op.task_id,
+                            task_updated_at,
+                            op_timestamp
+                        )
+                        # Пропускаем операцию - серверная версия остается актуальной (сервер - источник истины)
+                        continue
                 update_data = TaskUpdate.model_validate(op.payload)
-                TaskService.update_task(db, op.task_id, update_data)
+                # Вызываем эндпоинт напрямую - он сам вызовет сервис и отправит WebSocket
+                update_task(op.task_id, update_data, db)
             elif op.operation == TaskOperationType.DELETE:
                 if op.task_id is None:
                     continue
-                TaskService.delete_task(db, op.task_id)
+                # Вызываем эндпоинт напрямую - он сам вызовет сервис и отправит WebSocket
+                delete_task(op.task_id, db)
             elif op.operation == TaskOperationType.COMPLETE:
                 if op.task_id is None:
                     continue
-                TaskService.complete_task(db, op.task_id)
+                # Вызываем эндпоинт напрямую - он сам вызовет сервис и отправит WebSocket
+                complete_task(op.task_id, db)
             elif op.operation == TaskOperationType.UNCOMPLETE:
                 if op.task_id is None:
                     continue
-                TaskService.uncomplete_task(db, op.task_id)
+                # Вызываем эндпоинт напрямую - он сам вызовет сервис и отправит WebSocket
+                uncomplete_task(op.task_id, db)
         except Exception as exc:  # Логируем, но продолжаем остальные операции
             logger.error(
                 "sync-queue: failed to apply op %s for task %s: %s",
@@ -236,17 +275,6 @@ def update_task(
     """Update a task."""
     try:
         updated_task = TaskService.update_task(db, task_id, task_update)
-    except TaskRevisionConflictError as exc:
-        server_payload = TaskResponse.model_validate(exc.task).model_dump(mode="json")
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail={
-                "code": "conflict_revision",
-                "message": "Конфликт ревизий. Обновите данные и повторите попытку.",
-                "server_revision": exc.expected_revision,
-                "server_payload": server_payload,
-            },
-        ) from exc
     except ValueError as exc:
         # Validation inside service may raise ValueError; convert to HTTP 422
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
@@ -300,11 +328,11 @@ def complete_task(
             detail=f"Task with id {task_id} not found",
         )
     logger.info("HTTP complete: task_id=%s", completed_task.id)
+    # Для легких операций передаем только task_id, без полной задачи
     broadcast_task_update({
         "type": "task_update",
         "action": "completed",
-        "task_id": completed_task.id,
-        "task": TaskResponse.model_validate(completed_task).model_dump(mode="json")
+        "task_id": completed_task.id
     })
     return TaskResponse.model_validate(completed_task)
 
@@ -344,11 +372,11 @@ def uncomplete_task(
             detail=f"Task with id {task_id} not found",
         )
     logger.info("HTTP uncomplete: task_id=%s", uncompleted_task.id)
+    # Для легких операций передаем только task_id, без полной задачи
     broadcast_task_update({
         "type": "task_update",
         "action": "uncompleted",
-        "task_id": uncompleted_task.id,
-        "task": TaskResponse.model_validate(uncompleted_task).model_dump(mode="json")
+        "task_id": uncompleted_task.id
     })
     return TaskResponse.model_validate(uncompleted_task)
 

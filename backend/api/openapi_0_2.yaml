@@ -20,7 +20,7 @@ paths:
     post:
       tags: [tasks]
       summary: Создание задачи
-      description: Создаёт новую задачу с опциональными повторениями и напоминаниями. При создании `revision` должен быть равен `0`.
+      description: Создаёт новую задачу с опциональными повторениями и напоминаниями.
       security:
         - bearerAuth: []
       requestBody:
@@ -53,7 +53,8 @@ paths:
       tags: [tasks]
       summary: Обновление задачи
       description: >
-        Обновляет задачу. Клиент обязан передать актуальную `revision`. В случае конфликта сервер возвращает 409 и данные последней версии.
+        Обновляет задачу. Конфликты разрешаются на сервере по времени обновления (`updated_at`).
+        При синхронизации через `/tasks/sync-queue` операции с timestamp, который старше серверного `updated_at`, автоматически пропускаются.
       security:
         - bearerAuth: []
       parameters:
@@ -89,12 +90,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '409':
-          description: Конфликт версии (revision)
+        '404':
+          description: Задача не найдена
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ConflictErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
   /tasks/stream:
     get:
       tags: [tasks]
@@ -242,23 +243,9 @@ components:
     TaskCreateRequest:
       allOf:
         - $ref: '#/components/schemas/TaskBase'
-      required:
-        - revision
-      properties:
-        revision:
-          type: integer
-          minimum: 0
-          description: Ревизия сущности (при создании всегда 0)
-          example: 0
     TaskUpdateRequest:
       type: object
-      required:
-        - revision
       properties:
-        revision:
-          type: integer
-          minimum: 0
-          description: Текущая ревизия клиента. Несовпадение приводит к 409.
         title:
           type: string
         description:
@@ -306,7 +293,6 @@ components:
       type: object
       required:
         - id
-        - revision
         - title
         - task_type
         - reminder_time
@@ -316,8 +302,6 @@ components:
         - updated_at
       properties:
         id:
-          type: integer
-        revision:
           type: integer
         title:
           type: string
@@ -507,23 +491,4 @@ components:
           type: string
         message:
           type: string
-    ConflictErrorResponse:
-      type: object
-      required:
-        - code
-        - message
-        - server_revision
-        - server_payload
-      properties:
-        code:
-          type: string
-          example: 'conflict_revision'
-        message:
-          type: string
-          example: 'Конфликт ревизий. Обновите данные перед сохранением.'
-        server_revision:
-          type: integer
-          description: Актуальная ревизия на сервере
-        server_payload:
-          $ref: '#/components/schemas/TaskResponse'
 

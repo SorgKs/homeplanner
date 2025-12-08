@@ -28,7 +28,6 @@ data class SyncQueueItem(
     
     // Данные операции (только для полных операций: create, update)
     val payload: String? = null, // JSON как строка
-    val revision: Int? = null, // Только для update
     
     val timestamp: Long = System.currentTimeMillis(),
     val retryCount: Int = 0,

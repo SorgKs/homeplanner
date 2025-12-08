@@ -247,7 +247,10 @@ class TasksApi(
         httpClient.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {
                 val errorBody = response.body?.string() ?: "No error body"
-                throw IllegalStateException("HTTP ${response.code}: $errorBody")
+                val errorCode = response.code
+                // Сервер обрабатывает конфликты самостоятельно
+                // Если сервер вернул ошибку, это не конфликт, а реальная ошибка
+                throw IllegalStateException("HTTP $errorCode: $errorBody")
             }
             val respBody = response.body?.string() ?: "[]"
             val array = JSONArray(respBody)

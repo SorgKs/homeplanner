@@ -14,27 +14,6 @@ if TYPE_CHECKING:
     from backend.schemas.task import TaskCreate, TaskUpdate
 
 
-class TaskRevisionConflictError(Exception):
-    """Raised when task revision conflict occurs during update.
-    
-    Attributes:
-        task: The task object with current server state.
-        expected_revision: The expected revision number that client should use.
-    """
-    
-    def __init__(self, task: Task, expected_revision: int, message: str | None = None) -> None:
-        """Initialize revision conflict error.
-        
-        Args:
-            task: The task object with current server state.
-            expected_revision: The expected revision number.
-            message: Optional error message.
-        """
-        self.task = task
-        self.expected_revision = expected_revision
-        super().__init__(message or f"Task revision conflict. Expected revision: {expected_revision}")
-
-
 class TaskService:
     """Service for managing recurring tasks."""
     
@@ -295,13 +274,22 @@ class TaskService:
         if not task:
             return None
 
-        # Optimistic concurrency control: check expected revision if provided
-        expected_revision = getattr(task_data, "revision", None)
-        if expected_revision is not None and expected_revision != task.revision:
-            # Return conflict with current server task and expected revision
-            raise TaskRevisionConflictError(task=task, expected_revision=task.revision)
+        # Конфликты разрешаются по времени обновления (updated_at)
+        # Сервер - источник истины: проверка конфликтов выполняется на уровне роутера
+        # при обработке sync-queue. Если серверная версия новее, операция пропускается.
 
         update_data = task_data.model_dump(exclude_unset=True, exclude={"assigned_user_ids"})
+        
+        # Log reminder_time update for debugging
+        if "reminder_time" in update_data:
+            import logging
+            logger = logging.getLogger("homeplanner.tasks")
+            logger.info(
+                "Task update: id=%s, old_reminder_time=%s, new_reminder_time=%s",
+                task.id,
+                task.reminder_time,
+                update_data["reminder_time"]
+            )
         
         # Save old task state for history comments (before applying changes)
         old_task_state = {
@@ -346,9 +334,6 @@ class TaskService:
         # Apply changes
         for key, value in update_data.items():
             setattr(task, key, value)
-
-        # Bump revision after successful in-memory update
-        task.revision = (task.revision or 0) + 1
 
         # Update assignees if provided
         if task_data.assigned_user_ids is not None:

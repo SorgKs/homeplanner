@@ -131,13 +131,12 @@ class OfflineRepository(
         operation: String,
         entityType: String,
         entityId: Int?,
-        payload: Any? = null,
-        revision: Int? = null
+        payload: Any? = null
     ): Result<Long> {
         return try {
             val isLightOperation = operation in listOf("complete", "uncomplete", "delete")
             
-            // Для легких операций payload и revision не сохраняются
+            // Для легких операций payload не сохраняется
             val jsonPayload = if (isLightOperation || payload == null) {
                 null
             } else {
@@ -157,7 +156,6 @@ class OfflineRepository(
                 entityType = entityType,
                 entityId = entityId,
                 payload = jsonPayload,
-                revision = if (isLightOperation) null else revision,
                 sizeBytes = sizeBytes
             )
             
@@ -359,8 +357,8 @@ class OfflineRepository(
     
     private fun taskToJson(task: Task): String {
         return JSONObject().apply {
-            put("id", task.id)
-            put("revision", task.revision)
+            // Не включаем id в payload для обновления через очередь синхронизации
+            // id передается отдельно как task_id
             put("title", task.title)
             put("description", task.description)
             put("task_type", task.taskType)

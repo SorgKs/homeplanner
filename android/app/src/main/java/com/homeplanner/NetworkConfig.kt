@@ -14,6 +14,17 @@ data class NetworkConfig(
      * Convert to API base URL (e.g., "https://192.168.1.2:8000/api/v0.2")
      */
     fun toApiBaseUrl(): String {
+        // Валидация перед созданием URL
+        if (host.isBlank()) {
+            throw IllegalArgumentException("Host cannot be empty")
+        }
+        if (port !in 1..65535) {
+            throw IllegalArgumentException("Port must be in range 1-65535, got: $port")
+        }
+        if (apiVersion.isBlank()) {
+            throw IllegalArgumentException("API version cannot be empty")
+        }
+        
         val protocol = if (useHttps) "https" else "http"
         return "$protocol://$host:$port/api/v$apiVersion"
     }

@@ -220,7 +220,7 @@ class TestTasksRouter:
         # Update task2 to be inactive
         task2_id = create_response2.json()["id"]
         current = client.get(api_path(f"/tasks/{task2_id}")).json()
-        client.put(api_path(f"/tasks/{task2_id}"), json={"revision": current["revision"], "active": False})
+        client.put(api_path(f"/tasks/{task2_id}"), json={"active": False})
         
         response = client.get(api_path("/tasks/") + "?active_only=true")
         
@@ -267,8 +267,7 @@ class TestTasksRouter:
         task_id = create_response.json()["id"]
         
         update_data = {"title": "Updated Title"}
-        cur = client.get(api_path(f"/tasks/{task_id}")).json()
-        response = client.put(api_path(f"/tasks/{task_id}"), json={"revision": cur["revision"], **update_data})
+        response = client.put(api_path(f"/tasks/{task_id}"), json=update_data)
         
         assert response.status_code == 200
         data = response.json()
@@ -334,11 +333,10 @@ class TestTasksRouter:
         assert created["assignees"][0]["is_active"] is True
 
         task_id = created["id"]
-        # include revision to pass optimistic locking
-        cur = client.get(api_path(f"/tasks/{task_id}")).json()
+        # Конфликты обрабатываются только на сервере по времени обновления
         update_resp = client.put(
             api_path(f"/tasks/{task_id}"),
-            json={"revision": cur["revision"], "assigned_user_ids": []},
+            json={"assigned_user_ids": []},
         )
         assert update_resp.status_code == 200
         updated = update_resp.json()

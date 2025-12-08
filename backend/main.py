@@ -19,6 +19,9 @@ from backend.routers import events, groups, task_history, tasks, time_control, u
 from backend.routers import download
 from backend.routers import realtime
 
+# System logger for application-level messages
+system_logger = logging.getLogger("homeplanner.system")
+
 
 class HTTPOnlyStaticFiles(StarletteStaticFiles):
     """StaticFiles that handles ONLY HTTP requests, rejects WebSocket.
@@ -200,11 +203,9 @@ if __name__ == "__main__":
         
         def logged_info(msg: str, *args: Any, **kwargs: Any) -> None:
             """Wrap watchfiles info to show file details when available."""
-            formatted_msg = msg % args if args else msg
-            # watchfiles logs "N change detected" - we need to get actual file paths
-            # The file information is available in uvicorn's reload handler
-            # We'll log the message and let uvicorn show the actual file names
-            original_info(formatted_msg, *args, **kwargs)
+            # Pass message and args as-is to original logger
+            # The logger will handle formatting internally
+            original_info(msg, *args, **kwargs)
         
         watchfiles_logger.info = logged_info  # type: ignore[assignment]
         
@@ -227,11 +228,11 @@ if __name__ == "__main__":
                     rel_path = Path(file_path).relative_to(Path.cwd())
                     # Normalize path separators to forward slashes for consistency
                     normalized_path = str(rel_path).replace("\\", "/")
-                    logging.warning(f"WatchFiles detected changes in '{normalized_path}'. Reloading...")
+                    system_logger.warning(f"WatchFiles detected changes in '{normalized_path}'. Reloading...")
                 except ValueError:
                     # If relative path fails, use absolute and normalize
                     normalized_path = str(Path(file_path)).replace("\\", "/")
-                    logging.warning(f"WatchFiles detected changes in '{normalized_path}'. Reloading...")
+                    system_logger.warning(f"WatchFiles detected changes in '{normalized_path}'. Reloading...")
             else:
                 # If pattern doesn't match, use original message
                 original_warning(msg, *args, **kwargs)
@@ -243,9 +244,9 @@ if __name__ == "__main__":
     if settings.use_ssl:
         ssl_kwargs["ssl_keyfile"] = settings.ssl_keyfile
         ssl_kwargs["ssl_certfile"] = settings.ssl_certfile
-        logging.info(f"HTTPS enabled: certfile={settings.ssl_certfile}, keyfile={settings.ssl_keyfile}")
+        system_logger.info(f"HTTPS enabled: certfile={settings.ssl_certfile}, keyfile={settings.ssl_keyfile}")
     else:
-        logging.info("HTTP mode (SSL not configured)")
+        system_logger.info("HTTP mode (SSL not configured)")
     
     uvicorn.run(
         "backend.main:app",

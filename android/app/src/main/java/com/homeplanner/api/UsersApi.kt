@@ -19,10 +19,20 @@ class UsersApi(
 ) {
 
     fun getUsers(): List<UserSummary> {
+        // Валидация baseUrl
+        if (baseUrl.isBlank()) {
+            throw IllegalArgumentException("baseUrl cannot be empty")
+        }
+        
         val url = "$baseUrl/users/"
-        val request = Request.Builder()
+        val request = try {
+            Request.Builder()
             .url(url)
             .build()
+        } catch (e: IllegalArgumentException) {
+            throw IllegalArgumentException("Invalid URL: $url", e)
+        }
+        
         httpClient.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {
                 throw IllegalStateException("HTTP ${response.code}")

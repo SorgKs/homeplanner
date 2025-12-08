@@ -1841,7 +1841,6 @@ function openTaskModal(taskId = null) {
             title.textContent = 'Редактировать задачу';
             document.getElementById('task-id').value = task.id;
             document.getElementById('task-type').value = 'task';
-            document.getElementById('task-revision').value = task.revision ?? '';
             document.getElementById('task-title').value = task.title;
             document.getElementById('task-description').value = task.description || '';
             document.getElementById('task-group-id').value = task.group_id || '';
@@ -1980,7 +1979,6 @@ function openTaskModal(taskId = null) {
         form.reset();
         document.getElementById('task-id').value = '';
         document.getElementById('task-type').value = '';
-        document.getElementById('task-revision').value = '';
         document.getElementById('task-group-id').value = '';
         setAssigneeSelection([]);
         document.getElementById('task-is-recurring').value = 'one_time';
@@ -2072,7 +2070,6 @@ async function handleTaskSubmit(e) {
     const id = document.getElementById('task-id').value;
     const taskType = document.getElementById('task-type').value;
     const taskSchedulingType = document.getElementById('task-is-recurring').value;
-    const revisionInput = document.getElementById('task-revision');
     const groupId = document.getElementById('task-group-id').value;
 
     const submitBtn = e.target.querySelector('button[type="submit"]');
@@ -2230,14 +2227,8 @@ async function handleTaskSubmit(e) {
         
         if (id && taskType) {
             const numericId = parseInt(id);
-            const existingTask = allTasks.find(t => t.id === numericId);
-            if (existingTask) {
-                const revisionValue = revisionInput && revisionInput.value !== ''
-                    ? parseInt(revisionInput.value, 10)
-                    : existingTask.revision ?? 0;
-                taskData.revision = revisionValue;
-            }
             // Редактирование существующей задачи
+            // Конфликты обрабатываются только на сервере по времени обновления
             await tasksAPI.update(numericId, taskData);
             showToast('Задача обновлена', 'success');
         } else {
@@ -2269,13 +2260,8 @@ async function handleTaskSubmit(e) {
             errorMessage = error.message;
         }
 
-        if (error && error.code === 'conflict_revision') {
-            errorMessage = errorMessage || 'Конфликт версий. Обновляем данные задачи.';
-            await loadData();
-            if (id) {
-                openTaskModal(parseInt(id, 10));
-            }
-        }
+        // Конфликты обрабатываются только на сервере
+        // Сервер - источник истины, данные обновляются автоматически при синхронизации
 
         console.error('Error message:', errorMessage);
         showToast(errorMessage, 'error');

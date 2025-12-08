@@ -20,7 +20,6 @@ class TodayTaskFilterTest {
     ): Task {
         return Task(
             id = id,
-            revision = 0,
             title = "T$id",
             description = null,
             taskType = type,

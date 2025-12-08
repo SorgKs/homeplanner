@@ -360,3 +360,9 @@ cd android
 ## Поддержка
 
 Для вопросов по разработке и внутренним деталям проекта см. документацию в папке `docs/`.
+
+### Ключевая документация
+
+- **[Архитектура Offline-First Android приложения](docs/OFFLINE_FIRST_ARCHITECTURE.md)** — подробное описание архитектуры offline-first Android APK, компонентов (LocalApi, TasksApi, SyncService) и потоков данных
+- **[Версионирование](docs/VERSIONING.md)** — правила версионирования проекта
+- **[Архитектура](docs/ARCHITECTURE_vNext.md)** — общая архитектура проекта

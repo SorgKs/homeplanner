@@ -94,11 +94,11 @@ fun loadProjectVersionFromPyproject(file: File, fallback: Map<String, Int>): Map
         val content = file.readText()
         val majorMatch = Regex("project_major\\s*=\\s*\"?(\\d+)\"?").find(content)
         val minorMatch = Regex("project_minor\\s*=\\s*\"?(\\d+)\"?").find(content)
-
+        
         val result = mutableMapOf<String, Int>()
         if (majorMatch != null) result["major"] = majorMatch.groupValues[1].toInt()
         if (minorMatch != null) result["minor"] = minorMatch.groupValues[1].toInt()
-
+        
         fallback.forEach { (key, value) ->
             if (!result.containsKey(key)) result[key] = value
         }
@@ -304,6 +304,8 @@ dependencies {
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    // UiAutomator for handling system dialogs
+    androidTestImplementation("androidx.test.uiautomator:uiautomator:2.3.0")
     // MockWebServer for instrumented tests (API/sync tests)
     androidTestImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
 }

@@ -68,7 +68,6 @@ class TaskDateCalculatorTest {
 
         val task = Task(
             id = 1,
-            revision = 0,
             title = "Daily",
             description = null,
             taskType = "recurring",

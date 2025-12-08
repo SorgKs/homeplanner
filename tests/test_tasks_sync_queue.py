@@ -1,7 +1,7 @@
 """Tests for /tasks/sync-queue endpoint."""
 
 from collections.abc import Generator
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
 import pytest
@@ -77,7 +77,10 @@ def client(db_session: "Session") -> Generator[TestClient, None, None]:
 
 
 def _iso(dt: datetime) -> str:
-    return dt.replace(tzinfo=timezone.utc).isoformat().replace("+00:00", "Z")
+    """Convert datetime to ISO format string (local time, no timezone)."""
+    # Убираем timezone если есть, так как система использует только локальное время
+    dt_naive = dt.replace(tzinfo=None) if dt.tzinfo else dt
+    return dt_naive.isoformat()
 
 
 class TestSyncQueueEndpoint:
@@ -85,7 +88,7 @@ class TestSyncQueueEndpoint:
 
     def test_create_and_update_in_single_batch(self, client: TestClient) -> None:
         """Create task, then update title in one batch and get final state."""
-        now = datetime(2025, 1, 1, 9, 0, tzinfo=timezone.utc)
+        now = datetime(2025, 1, 1, 9, 0)
 
         create_payload = {
             "title": "Initial",
@@ -120,7 +123,7 @@ class TestSyncQueueEndpoint:
 
     def test_delete_in_batch_removes_task(self, client: TestClient) -> None:
         """Task created then deleted in same batch should not be present."""
-        now = datetime(2025, 1, 1, 9, 0, tzinfo=timezone.utc)
+        now = datetime(2025, 1, 1, 9, 0)
 
         create_payload = {
             "title": "To delete",

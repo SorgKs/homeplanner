@@ -89,7 +89,7 @@ import com.homeplanner.api.TasksApi
 import com.homeplanner.api.GroupsApi
 import com.homeplanner.api.UsersApi
 import com.homeplanner.api.UserSummary
-import com.homeplanner.api.TasksApiOffline
+import com.homeplanner.api.LocalApi
 import com.homeplanner.database.AppDatabase
 import com.homeplanner.repository.OfflineRepository
 import com.homeplanner.sync.SyncService
@@ -146,7 +146,7 @@ class MainActivity : ComponentActivity() {
     }
 
     // Activity Result Launcher for exact alarm settings
-    private val requestExactAlarmSettingsLauncher = registerForActivityResult(
+    val requestExactAlarmSettingsLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         // Check if permission was granted after returning from settings
@@ -176,6 +176,8 @@ class MainActivity : ComponentActivity() {
         // Request all permissions at once when app is first launched
         Log.d("MainActivity", "Requesting all required permissions")
         
+        val prefs = getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+        
         // Notifications permission (Android 13+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val granted = ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
@@ -188,15 +190,18 @@ class MainActivity : ComponentActivity() {
         }
         
         // Exact alarms permission (Android 12+)
+        // Устанавливаем флаг, что нужно показать диалог с объяснением (будет показан в UI)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val am = getSystemService(AlarmManager::class.java)
             if (am != null && !am.canScheduleExactAlarms()) {
-                Log.d("MainActivity", "Requesting SCHEDULE_EXACT_ALARM permission")
-                try {
-                    val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-                    requestExactAlarmSettingsLauncher.launch(intent)
-                } catch (e: Exception) {
-                    Log.e("MainActivity", "Failed to open exact alarm settings", e)
+                // Проверяем, был ли уже показан запрос
+                val exactAlarmRequestShown = prefs.getBoolean("exact_alarm_request_shown", false)
+                if (!exactAlarmRequestShown) {
+                    Log.d("MainActivity", "SCHEDULE_EXACT_ALARM permission needed, will show dialog in UI")
+                    // Устанавливаем флаг, что нужно показать диалог
+                    prefs.edit().putBoolean("show_exact_alarm_dialog", true).apply()
+                } else {
+                    Log.d("MainActivity", "SCHEDULE_EXACT_ALARM permission request was already shown, skipping")
                 }
             } else {
                 Log.d("MainActivity", "SCHEDULE_EXACT_ALARM permission already granted")
@@ -212,14 +217,13 @@ private fun resolveWebSocketUrl(networkConfig: NetworkConfig?): String? {
 @Composable
 @OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class)
 fun TasksScreen() {
-    var tasks by remember { mutableStateOf<List<Task>>(emptyList()) }
     var error by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(false) }
     var groups by remember { mutableStateOf<Map<Int, String>>(emptyMap()) }
     var users by remember { mutableStateOf<List<com.homeplanner.api.UserSummary>>(emptyList()) }
     // Key used to trigger refresh via LaunchedEffect
     var refreshKey by remember { mutableStateOf(0) }
-    // Store all tasks separately from filtered tasks
+    // Store all tasks (offline-first: always loaded from cache, filtered by getVisibleTasks())
     var allTasks by remember { mutableStateOf<List<Task>>(emptyList()) }
     // Store last known today task IDs for offline mode
     var lastTodayTaskIds by remember { mutableStateOf<Set<Int>>(emptySet()) }
@@ -234,12 +238,21 @@ fun TasksScreen() {
     val context = LocalContext.current
     val reminderScheduler = remember(context) { ReminderScheduler(context) }
     
+    // Диалог для запроса разрешения на точные будильники
+    var showExactAlarmDialog by remember { mutableStateOf(false) }
+    val mainActivity = context as? MainActivity
+    
     // Network settings
     val networkSettings = remember { NetworkSettings(context) }
     val userSettings = remember { UserSettings(context) }
     val networkConfig by networkSettings.configFlow.collectAsState(initial = null)
     val apiBaseUrl = remember(networkConfig) {
-        networkConfig?.toApiBaseUrl()
+        try {
+            networkConfig?.toApiBaseUrl()?.takeIf { it.isNotBlank() }
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Failed to create API base URL from network config", e)
+            null
+        }
     }
     val selectedUser by userSettings.selectedUserFlow.collectAsState(initial = null)
     
@@ -253,13 +266,8 @@ fun TasksScreen() {
     var statusBarCompactMode by remember { mutableStateOf(getStatusBarCompactMode(context)) }
     
     // Connection status tracking
-    // При старте: если нет конфигурации - OFFLINE, иначе UNKNOWN до первой попытки
-    var connectionStatus by remember(networkConfig, apiBaseUrl) { 
-        mutableStateOf(
-            if (networkConfig == null || apiBaseUrl == null) ConnectionStatus.OFFLINE 
-            else ConnectionStatus.UNKNOWN
-        )
-    }
+    // Статус соединения не зависит от наличия конфигурации - только от реальных запросов к серверу
+    var connectionStatus by remember { mutableStateOf(ConnectionStatus.UNKNOWN) }
     var lastSuccessfulRequestTime by remember { mutableStateOf<Long?>(null) }
     var consecutiveFailures by remember { mutableStateOf(0) }
     var connectionCheckIntervalMinutes by remember { mutableStateOf(5) }
@@ -303,23 +311,22 @@ fun TasksScreen() {
     val syncService = remember(baseTasksApi, offlineRepository) {
         SyncService(offlineRepository, baseTasksApi, context)
     }
-    val tasksApiOffline = remember(baseTasksApi, offlineRepository, syncService, scope) {
-        TasksApiOffline(
-            baseTasksApi, 
-            offlineRepository, 
-            syncService, 
-            scope,
-            onSyncStateChanged = { syncing ->
-                isSyncing = syncing
-            },
-            onSyncSuccess = {
-                // Уведомление об успешной синхронизации для обновления статуса соединения
-                markSuccessfulRequest()
-            }
-        )
+    val localApi = remember(offlineRepository) {
+        LocalApi(offlineRepository)
     }
     
     // Load connection check interval from settings
+    // Проверяем, нужно ли показать диалог запроса разрешения на точные будильники
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val prefs = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+            val showDialog = prefs.getBoolean("show_exact_alarm_dialog", false)
+            if (showDialog) {
+                showExactAlarmDialog = true
+            }
+        }
+    }
+    
     LaunchedEffect(userSettings) {
         scope.launch {
             connectionCheckIntervalMinutes = userSettings.getConnectionCheckIntervalMinutes()
@@ -332,14 +339,8 @@ fun TasksScreen() {
         connectionCheckIntervalMinutes = connectionCheckIntervalFlow
     }
     // Function to update connection status based on time since last success
+    // Статус не зависит от наличия конфигурации - только от реальных запросов
     fun updateConnectionStatusByTime() {
-        val hasConfig = networkConfig != null && apiBaseUrl != null
-        if (!hasConfig) {
-            connectionStatus = ConnectionStatus.OFFLINE
-            isOnline = false
-            return
-        }
-        
         val now = System.currentTimeMillis()
         val intervalMs = connectionCheckIntervalMinutes * 60 * 1000L
         
@@ -528,7 +529,7 @@ fun TasksScreen() {
         // Sort tasks by ID for consistent hashing
         val sortedTasks = tasks.sortedBy { it.id }
         val data = sortedTasks.joinToString("|") { task ->
-            "${task.id}:${task.revision}:${task.title}:${task.reminderTime}:${task.completed}:${task.active}"
+            "${task.id}:${task.title}:${task.reminderTime}:${task.completed}:${task.active}"
         }
         val hashBytes = digest.digest(data.toByteArray(Charsets.UTF_8))
         return hashBytes.joinToString("") { "%02x".format(it) }
@@ -554,155 +555,239 @@ fun TasksScreen() {
         }
     }
 
-    suspend fun loadTasks() {
-        // Если сеть не настроена, всё равно пытаемся показать локальный кэш (офлайн-режим).
-        if (networkConfig == null || apiBaseUrl == null) {
-            android.util.Log.w(
-                "TasksScreen",
-                "loadTasks: networkConfig or apiBaseUrl is null, loading from offline cache only"
-            )
-            isLoading = true
-            // Не перетираем возможные ошибки сети здесь — это чисто локальная загрузка.
-            try {
-                val dayStartHour = 4
-                val cachedTasks = withContext(Dispatchers.IO) {
-                    // Обновляем рекуррентные задачи по новому дню даже без сети
-                    try {
-                        offlineRepository.updateRecurringTasksForNewDay(dayStartHour)
-                    } catch (e: Exception) {
-                        Log.e("TasksScreen", "loadTasks (offline-only): error during local new-day recalculation", e)
-                    }
-                    offlineRepository.loadTasksFromCache()
-                }
-
-                val uniqueTasks = cachedTasks.distinctBy { it.id }
-                allTasks = uniqueTasks
-                android.util.Log.d(
-                    "TasksScreen",
-                    "loadTasks (offline-only): Loaded ${uniqueTasks.size} tasks from cache"
-                )
-
-                val t = when {
-                    selectedTab != ViewTab.TODAY -> uniqueTasks
-                    selectedUser == null -> {
-                        android.util.Log.w(
-                            "TasksScreen",
-                            "loadTasks (offline-only): selected user is null, Today view will be empty"
-                        )
-                        emptyList()
-                    }
-                    else -> TodayTaskFilter.filterTodayTasks(
-                        tasks = uniqueTasks,
-                        selectedUser = selectedUser,
-                        dayStartHour = dayStartHour
-                    )
-                }
-
-                tasks = t
-                groups = emptyMap()
-                users = emptyList()
-
-                // Перепланировка напоминаний по локальным данным
-                try {
-                    reminderScheduler.cancelAll(allTasks)
-                    reminderScheduler.scheduleForTasks(allTasks)
-                } catch (e: Exception) {
-                    Log.e("TasksScreen", "loadTasks (offline-only): Scheduling error", e)
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("TasksScreen", "loadTasks (offline-only): Error loading tasks from cache", e)
-            } finally {
-                isLoading = false
-            }
-            return
+    /**
+     * Задача 1: Синхронизация локального кэша с сервером.
+     * Проверяет синхронность, при различиях запрашивает данные с сервера, кладёт в кэш.
+     * При внесении фактических изменений возвращает true для обновления UI.
+     * 
+     * @param tasksApi API для работы с задачами
+     * @return Pair<Boolean, List<UserSummary>> где Boolean - были ли изменения в кэше, List - обновлённые пользователи
+     */
+    suspend fun syncCacheWithServer(tasksApi: com.homeplanner.api.TasksApi): Pair<Boolean, List<com.homeplanner.api.UserSummary>> {
+        if (networkConfig == null || apiBaseUrl == null || !syncService.isOnline()) {
+            android.util.Log.d("TasksScreen", "syncCacheWithServer: Offline or no network config, skipping")
+            return Pair(false, emptyList())
         }
-
-        android.util.Log.d("TasksScreen", "loadTasks: Starting load from $apiBaseUrl")
+        
+        return withContext(Dispatchers.IO) {
+            try {
+                android.util.Log.d("TasksScreen", "syncCacheWithServer: Starting sync from $apiBaseUrl")
+                
+                // 1. Загружаем текущие данные из кэша для сравнения
+                val cachedTasks = offlineRepository.loadTasksFromCache()
+                val cachedHash = calculateTasksHash(cachedTasks)
+                
+                // 2. Запрашиваем данные с сервера
+                val serverTasks = try {
+                    tasksApi.getTasks(activeOnly = false)
+                } catch (e: Exception) {
+                    android.util.Log.w("TasksScreen", "syncCacheWithServer: Failed to fetch from server", e)
+                    return@withContext Pair(false, emptyList())
+                }
+                
+                val serverHash = calculateTasksHash(serverTasks)
+                
+                // 3. Загружаем группы и пользователей с сервера (всегда, даже если задачи совпадают)
+                val syncedGroups = try {
+                    GroupsApi(baseUrl = apiBaseUrl).getAll()
+                } catch (e: Exception) {
+                    android.util.Log.w("TasksScreen", "syncCacheWithServer: Failed to load groups", e)
+                    emptyMap()
+                }
+                
+                val syncedUsers = try {
+                    UsersApi(baseUrl = apiBaseUrl).getUsers()
+                } catch (e: Exception) {
+                    android.util.Log.w("TasksScreen", "syncCacheWithServer: Failed to load users", e)
+                    emptyList()
+                }
+                
+                // 4. Сохраняем группы в кэш
+                if (syncedGroups.isNotEmpty()) {
+                    saveGroupsToCache(context, syncedGroups)
+                }
+                
+                // 5. Проверяем синхронность задач
+                if (cachedHash == serverHash) {
+                    android.util.Log.d("TasksScreen", "syncCacheWithServer: Cache is in sync with server")
+                    // Синхронизируем очередь операций даже если данные совпадают
+                    try {
+                        syncService.syncQueue()
+                    } catch (e: Exception) {
+                        android.util.Log.w("TasksScreen", "syncCacheWithServer: Queue sync failed", e)
+                    }
+                    // Возвращаем пользователей даже если задачи не изменились
+                    return@withContext Pair(false, syncedUsers)
+                }
+                
+                // 6. Есть различия - сохраняем данные с сервера в кэш
+                android.util.Log.d("TasksScreen", "syncCacheWithServer: Cache differs from server, updating cache")
+                offlineRepository.saveTasksToCache(serverTasks)
+                
+                // 7. Синхронизируем очередь операций
+                try {
+                    syncService.syncQueue()
+                } catch (e: Exception) {
+                    android.util.Log.w("TasksScreen", "syncCacheWithServer: Queue sync failed", e)
+                }
+                
+                android.util.Log.d("TasksScreen", "syncCacheWithServer: Cache updated, ${serverTasks.size} tasks, ${syncedGroups.size} groups, ${syncedUsers.size} users")
+                return@withContext Pair(true, syncedUsers) // Были изменения
+            } catch (e: Exception) {
+                android.util.Log.e("TasksScreen", "syncCacheWithServer: Error during sync", e)
+                return@withContext Pair(false, emptyList())
+            }
+        }
+    }
+    
+    /**
+     * Задача 2: Обновление UI из кэша.
+     * Проверяет синхронность UI с кэшем, при наличии фактических расхождений обновляет UI.
+     * 
+     * @return true если UI был обновлён
+     */
+    suspend fun updateUIFromCache(): Boolean {
+        return withContext(Dispatchers.IO) {
+            try {
+                // 1. Загружаем данные из кэша
+                val cachedTasks = offlineRepository.loadTasksFromCache()
+                val uniqueCachedTasks = cachedTasks.distinctBy { it.id }
+                
+                // 2. Загружаем группы из кэша
+                val cachedGroups = loadGroupsFromCache(context)
+                
+                // 3. Проверяем синхронность UI с кэшем
+                val currentHash = calculateTasksHash(allTasks)
+                val cachedHash = calculateTasksHash(uniqueCachedTasks)
+                
+                if (currentHash == cachedHash && groups == cachedGroups) {
+                    android.util.Log.d("TasksScreen", "updateUIFromCache: UI is in sync with cache")
+                    return@withContext false
+                }
+                
+                // 4. Есть расхождения - обновляем UI, сохраняя более свежие данные
+                withContext(Dispatchers.Main) {
+                    // Объединяем данные из кэша с текущими allTasks
+                    val mergedTasks = uniqueCachedTasks.map { cachedTask ->
+                        val currentTask = allTasks.find { it.id == cachedTask.id }
+                        if (currentTask != null) {
+                            // Если есть оптимистичное обновление (completed/active отличается), сохраняем текущую
+                            if (currentTask.completed != cachedTask.completed || 
+                                currentTask.active != cachedTask.active) {
+                                android.util.Log.d("TasksScreen", "updateUIFromCache: Keeping current task id=${currentTask.id} (optimistic update)")
+                                currentTask
+                            } else {
+                                // Используем кэшированную задачу
+                                cachedTask
+                            }
+                        } else {
+                            // Новой задачи нет в текущих - добавляем
+                            cachedTask
+                        }
+                    }
+                    
+                    // Добавляем задачи, которых нет в кэше (локальные изменения, которые ещё не сохранены)
+                    val cachedTaskIds = mergedTasks.map { it.id }.toSet()
+                    val additionalTasks = allTasks.filter { it.id !in cachedTaskIds }
+                    allTasks = (mergedTasks + additionalTasks).distinctBy { it.id }
+                    
+                    // Обновляем группы только если они изменились
+                    if (cachedGroups.isNotEmpty() && groups != cachedGroups) {
+                        groups = cachedGroups
+                    }
+                    
+                    android.util.Log.d("TasksScreen", "updateUIFromCache: UI updated, ${allTasks.size} tasks, ${groups.size} groups")
+                }
+                
+                return@withContext true // UI был обновлён
+            } catch (e: Exception) {
+                android.util.Log.e("TasksScreen", "updateUIFromCache: Error updating UI from cache", e)
+                return@withContext false
+            }
+        }
+    }
+    
+    suspend fun loadTasks() {
+        // Offline-first: ВСЕГДА сначала загружаем из локального кэша для мгновенного отображения
+        android.util.Log.d("TasksScreen", "loadTasks: Starting offline-first load from cache")
         isLoading = true
         error = null
+        
         try {
-            // Использование TasksApiOffline и OfflineRepository для поддержки оффлайн-режима
-            val groupsApi = GroupsApi(baseUrl = apiBaseUrl)
-            val usersApi = UsersApi(baseUrl = apiBaseUrl)
-
-            // Перед возможным пересчётом проверяем, не наступил ли новый логический день.
-            // Если наступил и есть сеть — сначала синхронизируемся с сервером.
             val dayStartHour = 4
+            
+            // 1. Обновляем рекуррентные задачи по новому дню
             withContext(Dispatchers.IO) {
                 try {
                     val isNewDay = offlineRepository.updateRecurringTasksForNewDay(dayStartHour)
-                    if (isNewDay && syncService.isOnline()) {
+                    if (isNewDay && networkConfig != null && apiBaseUrl != null && syncService.isOnline()) {
                         // После локального пересчёта выполняем полную синхронизацию состояния с сервером
                         syncService.syncStateBeforeRecalculation()
+                    } else {
+                        // Новый день не наступил или нет интернета
                     }
                 } catch (e: Exception) {
                     Log.e("TasksScreen", "loadTasks: error during local new-day recalculation", e)
                 }
-                Unit
+            }
+            
+            // 2. Обновляем UI из кэша (мгновенное отображение)
+            val uiUpdated = updateUIFromCache()
+            android.util.Log.d("TasksScreen", "loadTasks: UI updated from cache: $uiUpdated")
+            
+            // 3. Синхронизация с сервером в фоне (не блокирует UI)
+            if (networkConfig != null && apiBaseUrl != null && syncService.isOnline()) {
+                scope.launch(Dispatchers.IO) {
+                    try {
+                        val groupsApi = GroupsApi(baseUrl = apiBaseUrl)
+                        val usersApi = UsersApi(baseUrl = apiBaseUrl)
+                        val syncResult = syncService.syncCacheWithServer(groupsApi, usersApi)
+                        
+                        if (syncResult.isSuccess) {
+                            val result = syncResult.getOrNull()
+                            val cacheUpdated = result?.cacheUpdated ?: false
+                            val syncedUsers = result?.users ?: emptyList()
+                            
+                            withContext(Dispatchers.Main) {
+                                // Обновляем пользователей всегда (даже если задачи не изменились)
+                                if (syncedUsers.isNotEmpty()) {
+                                    users = syncedUsers
+                                }
+                                if (result?.groups != null) {
+                                    saveGroupsToCache(context, result.groups)
+                                }
+                            }
+                            
+                            if (cacheUpdated) {
+                                // Кэш был обновлён — обновляем UI только если изменения влияют на текущий вид
+                                updateUIFromCache()
+                            }
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.w("TasksScreen", "loadTasks: Background sync failed", e)
+                    }
+                }
+            } else {
+                android.util.Log.d("TasksScreen", "loadTasks: No network config or offline, skipping background sync")
+                users = emptyList()
             }
 
-            // Always load all tasks, затем локально фильтруем для вкладки «Сегодня»
-            val loadedTasks = withContext(Dispatchers.IO) {
-                tasksApiOffline.getTasks(activeOnly = false)
-            }
-            val g = withContext(Dispatchers.IO) {
-                groupsApi.getAll()
-            }
-            val u = withContext(Dispatchers.IO) {
-                usersApi.getUsers()
-            }
-            
-            // Remove duplicates by ID (keep first occurrence)
-            val uniqueTasks = loadedTasks.distinctBy { it.id }
-            if (uniqueTasks.size != loadedTasks.size) {
-                android.util.Log.w("TasksScreen", "loadTasks: Found ${loadedTasks.size - uniqueTasks.size} duplicate tasks, removed")
-            }
-            
-            // Store ALL tasks for filtering when switching tabs (CRITICAL: before any filtering!)
-            // This ensures that allTasks always contains all tasks, not filtered ones
-            allTasks = uniqueTasks
-            android.util.Log.d("TasksScreen", "loadTasks: Stored ${uniqueTasks.size} tasks in allTasks")
-            
-            // Apply initial filtering based on current tab (only for tasks variable, allTasks stays unfiltered)
-            val t = when {
-                selectedTab != ViewTab.TODAY -> uniqueTasks
-                selectedUser == null -> {
-                    android.util.Log.w("TasksScreen", "loadTasks: selected user is null, Today view will be empty")
-                    emptyList()
-                }
-                else -> {
-                    TodayTaskFilter.filterTodayTasks(
-                        tasks = uniqueTasks,
-                        selectedUser = selectedUser,
-                        dayStartHour = dayStartHour
-                    )
-                }
-            }
-            
-            tasks = t
-            android.util.Log.d("TasksScreen", "loadTasks: Filtered to ${tasks.size} tasks for current tab (allTasks=${allTasks.size})")
-            groups = g
-            users = u
-            android.util.Log.d("TasksScreen", "loadTasks: Loaded ${tasks.size} tasks from cache (offline-first), ${groups.size} groups, ${users.size} users")
-            
-            // Note: markSuccessfulRequest() вызывается только при успешной синхронизации в фоне
-            // Здесь мы не ждем ответа сервера, так как работаем в offline-first режиме
-            
-            // Calculate and store local hash after loading
-            localDataHash = calculateTasksHash(tasks)
-            android.util.Log.d("TasksScreen", "loadTasks: Calculated local hash: ${localDataHash?.take(16)}...")
-            
-            // Reschedule reminders after data refresh (use all tasks for scheduling)
+            // 4. Перепланировка напоминаний по локальным данным
             try {
                 reminderScheduler.cancelAll(allTasks)
                 reminderScheduler.scheduleForTasks(allTasks)
             } catch (e: Exception) {
-                Log.e("TasksScreen", "Scheduling error", e)
+                Log.e("TasksScreen", "loadTasks: Scheduling error", e)
             }
+            
+            // 5. Calculate and store local hash after loading
+            localDataHash = calculateTasksHash(allTasks)
+            android.util.Log.d("TasksScreen", "loadTasks: Calculated local hash: ${localDataHash?.take(16)}...")
+            
         } catch (e: Exception) {
-            android.util.Log.e("TasksScreen", "loadTasks: Error loading tasks", e)
+            android.util.Log.e("TasksScreen", "loadTasks: Error loading tasks from cache", e)
             error = e.message ?: "Unknown error"
-            markFailedRequest()
+            // Не вызываем markFailedRequest() - это не реальный запрос к серверу, только локальная загрузка из кэша
         } finally {
             isLoading = false
             android.util.Log.d("TasksScreen", "loadTasks: Completed, isLoading=false")
@@ -715,7 +800,8 @@ fun TasksScreen() {
             android.util.Log.d("TasksScreen", "Network config changed, loading tasks from ${config.toApiBaseUrl()}")
             loadTasks()
         } else {
-            android.util.Log.d("TasksScreen", "Network config is null, not loading tasks")
+            android.util.Log.d("TasksScreen", "Network config is null, loading tasks from offline cache")
+            loadTasks() // Загружаем задачи из кэша даже в оффлайн режиме
         }
     }
 
@@ -776,9 +862,8 @@ fun TasksScreen() {
                 }
                 
                 // For other views, update locally
-                // Update both allTasks and tasks to keep them in sync
+                // Update allTasks (getVisibleTasks() will be recalculated on next recomposition)
                 val currentAllTasksList = allTasks.toMutableList()
-                val currentList = tasks.toMutableList()
                 var needsReschedule = false
                 when (action) {
                     "created", "updated" -> {
@@ -790,22 +875,13 @@ fun TasksScreen() {
                             val allIndex = currentAllTasksList.indexOfFirst { it.id == updatedTask.id }
                             if (allIndex >= 0) {
                                 currentAllTasksList[allIndex] = updatedTask
+                                android.util.Log.d("TasksScreen", "Task replaced at index $allIndex")
                             } else {
                                 currentAllTasksList.add(updatedTask)
-                            }
-                            
-                            // Update in tasks (filtered list)
-                            val index = currentList.indexOfFirst { it.id == updatedTask.id }
-                            if (index >= 0) {
-                                currentList[index] = updatedTask
-                                android.util.Log.d("TasksScreen", "Task replaced at index $index")
-                            } else {
-                                currentList.add(updatedTask)
                                 android.util.Log.d("TasksScreen", "Task added to list")
                             }
                             
                             allTasks = currentAllTasksList.toList()
-                            tasks = currentList.toList()
                             needsReschedule = true
                         } else {
                             android.util.Log.w("TasksScreen", "No taskJson for action=$action")
@@ -815,33 +891,34 @@ fun TasksScreen() {
                         if (taskJson != null) {
                             val updatedTask = parseTaskFromJson(taskJson)
                             
-                            // Update in allTasks
+                            // Update in allTasks только если задача существует
+                            // Проверяем, не была ли задача только что обновлена локально (чтобы избежать моргания)
                             val allIndex = currentAllTasksList.indexOfFirst { it.id == updatedTask.id }
                             if (allIndex >= 0) {
-                                currentAllTasksList[allIndex] = updatedTask
+                                val currentTask = currentAllTasksList[allIndex]
+                                // Обновляем только если данные действительно изменились
+                                // Это предотвращает моргание при дублирующих обновлениях
+                                if (updatedTask.completed != currentTask.completed ||
+                                    updatedTask.active != currentTask.active ||
+                                    updatedTask.reminderTime != currentTask.reminderTime ||
+                                    updatedTask.title != currentTask.title) {
+                                    currentAllTasksList[allIndex] = updatedTask
+                                    android.util.Log.d("TasksScreen", "WebSocket: Updated task id=${updatedTask.id}, completed=${updatedTask.completed}")
+                                } else {
+                                    android.util.Log.d("TasksScreen", "WebSocket: Skipping update for task id=${updatedTask.id} (no changes)")
+                                }
                             } else {
                                 currentAllTasksList.add(updatedTask)
                             }
                             
-                            // Update in tasks (filtered list)
-                            val index = currentList.indexOfFirst { it.id == updatedTask.id }
-                            if (index >= 0) {
-                                currentList[index] = updatedTask
-                            } else {
-                                currentList.add(updatedTask)
-                            }
-                            
                             allTasks = currentAllTasksList.toList()
-                            tasks = currentList.toList()
                         }
                     }
                     "deleted" -> {
                         taskId?.let { id ->
                             val removedFromAll = currentAllTasksList.removeAll { it.id == id }
-                            val removed = currentList.removeAll { it.id == id }
-                            android.util.Log.d("TasksScreen", "Task deleted: id=$id, removed from all=$removedFromAll, removed from filtered=$removed")
+                            android.util.Log.d("TasksScreen", "Task deleted: id=$id, removed from all=$removedFromAll")
                             allTasks = currentAllTasksList.toList()
-                            tasks = currentList.toList()
                             needsReschedule = true
                             
                             // Remove from marked list if it was there (task no longer exists)
@@ -866,8 +943,8 @@ fun TasksScreen() {
                 // Reschedule reminders if task was created, updated, or deleted
                 if (needsReschedule) {
                     try {
-                        reminderScheduler.cancelAll(tasks)
-                        reminderScheduler.scheduleForTasks(tasks)
+                        reminderScheduler.cancelAll(allTasks)
+                        reminderScheduler.scheduleForTasks(allTasks)
                     } catch (e: Exception) {
                         Log.e("TasksScreen", "Reschedule error after WebSocket update", e)
                     }
@@ -936,7 +1013,7 @@ fun TasksScreen() {
                                     scope.launch {
                                         // Wait a bit for tasks to update
                                         delay(100)
-                                        val needsRefresh = handleHashMismatch(serverHash, tasks)
+                                        val needsRefresh = handleHashMismatch(serverHash, allTasks)
                                         if (needsRefresh) {
                                             loadTasks()
                                         }
@@ -946,7 +1023,7 @@ fun TasksScreen() {
                                 // Standalone hash check message
                                 val serverHash = msg.getString("data_hash")
                                 scope.launch {
-                                    val needsRefresh = handleHashMismatch(serverHash, tasks)
+                                    val needsRefresh = handleHashMismatch(serverHash, allTasks)
                                     if (needsRefresh) {
                                         loadTasks()
                                     }
@@ -1159,38 +1236,55 @@ fun TasksScreen() {
                 }
             }
 
-            // Filter tasks based on current tab (recalculate when tab changes)
-            // This ensures correct filtering when switching tabs, especially in offline mode
-            val visibleTasks = remember(selectedTab, allTasks, lastTodayTaskIds, selectedUser) {
+            // Filter tasks based on current tab (computed directly when needed)
+            val isTodayTab = selectedTab == ViewTab.TODAY
+            val isTodayWithoutUser = isTodayTab && selectedUser == null
+            
+            // Helper function to get visible tasks for current tab with stable sorting
+            // Мемоизируем отсортированный список, чтобы избежать лишних перерисовок
+            val visibleTasks = remember(selectedTab, allTasks, selectedUser) {
                 when (selectedTab) {
                     ViewTab.TODAY -> {
-                        android.util.Log.d("TasksScreen", "visibleTasks: TODAY tab, allTasks.size=${allTasks.size}, lastTodayTaskIds.size=${lastTodayTaskIds.size}")
+                        android.util.Log.d("TasksScreen", "getVisibleTasks: TODAY tab, allTasks.size=${allTasks.size}")
                         if (selectedUser == null) {
-                            android.util.Log.w("TasksScreen", "visibleTasks: selected user is null, Today view will be empty")
+                            android.util.Log.w("TasksScreen", "getVisibleTasks: selected user is null, Today view will be empty")
                             emptyList()
                         } else {
-                            // Use cached today IDs for offline mode
-                            val todayIdsSet = lastTodayTaskIds
-                            if (todayIdsSet.isEmpty()) {
-                                android.util.Log.w("TasksScreen", "visibleTasks: No today IDs available, showing empty list")
-                                emptyList()
-                            } else {
-                                val filtered = allTasks.filter { it.id in todayIdsSet }
-                                android.util.Log.d("TasksScreen", "visibleTasks: Filtered ${allTasks.size} tasks to ${filtered.size} for Today view (IDs: ${todayIdsSet.take(5)})")
-                                filtered
-                            }
+                            // Use local filtering for Today view (works in both online and offline modes)
+                            val dayStartHour = 4
+                            val filtered = TodayTaskFilter.filterTodayTasks(
+                                tasks = allTasks,
+                                selectedUser = selectedUser,
+                                dayStartHour = dayStartHour
+                            )
+                            // Сортировка по хронологическому порядку (reminder_time), затем по ID для стабильности
+                            val sorted = filtered.sortedWith(compareBy(
+                                { task ->
+                                    try {
+                                        java.time.LocalDateTime.parse(task.reminderTime)
+                                    } catch (e: Exception) {
+                                        java.time.LocalDateTime.MIN
+                                    }
+                                },
+                                { it.id } // Вторичная сортировка по ID для стабильности
+                            ))
+                            android.util.Log.d("TasksScreen", "getVisibleTasks: Filtered ${allTasks.size} tasks to ${sorted.size} for Today view (chronological order)")
+                            sorted
                         }
                     }
                     ViewTab.ALL -> {
-                        android.util.Log.d("TasksScreen", "visibleTasks: ALL tab, showing all ${allTasks.size} tasks")
-                        allTasks
+                        // Сортировка по алфавитному порядку (title), затем по ID для стабильности
+                        val sorted = allTasks.sortedWith(compareBy(
+                            { it.title.lowercase() },
+                            { it.id } // Вторичная сортировка по ID для стабильности
+                        ))
+                        android.util.Log.d("TasksScreen", "getVisibleTasks: ALL tab, showing ${sorted.size} tasks (alphabetical order)")
+                        sorted
                     }
                     ViewTab.SETTINGS -> emptyList()
                     ViewTab.LOG -> emptyList()
                 }
             }
-            val isTodayTab = selectedTab == ViewTab.TODAY
-            val isTodayWithoutUser = isTodayTab && selectedUser == null
 
             when (selectedTab) {
                 ViewTab.SETTINGS -> {
@@ -1222,24 +1316,8 @@ fun TasksScreen() {
                 }
 
                 ViewTab.TODAY, ViewTab.ALL -> {
-                    if (networkConfig == null) {
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            Text(
-                                text = "⚠️ Подключение не настроено",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.error
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "Перейдите в Настройки для настройки подключения к серверу",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
-                    } else if (isTodayWithoutUser) {
+                    // Offline-first: задачи всегда загружаются из кэша, даже без networkConfig
+                    if (isTodayWithoutUser) {
                         Column(
                             modifier = Modifier.weight(1f),
                             verticalArrangement = Arrangement.Center,
@@ -1261,20 +1339,21 @@ fun TasksScreen() {
                                 Text("Открыть настройки")
                             }
                         }
-                    } else if (visibleTasks.isEmpty()) {
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            Text(text = "No tasks")
-                        }
                     } else {
-                        val activeList = visibleTasks.filter { it.active }
-                        val inactiveList = visibleTasks.filter { !it.active }
+                        if (visibleTasks.isEmpty()) {
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                Text(text = "No tasks")
+                            }
+                        } else {
+                            val activeList = visibleTasks.filter { it.active }
+                            val inactiveList = visibleTasks.filter { !it.active }
 
-                        LazyColumn(modifier = Modifier.weight(1f)) {
-                            items(activeList, key = { it.id }) { task ->
+                            LazyColumn(modifier = Modifier.weight(1f)) {
+                                items(activeList, key = { it.id }) { task ->
                                 val dismissState = rememberDismissState(
                                     confirmStateChange = { newValue ->
                                         when (newValue) {
@@ -1324,20 +1403,59 @@ fun TasksScreen() {
                                                 .fillMaxWidth(),
                                             verticalAlignment = Alignment.CenterVertically,
                                         ) {
-                                            fun formatTime(dt: String?): String {
+                                            // Форматирование времени/даты: для вкладки "Сегодня" - дата для просроченных, время для сегодняшних
+                                            // Для вкладки "Все задачи" - всегда время
+                                            fun formatTimeOrDate(dt: String?): String {
                                                 if (dt.isNullOrBlank()) return "--:--"
                                                 return try {
                                                     val ldt = LocalDateTime.parse(dt)
-                                                    ldt.format(DateTimeFormatter.ofPattern("HH:mm"))
+                                                    
+                                                    // Для вкладки "Сегодня" используем специальную логику
+                                                    if (selectedTab == ViewTab.TODAY) {
+                                                        val now = LocalDateTime.now()
+                                                        val dayStartHour = 4
+                                                        
+                                                        // Определяем начало сегодняшнего дня
+                                                        val todayStart = if (now.hour >= dayStartHour) {
+                                                            now.withHour(dayStartHour).withMinute(0).withSecond(0).withNano(0)
+                                                        } else {
+                                                            now.minusDays(1).withHour(dayStartHour).withMinute(0).withSecond(0).withNano(0)
+                                                        }
+                                                        
+                                                        // Определяем начало дня задачи
+                                                        val taskDayStart = if (ldt.hour >= dayStartHour) {
+                                                            ldt.withHour(dayStartHour).withMinute(0).withSecond(0).withNano(0)
+                                                        } else {
+                                                            ldt.minusDays(1).withHour(dayStartHour).withMinute(0).withSecond(0).withNano(0)
+                                                        }
+                                                        
+                                                        // Если задача просрочена (в прошлом), показываем дату
+                                                        if (taskDayStart.isBefore(todayStart)) {
+                                                            // Формат даты: "15.01"
+                                                            val dayOfMonth = ldt.dayOfMonth
+                                                            val month = ldt.month.value
+                                                            "$dayOfMonth.${String.format("%02d", month)}"
+                                                        } else {
+                                                            // Если задача сегодняшняя, показываем время
+                                                            ldt.format(DateTimeFormatter.ofPattern("HH:mm"))
+                                                        }
+                                                    } else {
+                                                        // Для вкладки "Все задачи" всегда показываем время
+                                                        ldt.format(DateTimeFormatter.ofPattern("HH:mm"))
+                                                    }
                                                 } catch (_: DateTimeParseException) {
                                                     val timePart = dt.substringAfter('T', dt)
                                                     if (timePart.length >= 5) timePart.substring(0, 5) else "--:--"
                                                 }
                                             }
-                                            val timeText = formatTime(task.reminderTime)
-                                            Text(timeText)
-                                            Spacer(modifier = Modifier.width(12.dp))
+                                            // Показываем время/дату только во вкладке "Сегодня"
+                                            if (selectedTab == ViewTab.TODAY) {
+                                                val timeText = formatTimeOrDate(task.reminderTime)
+                                                Text(timeText)
+                                                Spacer(modifier = Modifier.width(12.dp))
+                                            }
 
+                                            // Формат названия: "%group% %task%"
                                             val groupName = task.groupId?.let { groups[it] } ?: ""
                                             val titleWithGroup = if (groupName.isNotBlank()) {
                                                 "$groupName ${task.title}"
@@ -1384,41 +1502,75 @@ fun TasksScreen() {
                                                 )
                                                 if (isChecked && !checked) {
                                                     scope.launch {
-                                                        if (apiBaseUrl == null) return@launch
+                                                        // Offline-first: LocalApi работает даже без apiBaseUrl (обновляет локальный кэш)
                                                         try {
-                                                            appendLog("HTTP->", "POST /tasks/${task.id}/complete")
-                                                            val updated = withContext(Dispatchers.IO) {
-                                                                tasksApiOffline.completeTask(task.id)
+                                                            if (apiBaseUrl != null) {
+                                                                appendLog("HTTP->", "POST /tasks/${task.id}/complete")
+                                                            } else {
+                                                                appendLog("OFFLINE", "Completing task ${task.id} locally")
                                                             }
-                                                            markSuccessfulRequest()
+                                                            val updated = withContext(Dispatchers.IO) {
+                                                                localApi.completeTask(task.id)
+                                                            }
+                                                            // Явная синхронизация в фоне
+                                                            if (syncService.isOnline()) {
+                                                                scope.launch(Dispatchers.IO) {
+                                                                    syncService.syncQueue()
+                                                                    markSuccessfulRequest()
+                                                                }
+                                                            }
                                                             Log.d("TasksScreen", "Task completed: id=${updated.id}, completed=${updated.completed}")
-                                                            val newList = tasks.map { if (it.id == updated.id) updated else it }
-                                                            tasks = newList
-                                                            Log.d("TasksScreen", "Tasks list updated, new size=${newList.size}")
+                                                            // Обновляем allTasks только если задача действительно изменилась (предотвращаем моргание)
+                                                            val currentTask = allTasks.find { it.id == updated.id }
+                                                            if (currentTask == null || currentTask.completed != updated.completed) {
+                                                                val newAllTasks = allTasks.map { if (it.id == updated.id) updated else it }
+                                                                allTasks = newAllTasks
+                                                                Log.d("TasksScreen", "allTasks updated, new size=${newAllTasks.size}")
+                                                            } else {
+                                                                Log.d("TasksScreen", "Task already updated, skipping allTasks update to prevent flickering")
+                                                            }
                                                         } catch (e: Exception) {
                                                             Log.e("TasksScreen", "Error completing task", e)
-                                                            appendLog("HTTP<-", "error: ${e.message}")
-                                                            markFailedRequest()
+                                                            appendLog("ERROR", "error: ${e.message}")
+                                                            // Не вызываем markFailedRequest() - это оптимистичное обновление
+                                                            // Реальный статус сети обновится при следующей синхронизации
                                                             e.printStackTrace()
                                                         }
                                                     }
                                                 } else if (!isChecked && checked) {
                                                     scope.launch {
-                                                        if (apiBaseUrl == null) return@launch
+                                                        // Offline-first: LocalApi работает даже без apiBaseUrl (обновляет локальный кэш)
                                                         try {
-                                                            appendLog("HTTP->", "POST /tasks/${task.id}/uncomplete")
-                                                            val updated = withContext(Dispatchers.IO) {
-                                                                tasksApiOffline.uncompleteTask(task.id)
+                                                            if (apiBaseUrl != null) {
+                                                                appendLog("HTTP->", "POST /tasks/${task.id}/uncomplete")
+                                                            } else {
+                                                                appendLog("OFFLINE", "Uncompleting task ${task.id} locally")
                                                             }
-                                                            markSuccessfulRequest()
+                                                            val updated = withContext(Dispatchers.IO) {
+                                                                localApi.uncompleteTask(task.id)
+                                                            }
+                                                            // Явная синхронизация в фоне
+                                                            if (syncService.isOnline()) {
+                                                                scope.launch(Dispatchers.IO) {
+                                                                    syncService.syncQueue()
+                                                                    markSuccessfulRequest()
+                                                                }
+                                                            }
                                                             Log.d("TasksScreen", "Task uncompleted: id=${updated.id}, completed=${updated.completed}")
-                                                            val newList = tasks.map { if (it.id == updated.id) updated else it }
-                                                            tasks = newList
-                                                            Log.d("TasksScreen", "Tasks list updated, new size=${newList.size}")
+                                                            // Обновляем allTasks только если задача действительно изменилась (предотвращаем моргание)
+                                                            val currentTask = allTasks.find { it.id == updated.id }
+                                                            if (currentTask == null || currentTask.completed != updated.completed) {
+                                                                val newAllTasks = allTasks.map { if (it.id == updated.id) updated else it }
+                                                                allTasks = newAllTasks
+                                                                Log.d("TasksScreen", "allTasks updated, new size=${newAllTasks.size}")
+                                                            } else {
+                                                                Log.d("TasksScreen", "Task already updated, skipping allTasks update to prevent flickering")
+                                                            }
                                                         } catch (e: Exception) {
                                                             Log.e("TasksScreen", "Error uncompleting task", e)
-                                                            appendLog("HTTP<-", "error: ${e.message}")
-                                                            markFailedRequest()
+                                                            appendLog("ERROR", "error: ${e.message}")
+                                                            // Не вызываем markFailedRequest() - это оптимистичное обновление
+                                                            // Реальный статус сети обновится при следующей синхронизации
                                                             e.printStackTrace()
                                                         }
                                                     }
@@ -1491,20 +1643,59 @@ fun TasksScreen() {
                                                     .fillMaxWidth(),
                                                 verticalAlignment = Alignment.CenterVertically,
                                             ) {
-                                                fun formatTime(dt: String?): String {
+                                                // Форматирование времени/даты: для вкладки "Сегодня" - дата для просроченных, время для сегодняшних
+                                                // Для вкладки "Все задачи" - всегда время
+                                                fun formatTimeOrDate(dt: String?): String {
                                                     if (dt.isNullOrBlank()) return "--:--"
                                                     return try {
                                                         val ldt = LocalDateTime.parse(dt)
-                                                        ldt.format(DateTimeFormatter.ofPattern("HH:mm"))
+                                                        
+                                                        // Для вкладки "Сегодня" используем специальную логику
+                                                        if (selectedTab == ViewTab.TODAY) {
+                                                            val now = LocalDateTime.now()
+                                                            val dayStartHour = 4
+                                                            
+                                                            // Определяем начало сегодняшнего дня
+                                                            val todayStart = if (now.hour >= dayStartHour) {
+                                                                now.withHour(dayStartHour).withMinute(0).withSecond(0).withNano(0)
+                                                            } else {
+                                                                now.minusDays(1).withHour(dayStartHour).withMinute(0).withSecond(0).withNano(0)
+                                                            }
+                                                            
+                                                            // Определяем начало дня задачи
+                                                            val taskDayStart = if (ldt.hour >= dayStartHour) {
+                                                                ldt.withHour(dayStartHour).withMinute(0).withSecond(0).withNano(0)
+                                                            } else {
+                                                                ldt.minusDays(1).withHour(dayStartHour).withMinute(0).withSecond(0).withNano(0)
+                                                            }
+                                                            
+                                                            // Если задача просрочена (в прошлом), показываем дату
+                                                            if (taskDayStart.isBefore(todayStart)) {
+                                                                // Формат даты: "15.01"
+                                                                val dayOfMonth = ldt.dayOfMonth
+                                                                val month = ldt.month.value
+                                                                "$dayOfMonth.${String.format("%02d", month)}"
+                                                            } else {
+                                                                // Если задача сегодняшняя, показываем время
+                                                                ldt.format(DateTimeFormatter.ofPattern("HH:mm"))
+                                                            }
+                                                        } else {
+                                                            // Для вкладки "Все задачи" всегда показываем время
+                                                            ldt.format(DateTimeFormatter.ofPattern("HH:mm"))
+                                                        }
                                                     } catch (_: DateTimeParseException) {
                                                         val timePart = dt.substringAfter('T', dt)
                                                         if (timePart.length >= 5) timePart.substring(0, 5) else "--:--"
                                                     }
                                                 }
-                                                val timeText = formatTime(task.reminderTime)
-                                                Text(timeText)
-                                                Spacer(modifier = Modifier.width(12.dp))
+                                                // Показываем время/дату только во вкладке "Сегодня"
+                                                if (selectedTab == ViewTab.TODAY) {
+                                                    val timeText = formatTimeOrDate(task.reminderTime)
+                                                    Text(timeText)
+                                                    Spacer(modifier = Modifier.width(12.dp))
+                                                }
 
+                                                // Формат названия: "%group% %task%"
                                                 val groupName = task.groupId?.let { groups[it] } ?: ""
                                                 val titleWithGroup = if (groupName.isNotBlank()) {
                                                     "$groupName ${task.title}"
@@ -1551,39 +1742,65 @@ fun TasksScreen() {
                                                     )
                                                     if (isChecked && !checked) {
                                                         scope.launch {
-                                                            if (apiBaseUrl == null) return@launch
+                                                            // Offline-first: LocalApi работает даже без apiBaseUrl (обновляет локальный кэш)
                                                             try {
-                                                                appendLog("HTTP->", "POST /tasks/${task.id}/complete")
+                                                                if (apiBaseUrl != null) {
+                                                                    appendLog("HTTP->", "POST /tasks/${task.id}/complete")
+                                                                } else {
+                                                                    appendLog("OFFLINE", "Completing task ${task.id} locally")
+                                                                }
                                                                 val updated = withContext(Dispatchers.IO) {
-                                                                    tasksApiOffline.completeTask(task.id)
+                                                                    localApi.completeTask(task.id)
+                                                                }
+                                                                // Явная синхронизация в фоне
+                                                                if (syncService.isOnline()) {
+                                                                    scope.launch(Dispatchers.IO) {
+                                                                        syncService.syncQueue()
+                                                                        markSuccessfulRequest()
+                                                                    }
                                                                 }
                                                                 Log.d("TasksScreen", "Task completed: id=${updated.id}, completed=${updated.completed}")
-                                                                val newList = tasks.map { if (it.id == updated.id) updated else it }
-                                                                tasks = newList
-                                                                Log.d("TasksScreen", "Tasks list updated, new size=${newList.size}")
+                                                                // Обновляем allTasks, getVisibleTasks() пересчитается при следующей рекомпозиции
+                                                                val newAllTasks = allTasks.map { if (it.id == updated.id) updated else it }
+                                                                allTasks = newAllTasks
+                                                                Log.d("TasksScreen", "allTasks updated, new size=${newAllTasks.size}")
                                                             } catch (e: Exception) {
                                                                 Log.e("TasksScreen", "Error completing task", e)
-                                                                appendLog("HTTP<-", "error: ${e.message}")
-                                                                markFailedRequest()
+                                                                appendLog("ERROR", "error: ${e.message}")
+                                                                // Не вызываем markFailedRequest() - это оптимистичное обновление
+                                                                // Реальный статус сети обновится при следующей синхронизации
                                                                 e.printStackTrace()
                                                             }
                                                         }
                                                     } else if (!isChecked && checked) {
                                                         scope.launch {
-                                                            if (apiBaseUrl == null) return@launch
+                                                            // Offline-first: LocalApi работает даже без apiBaseUrl (обновляет локальный кэш)
                                                             try {
-                                                                appendLog("HTTP->", "POST /tasks/${task.id}/uncomplete")
+                                                                if (apiBaseUrl != null) {
+                                                                    appendLog("HTTP->", "POST /tasks/${task.id}/uncomplete")
+                                                                } else {
+                                                                    appendLog("OFFLINE", "Uncompleting task ${task.id} locally")
+                                                                }
                                                                 val updated = withContext(Dispatchers.IO) {
-                                                                    tasksApiOffline.uncompleteTask(task.id)
+                                                                    localApi.uncompleteTask(task.id)
+                                                                }
+                                                                // Явная синхронизация в фоне
+                                                                if (syncService.isOnline()) {
+                                                                    scope.launch(Dispatchers.IO) {
+                                                                        syncService.syncQueue()
+                                                                        markSuccessfulRequest()
+                                                                    }
                                                                 }
                                                                 Log.d("TasksScreen", "Task uncompleted: id=${updated.id}, completed=${updated.completed}")
-                                                                val newList = tasks.map { if (it.id == updated.id) updated else it }
-                                                                tasks = newList
-                                                                Log.d("TasksScreen", "Tasks list updated, new size=${newList.size}")
+                                                                // Обновляем allTasks, getVisibleTasks() пересчитается при следующей рекомпозиции
+                                                                val newAllTasks = allTasks.map { if (it.id == updated.id) updated else it }
+                                                                allTasks = newAllTasks
+                                                                Log.d("TasksScreen", "allTasks updated, new size=${newAllTasks.size}")
                                                             } catch (e: Exception) {
                                                                 Log.e("TasksScreen", "Error uncompleting task", e)
-                                                                appendLog("HTTP<-", "error: ${e.message}")
-                                                                markFailedRequest()
+                                                                appendLog("ERROR", "error: ${e.message}")
+                                                                // Не вызываем markFailedRequest() - это оптимистичное обновление
+                                                                // Реальный статус сети обновится при следующей синхронизации
                                                                 e.printStackTrace()
                                                             }
                                                         }
@@ -1593,6 +1810,7 @@ fun TasksScreen() {
                                         }
                                     )
                                 }
+                            }
                             }
                         }
                     }
@@ -1610,7 +1828,7 @@ fun TasksScreen() {
                                     return@launch
                                 }
                                 try {
-                                    val api = tasksApiOffline
+                                    val api = localApi
                                     if (editingTask == null) {
                                         val reminderForCreate = editReminderTime.ifBlank { formatIso(LocalDateTime.now()) }
                                         val template = Task(
@@ -1636,22 +1854,35 @@ fun TasksScreen() {
                                             finalTemplate = template.copy(recurrenceType = "daily")
                                         }
                                         if (titleError != null || reminderTimeError != null || recurrenceError != null) return@launch
-                                        // Create via API - WebSocket will handle UI update, but also refresh to ensure consistency
+                                        // Create via API (offline-first: оптимистичное обновление, синхронизация в фоне)
                                         try {
                                             val created = withContext(Dispatchers.IO) { api.createTask(finalTemplate, editAssignedUserIds) }
-                                            markSuccessfulRequest()
+                                            // Явная синхронизация в фоне
+                                            if (syncService.isOnline()) {
+                                                scope.launch(Dispatchers.IO) {
+                                                    syncService.syncQueue()
+                                                    markSuccessfulRequest()
+                                                }
+                                            }
                                             android.util.Log.d("TasksScreen", "Task created via API: id=${created.id}, refreshing list")
                                             // Refresh tasks list to ensure UI is updated
                                             // WebSocket message will also trigger update, but this ensures immediate update
                                             refreshKey += 1
                                         } catch (e: Exception) {
                                             Log.e("TasksScreen", "Error creating task", e)
-                                            markFailedRequest()
+                                            // Не вызываем markFailedRequest() - это оптимистичное обновление
+                                            // Реальный статус сети обновится при следующей синхронизации
                                         }
                                     } else {
                                         val base = editingTask!!
                                         // Для обновления также гарантируем наличие reminderTime
-                                        val reminderForUpdate = editReminderTime.ifBlank { base.reminderTime }
+                                        // Используем editReminderTime, если оно не пустое, иначе старое значение
+                                        val reminderForUpdate = if (editReminderTime.isNotBlank()) {
+                                            editReminderTime
+                                        } else {
+                                            base.reminderTime
+                                        }
+                                        android.util.Log.d("TasksScreen", "Updating task: id=${base.id}, oldReminderTime=${base.reminderTime}, newReminderTime=$reminderForUpdate, editReminderTime=$editReminderTime")
                                         val updatedPayload = base.copy(
                                             title = editTitle,
                                             description = if (editDescription.isBlank()) null else editDescription,
@@ -1673,22 +1904,30 @@ fun TasksScreen() {
                                             finalPayload = updatedPayload.copy(recurrenceType = "daily")
                                         }
                                         if (titleError != null || reminderTimeError != null || recurrenceError != null) return@launch
-                                        // Update via API - WebSocket will handle UI update, but also refresh to ensure consistency
+                                        android.util.Log.d("TasksScreen", "Saving task with reminderTime: ${finalPayload.reminderTime}")
+                                        // Update via API (offline-first: оптимистичное обновление, синхронизация в фоне)
                                         try {
-                                            val updated = withContext(Dispatchers.IO) { tasksApiOffline.updateTask(base.id, finalPayload, editAssignedUserIds) }
-                                            markSuccessfulRequest()
-                                            android.util.Log.d("TasksScreen", "Task updated via API: id=${updated.id}, refreshing list")
+                                            val updated = withContext(Dispatchers.IO) { localApi.updateTask(base.id, finalPayload, editAssignedUserIds) }
+                                            android.util.Log.d("TasksScreen", "Task updated via API: id=${updated.id}, reminderTime=${updated.reminderTime}, refreshing list")
+                                            // Явная синхронизация в фоне
+                                            if (syncService.isOnline()) {
+                                                scope.launch(Dispatchers.IO) {
+                                                    syncService.syncQueue()
+                                                    markSuccessfulRequest()
+                                                }
+                                            }
                                             // Refresh tasks list to ensure UI is updated
                                             // WebSocket message will also trigger update, but this ensures immediate update
                                             refreshKey += 1
                                         } catch (e: Exception) {
                                             Log.e("TasksScreen", "Error updating task", e)
-                                            markFailedRequest()
+                                            // Не вызываем markFailedRequest() - это оптимистичное обновление
+                                            // Реальный статус сети обновится при следующей синхронизации
                                         }
                                     }
                                 } catch (e: Exception) {
                                     Log.e("TasksScreen", "Save task error", e)
-                                    markFailedRequest()
+                                    // Не вызываем markFailedRequest() - это может быть локальная ошибка валидации
                                 } finally {
                                     showEditDialog = false
                                 }
@@ -1868,13 +2107,20 @@ fun TasksScreen() {
                                     if (apiBaseUrl == null) return@launch
                                     try {
                                         withContext(Dispatchers.IO) {
-                                            tasksApiOffline.deleteTask(toDelete)
+                                            localApi.deleteTask(toDelete)
                                         }
-                                        markSuccessfulRequest()
-                                        tasks = tasks.filter { it.id != toDelete }
+                                        // Явная синхронизация в фоне
+                                        if (syncService.isOnline()) {
+                                            scope.launch(Dispatchers.IO) {
+                                                syncService.syncQueue()
+                                                markSuccessfulRequest()
+                                            }
+                                        }
+                                        allTasks = allTasks.filter { it.id != toDelete }
                                     } catch (e: Exception) {
                                         Log.e("TasksScreen", "Delete error", e)
-                                        markFailedRequest()
+                                        // Не вызываем markFailedRequest() - это оптимистичное обновление
+                                        // Реальный статус сети обновится при следующей синхронизации
                                     } finally {
                                         showDeleteConfirm = false
                                         pendingDeleteTaskId = null
@@ -1891,6 +2137,60 @@ fun TasksScreen() {
                 )
             }
         }
+    }
+    
+    // Диалог запроса разрешения на точные будильники
+    if (showExactAlarmDialog && mainActivity != null) {
+        AlertDialog(
+            onDismissRequest = { 
+                showExactAlarmDialog = false
+                // Убираем флаг, чтобы диалог больше не показывался
+                val prefs = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+                prefs.edit()
+                    .putBoolean("show_exact_alarm_dialog", false)
+                    .putBoolean("exact_alarm_request_shown", true)
+                    .apply()
+            },
+            title = { Text("Разрешение на точные будильники") },
+            text = { 
+                Text("Для работы напоминаний приложению необходимо разрешение на использование точных будильников.\n\n" +
+                     "Нажмите \"Открыть настройки\" и включите переключатель \"Разрешить\" в разделе \"Alarms & reminders\".")
+            },
+            confirmButton = {
+                Button(onClick = {
+                    showExactAlarmDialog = false
+                    val prefs = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+                    prefs.edit()
+                        .putBoolean("show_exact_alarm_dialog", false)
+                        .putBoolean("exact_alarm_request_shown", true)
+                        .apply()
+                    
+                    // Открываем настройки для запроса разрешения
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        try {
+                            val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                            mainActivity.requestExactAlarmSettingsLauncher.launch(intent)
+                        } catch (e: Exception) {
+                            Log.e("MainActivity", "Failed to open exact alarm settings", e)
+                        }
+                    }
+                }) {
+                    Text("Открыть настройки")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { 
+                    showExactAlarmDialog = false
+                    val prefs = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+                    prefs.edit()
+                        .putBoolean("show_exact_alarm_dialog", false)
+                        .putBoolean("exact_alarm_request_shown", true)
+                        .apply()
+                }) {
+                    Text("Позже")
+                }
+            }
+        )
     }
 }
 
@@ -1919,7 +2219,7 @@ fun SettingsScreen(
     var connectionTestResult by remember { mutableStateOf<String?>(null) }
     var isLoadingTest by remember { mutableStateOf(false) }
     var showUserPickerDialog by remember { mutableStateOf(false) }
-    var users by remember(apiBaseUrl) { mutableStateOf<List<UserSummary>>(emptyList()) }
+    var users by remember { mutableStateOf<List<UserSummary>>(emptyList()) }
     var isUsersLoading by remember { mutableStateOf(false) }
     var usersError by remember { mutableStateOf<String?>(null) }
     
@@ -1946,7 +2246,10 @@ fun SettingsScreen(
     }
     
     suspend fun refreshUsersList() {
-        val base = apiBaseUrl ?: return
+        val base = apiBaseUrl?.takeIf { it.isNotBlank() } ?: run {
+            users = emptyList()
+            return
+        }
         usersError = null
         isUsersLoading = true
         try {
@@ -1955,20 +2258,35 @@ fun SettingsScreen(
                 api.getUsers()
             }
             users = fetched
+        } catch (e: IllegalArgumentException) {
+            // Некорректный URL - не критично, просто не загружаем пользователей
+            android.util.Log.w("SettingsScreen", "Invalid API URL for users: $base", e)
+            users = emptyList()
+            usersError = "Некорректный адрес API"
+        } catch (e: IllegalStateException) {
+            // Ошибка HTTP - не критично
+            android.util.Log.w("SettingsScreen", "HTTP error loading users from $base", e)
+            users = emptyList()
+            usersError = "Ошибка подключения: ${e.message}"
         } catch (e: Exception) {
+            // Любая другая ошибка
+            android.util.Log.e("SettingsScreen", "Error loading users from $base", e)
             users = emptyList()
             usersError = e.message ?: "Не удалось загрузить пользователей"
-            // Note: markFailedRequest() не вызываем здесь, так как это SettingsScreen, а функция определена в TasksScreen
         } finally {
             isUsersLoading = false
         }
     }
     
     LaunchedEffect(apiBaseUrl, networkConfig) {
-        if (apiBaseUrl != null) {
+        if (apiBaseUrl != null && apiBaseUrl.isNotBlank()) {
             refreshUsersList()
         } else {
+            // Очищаем список пользователей только если apiBaseUrl стал null/пустым
+            // и это не первая инициализация (чтобы не сбрасывать уже загруженных пользователей)
+            if (users.isNotEmpty()) {
             users = emptyList()
+            }
         }
     }
 
@@ -2556,6 +2874,42 @@ private fun getStatusBarCompactMode(context: Context): Boolean {
 private fun setStatusBarCompactMode(context: Context, enabled: Boolean) {
     val prefs = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
     prefs.edit().putBoolean("status_bar_compact_mode", enabled).apply()
+}
+
+// Кэширование групп для оффлайн режима
+private fun saveGroupsToCache(context: Context, groups: Map<Int, String>) {
+    val prefs = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+    val editor = prefs.edit()
+    // Очищаем старые группы
+    val oldKeys = prefs.all.keys.filter { it.startsWith("group_") && !it.startsWith("group_id_") && !it.startsWith("group_count") }
+    oldKeys.forEach { editor.remove(it) }
+    // Сохраняем каждую группу
+    groups.forEach { (id, name) ->
+        editor.putString("group_$id", name)
+    }
+    editor.apply()
+    android.util.Log.d("TasksScreen", "Saved ${groups.size} groups to cache")
+}
+
+private fun loadGroupsFromCache(context: Context): Map<Int, String> {
+    val prefs = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+    val groups = mutableMapOf<Int, String>()
+    
+    // Загружаем все ключи, начинающиеся с "group_" (но не "group_id_" или "group_count")
+    val allKeys = prefs.all.keys.filter { it.startsWith("group_") && !it.startsWith("group_id_") && !it.startsWith("group_count") }
+    allKeys.forEach { key ->
+        val idStr = key.removePrefix("group_")
+        val id = idStr.toIntOrNull()
+        if (id != null) {
+            val name = prefs.getString(key, null)
+            if (name != null) {
+                groups[id] = name
+            }
+        }
+    }
+    
+    android.util.Log.d("TasksScreen", "Loaded ${groups.size} groups from cache")
+    return groups
 }
 
 

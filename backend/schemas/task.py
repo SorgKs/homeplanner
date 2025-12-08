@@ -15,7 +15,6 @@ class TaskBase(BaseModel):
 
     title: str = Field(..., min_length=1, max_length=255, description="Task title")
     description: str | None = Field(None, description="Task description")
-    # Revision is not part of base to avoid forcing it for create
     task_type: TaskType = Field(TaskType.ONE_TIME, description="Type of task scheduling")
     recurrence_type: RecurrenceType | None = Field(
         None, description="Type of recurrence (for recurring tasks)"
@@ -37,7 +36,6 @@ class TaskUpdate(BaseModel):
 
     title: str | None = Field(None, min_length=1, max_length=255)
     description: str | None = None
-    revision: int | None = Field(None, description="Expected task revision for optimistic concurrency control")
     task_type: TaskType | None = None
     recurrence_type: RecurrenceType | None = None
     recurrence_interval: int | None = Field(None, description="Recurrence interval (for recurring tasks only)")
@@ -94,7 +92,6 @@ class TaskResponse(TaskBase):
     """Schema for task response."""
 
     id: int
-    revision: int
     active: bool  # Task is active (replaces is_active)
     completed: bool  # Task is completed (replaces last_completed_at)
     task_type: TaskType

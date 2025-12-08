@@ -123,7 +123,7 @@ class SyncServiceTest {
         
         // Добавляем операцию обновления в очередь
         val updatedTask = sampleTask.copy(title = "Обновленная задача")
-        repository.addToSyncQueue("update", "task", sampleTask.id, updatedTask, sampleTask.revision)
+        repository.addToSyncQueue("update", "task", sampleTask.id, updatedTask)
         
         // Настраиваем успешный ответ сервера
         server.enqueue(
