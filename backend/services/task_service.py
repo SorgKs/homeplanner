@@ -119,12 +119,33 @@ class TaskService:
         return [user_map[user_id] for user_id in user_ids]
 
     @staticmethod
-    def create_task(db: Session, task_data: "TaskCreate") -> Task:
-        """Create a new recurring task."""
+    def create_task(db: Session, task_data: "TaskCreate", timestamp: datetime | None = None) -> Task:
+        """Create a new recurring task.
+        
+        Args:
+            db: Database session.
+            task_data: Task creation data.
+            timestamp: Optional client timestamp for sync operations.
+                      If provided, used for both created_at and updated_at.
+                      If None, uses server current time (default behavior).
+        """
+        import logging
+        logger = logging.getLogger("homeplanner.tasks")
+        
         from backend.models.task import RecurrenceType, TaskType
         
         payload = task_data.model_dump(exclude={"assigned_user_ids"})
         task = Task(**payload)
+        
+        # Если передан timestamp от клиента (для sync операций), используем его
+        # Иначе будут использованы дефолтные значения из модели (get_current_time)
+        if timestamp is not None:
+            task.created_at = timestamp
+            task.updated_at = timestamp
+        else:
+            # Логируем предупреждение, если timestamp не передан (для синхронизации он обязателен)
+            logger.warning("create_task: timestamp not provided, using server current time")
+        
         if task_data.assigned_user_ids:
             task.assignees = TaskService._get_users_by_ids(db, task_data.assigned_user_ids)
         
@@ -263,8 +284,17 @@ class TaskService:
         return TaskService.get_today_tasks(db, user_id=None)
 
     @staticmethod
-    def update_task(db: Session, task_id: int, task_data: "TaskUpdate") -> Task | None:
-        """Update a task."""
+    def update_task(db: Session, task_id: int, task_data: "TaskUpdate", timestamp: datetime | None = None) -> Task | None:
+        """Update a task.
+        
+        Args:
+            db: Database session.
+            task_id: Task identifier.
+            task_data: Task update data.
+            timestamp: Optional client timestamp for sync operations.
+                     If provided, used for updated_at.
+                     If None, uses server current time (default behavior).
+        """
         task = (
             db.query(Task)
             .options(selectinload(Task.assignees))
@@ -346,6 +376,16 @@ class TaskService:
                 old_values["assigned_user_ids"] = old_ids
         
         # reminder_time is now required (set in schema)
+        
+        # Если передан timestamp от клиента (для sync операций), используем его для updated_at
+        # Иначе будет использовано дефолтное значение из модели (get_current_time)
+        if timestamp is not None:
+            task.updated_at = timestamp
+        else:
+            # Логируем предупреждение, если timestamp не передан (для синхронизации он обязателен)
+            import logging
+            logger = logging.getLogger("homeplanner.tasks")
+            logger.warning("update_task: timestamp not provided, using server current time")
 
         db.commit()
         db.refresh(task)
@@ -499,8 +539,16 @@ class TaskService:
         return task
 
     @staticmethod
-    def delete_task(db: Session, task_id: int) -> bool:
-        """Delete a task."""
+    def delete_task(db: Session, task_id: int, timestamp: datetime | None = None) -> bool:
+        """Delete a task.
+        
+        Args:
+            db: Database session.
+            task_id: Task identifier.
+            timestamp: Optional client timestamp for sync operations.
+                     If provided, used for updated_at before deletion.
+                     If None, uses server current time (default behavior).
+        """
         task = (
             db.query(Task)
             .options(selectinload(Task.assignees))
@@ -530,12 +578,21 @@ class TaskService:
         }
         metadata_json = json.dumps(metadata)
         
+        # Если передан timestamp от клиента (для sync операций), обновляем updated_at перед удалением
+        if timestamp is not None:
+            task.updated_at = timestamp
+        else:
+            # Логируем предупреждение, если timestamp не передан (для синхронизации он обязателен)
+            import logging
+            logger = logging.getLogger("homeplanner.tasks")
+            logger.warning("delete_task: timestamp not provided, using server current time")
+        
         # Create history entry manually to ensure it's saved with task_id before deletion
         from backend.models.task_history import TaskHistory
         history_entry = TaskHistory(
             task_id=saved_task_id,
             action=TaskHistoryAction.DELETED,
-            action_timestamp=get_current_time(),
+            action_timestamp=timestamp if timestamp is not None else get_current_time(),
             comment=comment,
             meta_data=metadata_json
         )
@@ -551,11 +608,18 @@ class TaskService:
         return True
 
     @staticmethod
-    def complete_task(db: Session, task_id: int) -> Task | None:
+    def complete_task(db: Session, task_id: int, timestamp: datetime | None = None) -> Task | None:
         """Mark a task as completed and update next due date.
         
         If task is due today or overdue, the date is not updated immediately.
         Date will be updated only after day_start_hour (next day) via get_all_tasks.
+        
+        Args:
+            db: Database session.
+            task_id: Task identifier.
+            timestamp: Optional client timestamp for sync operations.
+                     If provided, used for updated_at.
+                     If None, uses server current time (default behavior).
         """
         from backend.models.task import TaskType
 
@@ -580,6 +644,16 @@ class TaskService:
         if task.task_type == TaskType.ONE_TIME:
             # One-time tasks are simply marked inactive upon completion.
             task.active = False
+        
+        # Если передан timestamp от клиента (для sync операций), используем его для updated_at
+        # Иначе будет использовано дефолтное значение из модели (get_current_time)
+        if timestamp is not None:
+            task.updated_at = timestamp
+        else:
+            # Логируем предупреждение, если timestamp не передан (для синхронизации он обязателен)
+            import logging
+            logger = logging.getLogger("homeplanner.tasks")
+            logger.warning("complete_task: timestamp not provided, using server current time")
 
         db.commit()
         db.refresh(task)
@@ -591,12 +665,19 @@ class TaskService:
         return task
 
     @staticmethod
-    def uncomplete_task(db: Session, task_id: int) -> Task | None:
+    def uncomplete_task(db: Session, task_id: int, timestamp: datetime | None = None) -> Task | None:
         """Revert task completion (cancel confirmation).
 
         For one-time tasks, mark task as active again.
         For recurring and interval tasks, clear completed flag.
         Restores reminder_time to the original date from history (iteration_date of last confirmed action).
+        
+        Args:
+            db: Database session.
+            task_id: Task identifier.
+            timestamp: Optional client timestamp for sync operations.
+                     If provided, used for updated_at.
+                     If None, uses server current time (default behavior).
         """
         from backend.models.task import TaskType
         from backend.models.task_history import TaskHistory, TaskHistoryAction
@@ -631,10 +712,20 @@ class TaskService:
         if task.task_type == TaskType.ONE_TIME:
             # Make one-time task active again
             task.active = True
+        
+        # Если передан timestamp от клиента (для sync операций), используем его для updated_at
+        # Иначе будет использовано дефолтное значение из модели (get_current_time)
+        if timestamp is not None:
+            task.updated_at = timestamp
+        else:
+            # Логируем предупреждение, если timestamp не передан (для синхронизации он обязателен)
+            import logging
+            logger = logging.getLogger("homeplanner.tasks")
+            logger.warning("uncomplete_task: timestamp not provided, using server current time")
 
         db.commit()
         db.refresh(task)
-
+        
         # Log unconfirmation to history
         from backend.services.task_history_service import TaskHistoryService
         TaskHistoryService.log_task_unconfirmed(db, task.id, task.reminder_time)

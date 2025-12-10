@@ -3,7 +3,7 @@
 > **Примечание:** Данный документ описывает архитектуру **Android APK приложения** (клиентская часть), а не всего проекта HomePlanner. Для общей архитектуры проекта см. [ARCHITECTURE_vNext.md](ARCHITECTURE_vNext.md).
 
 > **Статус архитектуры:** ✅ **Реализована**  
-> **Миграция:** Завершена (см. [MIGRATION_TO_LOCAL_API.md](MIGRATION_TO_LOCAL_API.md))
+> **Миграция:** Завершена (документ в архиве: [archive/MIGRATION_TO_LOCAL_API.md](archive/MIGRATION_TO_LOCAL_API.md))
 
 ## Обзор
 
@@ -866,8 +866,9 @@ UI обновляется **только по триггерам (события
 
 ## Миграция с TasksApiOffline на LocalApi
 
-> **Статус:** ✅ **Завершена**  
-> **Подробный план миграции:** См. [MIGRATION_TO_LOCAL_API.md](MIGRATION_TO_LOCAL_API.md)
+> **Статус:** ✅ **Завершена** (2025-01-27)  
+> **Подробный план миграции:** См. [archive/MIGRATION_TO_LOCAL_API.md](archive/MIGRATION_TO_LOCAL_API.md)  
+> **Результат:** `TasksApiOffline` успешно заменён на `LocalApi` + `SyncService`, файл удалён
 
 ## Преимущества новой архитектуры
 

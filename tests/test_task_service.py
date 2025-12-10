@@ -85,7 +85,7 @@ class TestTaskService:
             reminder_time=today,
         )
         
-        task = TaskService.create_task(db_session, task_data)
+        task = TaskService.create_task(db_session, task_data, timestamp=get_current_time())
         
         assert task.id is not None
         assert task.title == "Test Task"
@@ -103,7 +103,7 @@ class TestTaskService:
             reminder_time=today,
         )
         
-        created_task = TaskService.create_task(db_session, task_data)
+        created_task = TaskService.create_task(db_session, task_data, timestamp=get_current_time())
         task = TaskService.get_task(db_session, created_task.id)
         
         assert task is not None
@@ -130,8 +130,8 @@ class TestTaskService:
             reminder_time=today + timedelta(days=1),
         )
         
-        TaskService.create_task(db_session, task1_data)
-        TaskService.create_task(db_session, task2_data)
+        TaskService.create_task(db_session, task1_data, timestamp=get_current_time())
+        TaskService.create_task(db_session, task2_data, timestamp=get_current_time())
         
         tasks = TaskService.get_all_tasks(db_session)
         
@@ -154,8 +154,8 @@ class TestTaskService:
             reminder_time=today,
         )
         
-        task1 = TaskService.create_task(db_session, task1_data)
-        task2 = TaskService.create_task(db_session, task2_data)
+        task1 = TaskService.create_task(db_session, task1_data, timestamp=get_current_time())
+        task2 = TaskService.create_task(db_session, task2_data, timestamp=get_current_time())
         
         # Update task2 to be inactive
         update_data = TaskUpdate(active=False)
@@ -175,7 +175,7 @@ class TestTaskService:
             reminder_time=today,
         )
         
-        created_task = TaskService.create_task(db_session, task_data)
+        created_task = TaskService.create_task(db_session, task_data, timestamp=get_current_time())
         
         update_data = TaskUpdate(title="Updated Title")
         updated_task = TaskService.update_task(db_session, created_task.id, update_data)
@@ -199,7 +199,7 @@ class TestTaskService:
             reminder_time=today,
         )
         
-        created_task = TaskService.create_task(db_session, task_data)
+        created_task = TaskService.create_task(db_session, task_data, timestamp=get_current_time())
         success = TaskService.delete_task(db_session, created_task.id)
         
         assert success is True
@@ -221,7 +221,7 @@ class TestTaskService:
             reminder_time=today,
         )
         
-        created_task = TaskService.create_task(db_session, task_data)
+        created_task = TaskService.create_task(db_session, task_data, timestamp=get_current_time())
         completed_task = TaskService.complete_task(db_session, created_task.id)
         
         assert completed_task is not None
@@ -241,7 +241,7 @@ class TestTaskService:
             reminder_time=today,
         )
         
-        created_task = TaskService.create_task(db_session, task_data)
+        created_task = TaskService.create_task(db_session, task_data, timestamp=get_current_time())
         completed_task = TaskService.complete_task(db_session, created_task.id)
         
         assert completed_task is not None
@@ -262,7 +262,7 @@ class TestTaskService:
             reminder_time=tomorrow,
         )
         
-        created_task = TaskService.create_task(db_session, task_data)
+        created_task = TaskService.create_task(db_session, task_data, timestamp=get_current_time())
         completed_task = TaskService.complete_task(db_session, created_task.id)
         
         assert completed_task is not None
@@ -280,7 +280,7 @@ class TestTaskService:
             reminder_time=today,
         )
         
-        created_task = TaskService.create_task(db_session, task_data)
+        created_task = TaskService.create_task(db_session, task_data, timestamp=get_current_time())
         completed_task = TaskService.complete_task(db_session, created_task.id)
         
         assert completed_task is not None
@@ -300,7 +300,7 @@ class TestTaskService:
             recurrence_interval=1,
             reminder_time=today_9,
         )
-        created_task = TaskService.create_task(db_session, task_data)
+        created_task = TaskService.create_task(db_session, task_data, timestamp=get_current_time())
         # Подтверждаем — дата не должна меняться сразу
         completed_task = TaskService.complete_task(db_session, created_task.id)
         assert completed_task is not None
@@ -412,9 +412,9 @@ class TestTaskService:
             # active defaults to True
         )
         
-        TaskService.create_task(db_session, task1_data)
-        TaskService.create_task(db_session, task2_data)
-        TaskService.create_task(db_session, task3_data)
+        TaskService.create_task(db_session, task1_data, timestamp=get_current_time())
+        TaskService.create_task(db_session, task2_data, timestamp=get_current_time())
+        TaskService.create_task(db_session, task3_data, timestamp=get_current_time())
         
         upcoming_tasks = TaskService.get_upcoming_tasks(db_session, days_ahead=3)
         
@@ -437,7 +437,7 @@ class TestTaskService:
             # active defaults to True
         )
 
-        TaskService.create_task(db_session, future_recurring)
+        TaskService.create_task(db_session, future_recurring, timestamp=get_current_time())
 
         today_task_ids = TaskService.get_today_task_ids(db_session)
 
@@ -455,7 +455,7 @@ class TestTaskService:
             task_type=TaskType.ONE_TIME,
             reminder_time=past,
         )
-        created = TaskService.create_task(db_session, task_data)
+        created = TaskService.create_task(db_session, task_data, timestamp=get_current_time())
 
         # Имитация завершения и деактивации
         update = TaskUpdate(active=False, completed=True)
@@ -476,7 +476,7 @@ class TestTaskService:
             task_type=TaskType.ONE_TIME,
             reminder_time=future,
         )
-        created = TaskService.create_task(db_session, task_data)
+        created = TaskService.create_task(db_session, task_data, timestamp=get_current_time())
 
         # Завершаем задачу (complete_task также сделает её неактивной)
         completed = TaskService.complete_task(db_session, created.id)
@@ -497,7 +497,7 @@ class TestTaskService:
             task_type=TaskType.ONE_TIME,
             reminder_time=future,
         )
-        created = TaskService.create_task(db_session, task_data)
+        created = TaskService.create_task(db_session, task_data, timestamp=get_current_time())
 
         today_task_ids = TaskService.get_today_task_ids(db_session)
         assert created.id not in today_task_ids

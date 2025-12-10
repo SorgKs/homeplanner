@@ -88,6 +88,7 @@ def create_task(
     db: Session = Depends(get_db),
 ) -> TaskResponse:
     """Create a new recurring task."""
+    # Для обычного POST timestamp не передается - используется текущее время сервера (дефолт)
     created_task = TaskService.create_task(db, task)
     logger.info("HTTP create: task_id=%s", created_task.id)
     broadcast_task_update({
@@ -181,30 +182,30 @@ def sync_task_queue(
         payload.operations, key=lambda op: op.timestamp
     )
 
-    # Отслеживаем задачи, созданные в этом батче, чтобы не применять проверку конфликта
-    # для UPDATE операций на только что созданные задачи
-    tasks_created_in_batch: set[int] = set()
-
     for op in operations:
         try:
             if op.operation == TaskOperationType.CREATE:
                 if op.payload is None:
                     continue
                 create_data = TaskCreate.model_validate(op.payload)
-                # Вызываем эндпоинт напрямую - он сам вызовет сервис и отправит WebSocket
-                created_task_response = create_task(create_data, db)
-                # Запоминаем ID созданной задачи для последующих операций в батче
-                tasks_created_in_batch.add(created_task_response.id)
+                # В батче каждая операция имеет обязательный timestamp от клиента
+                # Используем его для установки created_at и updated_at создаваемой задачи
+                created_task = TaskService.create_task(db, create_data, timestamp=op.timestamp)
+                # Отправляем WebSocket уведомление
+                broadcast_task_update({
+                    "type": "task_update",
+                    "action": "created",
+                    "task_id": created_task.id,
+                    "task": TaskResponse.model_validate(created_task).model_dump(mode="json")
+                })
             elif op.operation == TaskOperationType.UPDATE:
                 if op.task_id is None or op.payload is None:
                     continue
                 # Проверка конфликта по времени обновления
                 # Сервер - источник истины: если серверная версия задачи новее, чем timestamp операции,
                 # операция пропускается, серверная версия остается актуальной
-                # ИСКЛЮЧЕНИЕ: если задача была создана в этом же батче, не применяем проверку конфликта,
-                # так как задача только что создана и её updated_at установлен текущим временем сервера
                 task = TaskService.get_task(db, op.task_id)
-                if task and op.task_id not in tasks_created_in_batch:
+                if task:
                     # Нормализуем timezone для сравнения: система использует только локальное время
                     # Убираем timezone если есть (на случай, если клиент отправил с timezone)
                     task_updated_at = task.updated_at.replace(tzinfo=None) if task.updated_at.tzinfo else task.updated_at
@@ -221,23 +222,56 @@ def sync_task_queue(
                         # Пропускаем операцию - серверная версия остается актуальной (сервер - источник истины)
                         continue
                 update_data = TaskUpdate.model_validate(op.payload)
-                # Вызываем эндпоинт напрямую - он сам вызовет сервис и отправит WebSocket
-                update_task(op.task_id, update_data, db)
+                # В батче каждая операция имеет обязательный timestamp от клиента
+                # Вызываем сервис напрямую с timestamp для установки updated_at
+                updated_task = TaskService.update_task(db, op.task_id, update_data, timestamp=op.timestamp)
+                if updated_task:
+                    # Отправляем WebSocket уведомление
+                    broadcast_task_update({
+                        "type": "task_update",
+                        "action": "updated",
+                        "task_id": updated_task.id,
+                        "task": TaskResponse.model_validate(updated_task).model_dump(mode="json")
+                    })
             elif op.operation == TaskOperationType.DELETE:
                 if op.task_id is None:
                     continue
-                # Вызываем эндпоинт напрямую - он сам вызовет сервис и отправит WebSocket
-                delete_task(op.task_id, db)
+                # В батче каждая операция имеет обязательный timestamp от клиента
+                # Вызываем сервис напрямую с timestamp
+                success = TaskService.delete_task(db, op.task_id, timestamp=op.timestamp)
+                if success:
+                    # Отправляем WebSocket уведомление
+                    broadcast_task_update({
+                        "type": "task_update",
+                        "action": "deleted",
+                        "task_id": op.task_id
+                    })
             elif op.operation == TaskOperationType.COMPLETE:
                 if op.task_id is None:
                     continue
-                # Вызываем эндпоинт напрямую - он сам вызовет сервис и отправит WebSocket
-                complete_task(op.task_id, db)
+                # В батче каждая операция имеет обязательный timestamp от клиента
+                # Вызываем сервис напрямую с timestamp для установки updated_at
+                completed_task = TaskService.complete_task(db, op.task_id, timestamp=op.timestamp)
+                if completed_task:
+                    # Отправляем WebSocket уведомление
+                    broadcast_task_update({
+                        "type": "task_update",
+                        "action": "completed",
+                        "task_id": completed_task.id
+                    })
             elif op.operation == TaskOperationType.UNCOMPLETE:
                 if op.task_id is None:
                     continue
-                # Вызываем эндпоинт напрямую - он сам вызовет сервис и отправит WebSocket
-                uncomplete_task(op.task_id, db)
+                # В батче каждая операция имеет обязательный timestamp от клиента
+                # Вызываем сервис напрямую с timestamp для установки updated_at
+                uncompleted_task = TaskService.uncomplete_task(db, op.task_id, timestamp=op.timestamp)
+                if uncompleted_task:
+                    # Отправляем WebSocket уведомление
+                    broadcast_task_update({
+                        "type": "task_update",
+                        "action": "uncompleted",
+                        "task_id": uncompleted_task.id
+                    })
         except Exception as exc:  # Логируем, но продолжаем остальные операции
             logger.error(
                 "sync-queue: failed to apply op %s for task %s: %s",

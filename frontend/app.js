@@ -1291,7 +1291,14 @@ function filterAndRenderTasks() {
         } else if (currentView === 'all') {
             userIdToFilter = allTasksUserFilterId; // Опциональный фильтр для "Все задачи"
         }
-        const matchesUser = !userIdToFilter || (task.assigned_user_ids || []).includes(userIdToFilter);
+        // Показываем задачи, если:
+        // 1. Фильтр не установлен (показываем все)
+        // 2. Задача назначена выбранному пользователю
+        // 3. Задача не назначена никому (пустой массив assigned_user_ids)
+        const taskAssignedIds = task.assigned_user_ids || [];
+        const matchesUser = !userIdToFilter || 
+            taskAssignedIds.includes(userIdToFilter) || 
+            taskAssignedIds.length === 0;
         
         return matchesSearch && matchesFilter && matchesUser;
     });

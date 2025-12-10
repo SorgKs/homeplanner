@@ -41,8 +41,15 @@ object TodayTaskFilter {
 
         return tasks.filter { task ->
             // Фильтрация по пользователю (если задан)
-            if (selectedUser != null && !task.assignedUserIds.contains(selectedUser.id)) {
-                return@filter false
+            // Показываем задачи, если:
+            // 1. Пользователь не выбран (показываем все)
+            // 2. Задача назначена выбранному пользователю
+            // 3. Задача не назначена никому (пустой список assignedUserIds)
+            if (selectedUser != null) {
+                val taskAssignedIds = task.assignedUserIds
+                if (taskAssignedIds.isNotEmpty() && !taskAssignedIds.contains(selectedUser.id)) {
+                    return@filter false
+                }
             }
 
             val reminderLdt = parseReminderTime(task.reminderTime) ?: return@filter false
