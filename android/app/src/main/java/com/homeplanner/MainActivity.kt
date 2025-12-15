@@ -85,6 +85,12 @@ import androidx.compose.material.rememberDismissState
 import com.homeplanner.BuildConfig
 import com.homeplanner.SelectedUser
 import com.homeplanner.UserSettings
+import com.homeplanner.debug.BinaryLogger
+import com.homeplanner.debug.ChunkSender
+import com.homeplanner.debug.LogCleanupManager
+import com.homeplanner.debug.LogSender
+import com.homeplanner.debug.LogLevel
+import com.homeplanner.debug.LogMessageCode
 import com.homeplanner.api.TasksApi
 import com.homeplanner.api.GroupsApi
 import com.homeplanner.api.UsersApi
@@ -123,7 +129,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.rememberLauncherForActivityResult
 
 // View tabs for bottom navigation
-enum class ViewTab { TODAY, ALL, SETTINGS, LOG }
+enum class ViewTab { TODAY, ALL, SETTINGS }
 
 // Connection status enum
 enum class ConnectionStatus {
@@ -221,8 +227,10 @@ fun TasksScreen() {
     var isLoading by remember { mutableStateOf(false) }
     var groups by remember { mutableStateOf<Map<Int, String>>(emptyMap()) }
     var users by remember { mutableStateOf<List<com.homeplanner.api.UserSummary>>(emptyList()) }
-    // Key used to trigger refresh via LaunchedEffect
+    // Key used to trigger refresh via LaunchedEffect (full sync with server)
     var refreshKey by remember { mutableStateOf(0) }
+    // Key used to trigger UI update from cache only (no server sync)
+    var uiRefreshKey by remember { mutableStateOf(0) }
     // Store all tasks (offline-first: always loaded from cache, filtered by getVisibleTasks())
     var allTasks by remember { mutableStateOf<List<Task>>(emptyList()) }
     // Store last known today task IDs for offline mode
@@ -232,7 +240,6 @@ fun TasksScreen() {
     val scope = rememberCoroutineScope()
 
     var selectedTab by remember { mutableStateOf(ViewTab.TODAY) }
-    var wsLog by remember { mutableStateOf<List<String>>(emptyList()) }
     var wsConnected by remember { mutableStateOf(false) }
     var wsConnecting by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -283,21 +290,24 @@ fun TasksScreen() {
         connectionStatus = ConnectionStatus.ONLINE
         isOnline = true
         android.util.Log.d("TasksScreen", "Marked successful request, status=ONLINE")
+        BinaryLogger.getInstance()?.log(com.homeplanner.debug.LogLevel.INFO, "MainActivity", com.homeplanner.debug.LogMessageCode.CONNECTION_ONLINE, emptyMap<String, Any>())
     }
     
     // Function to mark failed request
     fun markFailedRequest() {
         consecutiveFailures++
         android.util.Log.d("TasksScreen", "Marked failed request, consecutive failures=$consecutiveFailures")
-        
+
         // Обновляем статус на основе количества неудач
         connectionStatus = when {
             consecutiveFailures >= 5 -> {
                 android.util.Log.d("TasksScreen", "5+ consecutive failures, status=OFFLINE")
+                BinaryLogger.getInstance()?.log(com.homeplanner.debug.LogLevel.ERROR, "MainActivity", com.homeplanner.debug.LogMessageCode.CONNECTION_OFFLINE, mapOf<String, Any>("failures" to consecutiveFailures))
                 ConnectionStatus.OFFLINE
             }
             consecutiveFailures > 0 -> {
                 android.util.Log.d("TasksScreen", "1-4 consecutive failures, status=DEGRADED")
+                BinaryLogger.getInstance()?.log(com.homeplanner.debug.LogLevel.WARN, "MainActivity", com.homeplanner.debug.LogMessageCode.CONNECTION_DEGRADED, mapOf<String, Any>("failures" to consecutiveFailures))
                 ConnectionStatus.DEGRADED
             }
             else -> connectionStatus // Не должно случиться, но на всякий случай
@@ -313,6 +323,34 @@ fun TasksScreen() {
     }
     val localApi = remember(offlineRepository) {
         LocalApi(offlineRepository)
+    }
+    
+    // Initialize binary logging for debug builds (only when network config is available)
+    LaunchedEffect(networkConfig) {
+        val currentConfig = networkConfig
+        if (BuildConfig.DEBUG && currentConfig != null) {
+            // Initialize BinaryLogger
+            BinaryLogger.initialize(context)
+            
+            // Start LogSender for sending logs to server (JSON v1 format)
+            LogSender.start(context, currentConfig)
+            
+            // Link BinaryLogger with LogSender
+            val logger = BinaryLogger.getInstance()
+            val sender = LogSender.getInstance()
+            if (logger != null && sender != null) {
+                logger.setLogSender(sender)
+            }
+            
+            // Start ChunkSender for sending binary chunks (v2 format)
+            val storage = BinaryLogger.getStorage()
+            if (storage != null) {
+                ChunkSender.start(context, currentConfig, storage)
+            }
+            
+            // Start LogCleanupManager for automatic cleanup of old logs
+            LogCleanupManager.start(context)
+        }
     }
     
     // Load connection check interval from settings
@@ -517,12 +555,6 @@ fun TasksScreen() {
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var pendingDeleteTaskId by remember { mutableStateOf<Int?>(null) }
 
-    fun appendLog(direction: String, payload: String) {
-        val ts = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"))
-        val entry = "[$ts][$direction] $payload"
-        wsLog = (wsLog + entry).takeLast(500)
-    }
-    
     // Calculate SHA-256 hash of tasks list for version validation
     fun calculateTasksHash(tasks: List<Task>): String {
         val digest = MessageDigest.getInstance("SHA-256")
@@ -540,7 +572,6 @@ fun TasksScreen() {
     suspend fun handleHashMismatch(serverHash: String, currentTasks: List<Task>): Boolean {
         val newLocalHash = calculateTasksHash(currentTasks)
         if (newLocalHash != serverHash) {
-            appendLog("HASH", "Несовпадение хешей! Локальный: ${newLocalHash.take(16)}..., Серверный: ${serverHash.take(16)}...")
             android.util.Log.w("TasksScreen", "Hash mismatch detected. Local: ${newLocalHash.take(16)}..., Server: ${serverHash.take(16)}...")
             
             // Mark all tasks as changed for full update
@@ -564,15 +595,23 @@ fun TasksScreen() {
      * @return Pair<Boolean, List<UserSummary>> где Boolean - были ли изменения в кэше, List - обновлённые пользователи
      */
     suspend fun syncCacheWithServer(tasksApi: com.homeplanner.api.TasksApi): Pair<Boolean, List<com.homeplanner.api.UserSummary>> {
-        if (networkConfig == null || apiBaseUrl == null || !syncService.isOnline()) {
-            android.util.Log.d("TasksScreen", "syncCacheWithServer: Offline or no network config, skipping")
+        if (networkConfig == null || apiBaseUrl == null) {
+            android.util.Log.d("TasksScreen", "syncCacheWithServer: No network config, skipping")
             return Pair(false, emptyList())
+        }
+        
+        // Проверяем наличие интернета, но пытаемся синхронизироваться даже если статус неизвестен
+        // Это гарантирует обновление локального хранилища при запуске приложения
+        val hasInternet = syncService.isOnline()
+        if (!hasInternet) {
+            android.util.Log.d("TasksScreen", "syncCacheWithServer: No internet connection detected, but will try sync anyway")
         }
         
         return withContext(Dispatchers.IO) {
             try {
                 android.util.Log.d("TasksScreen", "syncCacheWithServer: Starting sync from $apiBaseUrl")
-                
+                BinaryLogger.getInstance()?.log(com.homeplanner.debug.LogLevel.INFO, "MainActivity", com.homeplanner.debug.LogMessageCode.SYNC_START, mapOf("cache_size" to cachedTasksCount))
+
                 // 1. Загружаем текущие данные из кэша для сравнения
                 val cachedTasks = offlineRepository.loadTasksFromCache()
                 val cachedHash = calculateTasksHash(cachedTasks)
@@ -608,6 +647,8 @@ fun TasksScreen() {
                 }
                 
                 // 5. Проверяем синхронность задач
+                // Если кэш пустой, а на сервере есть задачи - хеши будут разными, и задачи сохранятся автоматически
+                // Если на сервере нет задач - хеши совпадут (оба пустые), и сохранять нечего
                 if (cachedHash == serverHash) {
                     android.util.Log.d("TasksScreen", "syncCacheWithServer: Cache is in sync with server")
                     // Синхронизируем очередь операций даже если данные совпадают
@@ -623,6 +664,12 @@ fun TasksScreen() {
                 // 6. Есть различия - сохраняем данные с сервера в кэш
                 android.util.Log.d("TasksScreen", "syncCacheWithServer: Cache differs from server, updating cache")
                 offlineRepository.saveTasksToCache(serverTasks)
+                BinaryLogger.getInstance()?.log(
+                    com.homeplanner.debug.LogLevel.INFO,
+                    "MainActivity",
+                    com.homeplanner.debug.LogMessageCode.SYNC_CACHE_UPDATED,
+                    mapOf<String, Any>("tasks_count" to serverTasks.size, "source" to "syncCacheWithServer")
+                )
                 
                 // 7. Синхронизируем очередь операций
                 try {
@@ -632,9 +679,11 @@ fun TasksScreen() {
                 }
                 
                 android.util.Log.d("TasksScreen", "syncCacheWithServer: Cache updated, ${serverTasks.size} tasks, ${syncedGroups.size} groups, ${syncedUsers.size} users")
+                BinaryLogger.getInstance()?.log(com.homeplanner.debug.LogLevel.INFO, "MainActivity", com.homeplanner.debug.LogMessageCode.SYNC_SUCCESS, mapOf<String, Any>("server_tasks" to serverTasks.size, "groups" to syncedGroups.size, "users" to syncedUsers.size))
                 return@withContext Pair(true, syncedUsers) // Были изменения
             } catch (e: Exception) {
                 android.util.Log.e("TasksScreen", "syncCacheWithServer: Error during sync", e)
+                BinaryLogger.getInstance()?.log(com.homeplanner.debug.LogLevel.ERROR, "MainActivity", com.homeplanner.debug.LogMessageCode.SYNC_FAIL_NETWORK, mapOf<String, Any>("error" to (e.message ?: "unknown")))
                 return@withContext Pair(false, emptyList())
             }
         }
@@ -736,13 +785,23 @@ fun TasksScreen() {
             android.util.Log.d("TasksScreen", "loadTasks: UI updated from cache: $uiUpdated")
             
             // 3. Синхронизация с сервером в фоне (не блокирует UI)
-            if (networkConfig != null && apiBaseUrl != null && syncService.isOnline()) {
+            // При запуске приложения всегда пытаемся синхронизироваться с сервером, если есть networkConfig
+            // Это гарантирует обновление локального хранилища при старте, даже если кэш пустой
+            if (networkConfig != null && apiBaseUrl != null) {
                 scope.launch(Dispatchers.IO) {
                     try {
+                        // Проверяем наличие интернета, но пытаемся синхронизироваться даже если статус неизвестен
+                        val hasInternet = syncService.isOnline()
+                        if (!hasInternet) {
+                            android.util.Log.d("TasksScreen", "loadTasks: No internet connection, but will try sync anyway")
+                        }
+                        
                         val groupsApi = GroupsApi(baseUrl = apiBaseUrl)
                         val usersApi = UsersApi(baseUrl = apiBaseUrl)
+                        android.util.Log.d("TasksScreen", "loadTasks: Starting syncCacheWithServer")
                         val syncResult = syncService.syncCacheWithServer(groupsApi, usersApi)
                         
+                        android.util.Log.d("TasksScreen", "loadTasks: syncCacheWithServer completed, success=${syncResult.isSuccess}")
                         if (syncResult.isSuccess) {
                             val result = syncResult.getOrNull()
                             val cacheUpdated = result?.cacheUpdated ?: false
@@ -761,14 +820,24 @@ fun TasksScreen() {
                             if (cacheUpdated) {
                                 // Кэш был обновлён — обновляем UI только если изменения влияют на текущий вид
                                 updateUIFromCache()
+                                
+                                // Обновляем счетчик задач в хранилище
+                                cachedTasksCount = offlineRepository.getCachedTasksCount()
                             }
+                            
+                            // Отмечаем успешный запрос для обновления статуса соединения
+                            markSuccessfulRequest()
+                        } else {
+                            android.util.Log.w("TasksScreen", "loadTasks: Sync failed, marking as failed request")
+                            markFailedRequest()
                         }
                     } catch (e: Exception) {
                         android.util.Log.w("TasksScreen", "loadTasks: Background sync failed", e)
+                        markFailedRequest()
                     }
                 }
             } else {
-                android.util.Log.d("TasksScreen", "loadTasks: No network config or offline, skipping background sync")
+                android.util.Log.d("TasksScreen", "loadTasks: No network config, skipping background sync")
                 users = emptyList()
             }
 
@@ -928,7 +997,6 @@ fun TasksScreen() {
                     "hash_mismatch" -> {
                         // Server detected hash mismatch, trigger full refresh
                         android.util.Log.w("TasksScreen", "Server reported hash mismatch, doing full refresh")
-                        appendLog("HASH", "Сервер сообщил о несовпадении хешей, выполняется полное обновление")
                         refreshKey += 1
                         return@launch
                     }
@@ -994,7 +1062,6 @@ fun TasksScreen() {
                     override fun onMessage(webSocket: WebSocket, text: String) {
                         // Log ALL incoming messages first
                         android.util.Log.d("TasksScreen", "WS raw message: $text")
-                        scope.launch { appendLog("WS<-", text) }
                         
                         try {
                             val msg = JSONObject(text)
@@ -1041,7 +1108,6 @@ fun TasksScreen() {
                     override fun onOpen(webSocket: WebSocket, response: okhttp3.Response) {
                         android.util.Log.d("TasksScreen", "WS connection opened")
                         scope.launch {
-                            appendLog("WS", "connection opened")
                             wsConnected = true
                             wsConnecting = false
                             markSuccessfulRequest()
@@ -1052,7 +1118,6 @@ fun TasksScreen() {
                     override fun onFailure(webSocket: WebSocket, t: Throwable, response: okhttp3.Response?) {
                         android.util.Log.e("TasksScreen", "WS connection failure: ${t.message}", t)
                         scope.launch {
-                            appendLog("WS", "connection failed: ${t.message}")
                             wsConnected = false
                             wsConnecting = false
                             markFailedRequest()
@@ -1070,7 +1135,6 @@ fun TasksScreen() {
                     override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
                         android.util.Log.d("TasksScreen", "WS connection closed: code=$code, reason=$reason")
                         scope.launch {
-                            appendLog("WS", "connection closed: code=$code, retry in ${reconnectDelay}ms")
                             wsConnected = false
                             wsConnecting = false
                             // Если закрытие не нормальное (не код 1000) - считаем неуспешной попыткой
@@ -1126,13 +1190,19 @@ fun TasksScreen() {
             NavigationBar {
                 NavigationBarItem(
                     selected = selectedTab == ViewTab.TODAY,
-                    onClick = { selectedTab = ViewTab.TODAY; refreshKey += 1 },
+                    onClick = { 
+                        selectedTab = ViewTab.TODAY
+                        uiRefreshKey += 1
+                    },
                     icon = { Icon(Icons.Outlined.Today, contentDescription = "Сегодня") },
                     label = { Text("Сегодня") }
                 )
                 NavigationBarItem(
                     selected = selectedTab == ViewTab.ALL,
-                    onClick = { selectedTab = ViewTab.ALL; refreshKey += 1 },
+                    onClick = { 
+                        selectedTab = ViewTab.ALL
+                        uiRefreshKey += 1
+                    },
                     icon = { Icon(Icons.Outlined.List, contentDescription = "Все задачи") },
                     label = { Text("Все задачи") }
                 )
@@ -1141,12 +1211,6 @@ fun TasksScreen() {
                     onClick = { selectedTab = ViewTab.SETTINGS },
                     icon = { Icon(Icons.Outlined.Settings, contentDescription = "Настройки") },
                     label = { Text("Настройки") }
-                )
-                NavigationBarItem(
-                    selected = selectedTab == ViewTab.LOG,
-                    onClick = { selectedTab = ViewTab.LOG },
-                    icon = { Icon(Icons.Outlined.Terminal, contentDescription = "Лог") },
-                    label = { Text("Лог") }
                 )
             }
         },
@@ -1185,7 +1249,6 @@ fun TasksScreen() {
                 ViewTab.TODAY -> "Сегодня"
                 ViewTab.ALL -> "Все задачи"
                 ViewTab.SETTINGS -> "Настройки"
-                ViewTab.LOG -> "Лог"
             }
             AppStatusBar(
                 appIcon = Icons.Filled.Home,
@@ -1199,11 +1262,13 @@ fun TasksScreen() {
                 wsConnecting = wsConnecting,
                 compactMode = statusBarCompactMode,
                 onNetworkClick = {
+                    // Явное действие пользователя для синхронизации - это нормально
                     scope.launch {
                         isSyncing = true
                         try {
                             syncService.syncQueue()
-                            refreshKey += 1
+                            // После синхронизации очереди обновляем UI из кэша
+                            uiRefreshKey += 1
                         } finally {
                             isSyncing = false
                         }
@@ -1211,17 +1276,19 @@ fun TasksScreen() {
                 },
                 onStorageClick = { selectedTab = ViewTab.SETTINGS },
                 onSyncClick = {
+                    // Явное действие пользователя для синхронизации - это нормально
                     scope.launch {
                         isSyncing = true
                         try {
                             syncService.syncQueue()
-                            refreshKey += 1
+                            // После синхронизации очереди обновляем UI из кэша
+                            uiRefreshKey += 1
                         } finally {
                             isSyncing = false
                         }
                     }
                 },
-                onWebSocketClick = { selectedTab = ViewTab.LOG }
+                onWebSocketClick = { /* WebSocket status indicator only */ }
             )
             
             Text(
@@ -1233,6 +1300,16 @@ fun TasksScreen() {
             LaunchedEffect(refreshKey) {
                 if (refreshKey > 0) {
                     loadTasks()
+                }
+            }
+            
+            // Обновление UI из кэша при переключении вкладок (без синхронизации с сервером)
+            LaunchedEffect(uiRefreshKey) {
+                if (uiRefreshKey > 0) {
+                    android.util.Log.d("TasksScreen", "Tab switched, updating UI from cache only")
+                    scope.launch {
+                        updateUIFromCache()
+                    }
                 }
             }
 
@@ -1282,7 +1359,6 @@ fun TasksScreen() {
                         sorted
                     }
                     ViewTab.SETTINGS -> emptyList()
-                    ViewTab.LOG -> emptyList()
                 }
             }
 
@@ -1294,8 +1370,18 @@ fun TasksScreen() {
                         networkConfig = networkConfig,
                         selectedUser = selectedUser,
                         apiBaseUrl = apiBaseUrl,
-                        onConfigChanged = { refreshKey += 1 },
-                        onUserChanged = { refreshKey += 1 },
+                        onConfigChanged = { 
+                            // При изменении networkConfig запускаем полную синхронизацию с сервером
+                            // Это единственное место, где UI функция может вызвать синхронизацию
+                            scope.launch {
+                                android.util.Log.d("TasksScreen", "Network config changed, triggering immediate sync")
+                                loadTasks()
+                            }
+                        },
+                        onUserChanged = { 
+                            // При изменении пользователя обновляем только UI из кэша, без синхронизации с сервером
+                            uiRefreshKey += 1
+                        },
                         statusBarCompactMode = statusBarCompactMode,
                         onStatusBarCompactModeChanged = { enabled ->
                             statusBarCompactMode = enabled
@@ -1305,14 +1391,6 @@ fun TasksScreen() {
                         pendingOperations = pendingOperations,
                         cachedTasksCount = cachedTasksCount
                     )
-                }
-
-                ViewTab.LOG -> {
-                    LazyColumn(modifier = Modifier.weight(1f)) {
-                        items(wsLog) { line ->
-                            Text(text = line)
-                        }
-                    }
                 }
 
                 ViewTab.TODAY, ViewTab.ALL -> {
@@ -1504,11 +1582,6 @@ fun TasksScreen() {
                                                     scope.launch {
                                                         // Offline-first: LocalApi работает даже без apiBaseUrl (обновляет локальный кэш)
                                                         try {
-                                                            if (apiBaseUrl != null) {
-                                                                appendLog("HTTP->", "POST /tasks/${task.id}/complete")
-                                                            } else {
-                                                                appendLog("OFFLINE", "Completing task ${task.id} locally")
-                                                            }
                                                             val updated = withContext(Dispatchers.IO) {
                                                                 localApi.completeTask(task.id)
                                                             }
@@ -1520,6 +1593,7 @@ fun TasksScreen() {
                                                                 }
                                                             }
                                                             Log.d("TasksScreen", "Task completed: id=${updated.id}, completed=${updated.completed}")
+                                                            BinaryLogger.getInstance()?.log(com.homeplanner.debug.LogLevel.INFO, "MainActivity", com.homeplanner.debug.LogMessageCode.TASK_COMPLETE, mapOf<String, Any>("task_id" to updated.id, "title" to updated.title))
                                                             // Обновляем allTasks только если задача действительно изменилась (предотвращаем моргание)
                                                             val currentTask = allTasks.find { it.id == updated.id }
                                                             if (currentTask == null || currentTask.completed != updated.completed) {
@@ -1531,7 +1605,6 @@ fun TasksScreen() {
                                                             }
                                                         } catch (e: Exception) {
                                                             Log.e("TasksScreen", "Error completing task", e)
-                                                            appendLog("ERROR", "error: ${e.message}")
                                                             // Не вызываем markFailedRequest() - это оптимистичное обновление
                                                             // Реальный статус сети обновится при следующей синхронизации
                                                             e.printStackTrace()
@@ -1541,11 +1614,6 @@ fun TasksScreen() {
                                                     scope.launch {
                                                         // Offline-first: LocalApi работает даже без apiBaseUrl (обновляет локальный кэш)
                                                         try {
-                                                            if (apiBaseUrl != null) {
-                                                                appendLog("HTTP->", "POST /tasks/${task.id}/uncomplete")
-                                                            } else {
-                                                                appendLog("OFFLINE", "Uncompleting task ${task.id} locally")
-                                                            }
                                                             val updated = withContext(Dispatchers.IO) {
                                                                 localApi.uncompleteTask(task.id)
                                                             }
@@ -1568,7 +1636,6 @@ fun TasksScreen() {
                                                             }
                                                         } catch (e: Exception) {
                                                             Log.e("TasksScreen", "Error uncompleting task", e)
-                                                            appendLog("ERROR", "error: ${e.message}")
                                                             // Не вызываем markFailedRequest() - это оптимистичное обновление
                                                             // Реальный статус сети обновится при следующей синхронизации
                                                             e.printStackTrace()
@@ -1744,11 +1811,6 @@ fun TasksScreen() {
                                                         scope.launch {
                                                             // Offline-first: LocalApi работает даже без apiBaseUrl (обновляет локальный кэш)
                                                             try {
-                                                                if (apiBaseUrl != null) {
-                                                                    appendLog("HTTP->", "POST /tasks/${task.id}/complete")
-                                                                } else {
-                                                                    appendLog("OFFLINE", "Completing task ${task.id} locally")
-                                                                }
                                                                 val updated = withContext(Dispatchers.IO) {
                                                                     localApi.completeTask(task.id)
                                                                 }
@@ -1760,13 +1822,13 @@ fun TasksScreen() {
                                                                     }
                                                                 }
                                                                 Log.d("TasksScreen", "Task completed: id=${updated.id}, completed=${updated.completed}")
+                                                                BinaryLogger.getInstance()?.log(LogLevel.INFO, "MainActivity", LogMessageCode.TASK_COMPLETE, mapOf("task_id" to updated.id, "title" to updated.title))
                                                                 // Обновляем allTasks, getVisibleTasks() пересчитается при следующей рекомпозиции
                                                                 val newAllTasks = allTasks.map { if (it.id == updated.id) updated else it }
                                                                 allTasks = newAllTasks
                                                                 Log.d("TasksScreen", "allTasks updated, new size=${newAllTasks.size}")
                                                             } catch (e: Exception) {
                                                                 Log.e("TasksScreen", "Error completing task", e)
-                                                                appendLog("ERROR", "error: ${e.message}")
                                                                 // Не вызываем markFailedRequest() - это оптимистичное обновление
                                                                 // Реальный статус сети обновится при следующей синхронизации
                                                                 e.printStackTrace()
@@ -1776,11 +1838,6 @@ fun TasksScreen() {
                                                         scope.launch {
                                                             // Offline-first: LocalApi работает даже без apiBaseUrl (обновляет локальный кэш)
                                                             try {
-                                                                if (apiBaseUrl != null) {
-                                                                    appendLog("HTTP->", "POST /tasks/${task.id}/uncomplete")
-                                                                } else {
-                                                                    appendLog("OFFLINE", "Uncompleting task ${task.id} locally")
-                                                                }
                                                                 val updated = withContext(Dispatchers.IO) {
                                                                     localApi.uncompleteTask(task.id)
                                                                 }
@@ -1798,7 +1855,6 @@ fun TasksScreen() {
                                                                 Log.d("TasksScreen", "allTasks updated, new size=${newAllTasks.size}")
                                                             } catch (e: Exception) {
                                                                 Log.e("TasksScreen", "Error uncompleting task", e)
-                                                                appendLog("ERROR", "error: ${e.message}")
                                                                 // Не вызываем markFailedRequest() - это оптимистичное обновление
                                                                 // Реальный статус сети обновится при следующей синхронизации
                                                                 e.printStackTrace()
@@ -1865,9 +1921,10 @@ fun TasksScreen() {
                                                 }
                                             }
                                             android.util.Log.d("TasksScreen", "Task created via API: id=${created.id}, refreshing list")
-                                            // Refresh tasks list to ensure UI is updated
+                                            BinaryLogger.getInstance()?.log(LogLevel.INFO, "MainActivity", LogMessageCode.TASK_CREATE, mapOf("task_id" to created.id, "title" to created.title))
+                                            // Обновляем UI из кэша (задача уже создана и сохранена локально)
                                             // WebSocket message will also trigger update, but this ensures immediate update
-                                            refreshKey += 1
+                                            uiRefreshKey += 1
                                         } catch (e: Exception) {
                                             Log.e("TasksScreen", "Error creating task", e)
                                             // Не вызываем markFailedRequest() - это оптимистичное обновление
@@ -1909,6 +1966,7 @@ fun TasksScreen() {
                                         try {
                                             val updated = withContext(Dispatchers.IO) { localApi.updateTask(base.id, finalPayload, editAssignedUserIds) }
                                             android.util.Log.d("TasksScreen", "Task updated via API: id=${updated.id}, reminderTime=${updated.reminderTime}, refreshing list")
+                                            BinaryLogger.getInstance()?.log(LogLevel.INFO, "MainActivity", LogMessageCode.TASK_UPDATE, mapOf<String, Any>("task_id" to updated.id, "title" to updated.title))
                                             // Явная синхронизация в фоне
                                             if (syncService.isOnline()) {
                                                 scope.launch(Dispatchers.IO) {
@@ -1916,9 +1974,9 @@ fun TasksScreen() {
                                                     markSuccessfulRequest()
                                                 }
                                             }
-                                            // Refresh tasks list to ensure UI is updated
+                                            // Обновляем UI из кэша (задача уже обновлена локально)
                                             // WebSocket message will also trigger update, but this ensures immediate update
-                                            refreshKey += 1
+                                            uiRefreshKey += 1
                                         } catch (e: Exception) {
                                             Log.e("TasksScreen", "Error updating task", e)
                                             // Не вызываем markFailedRequest() - это оптимистичное обновление
@@ -2326,7 +2384,8 @@ fun SettingsScreen(
                     text = "Версия приложения",
                     style = MaterialTheme.typography.titleSmall
                 )
-                Text(text = "Версия: ${BuildConfig.VERSION_NAME}")
+                val debugStatus = if (BuildConfig.DEBUG) "DEBUG" else "RELEASE"
+                Text(text = "Версия: ${BuildConfig.VERSION_NAME} ($debugStatus)")
             }
         }
         
@@ -2393,6 +2452,21 @@ fun SettingsScreen(
                     )
                     Text(
                         text = "Операций в очереди: $pendingOperations",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    // Статистика бинарных логов (чанков)
+                    val binaryStorage = remember {
+                        com.homeplanner.debug.BinaryLogger.getStorage()
+                    }
+                    val (chunksCount, chunksSizeBytes) = remember {
+                        binaryStorage?.getChunksStats() ?: (0 to 0L)
+                    }
+                    Text(
+                        text = "Чанков логов: $chunksCount",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text(
+                        text = "Размер логов: ${chunksSizeBytes / 1024} КБ",
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }

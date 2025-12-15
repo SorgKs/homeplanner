@@ -70,8 +70,7 @@
 
 ### Специфические документы
 
-- **[MIGRATION_TO_LOCAL_API.md](MIGRATION_TO_LOCAL_API.md)** - План миграции на LocalApi
-  - ⚠️ Статус миграции требует уточнения
+- **[MIGRATION_TO_LOCAL_API.md](archive/MIGRATION_TO_LOCAL_API.md)** - План миграции на LocalApi (✅ завершена, в архиве)
 
 - **[PLAN_NETWORK_SETTINGS.md](PLAN_NETWORK_SETTINGS.md)** - План сетевых настроек Android
   - Детальный план реализации

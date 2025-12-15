@@ -323,3 +323,124 @@ ws://<host>:<port>/api/v<version>/tasks/stream
 
 Сообщения применяются в порядке получения. При сомнениях в консистентности предпочтительно перезагружать данные с бэкенда через REST API.
 
+### Отладочные логи (Debug Logs)
+
+> **Важно:** Эти endpoints доступны только в дебаг-версиях приложения и предназначены для отладки.
+
+Сервер поддерживает прием и хранение логов от Android-клиентов в бинарном формате с использованием кодов сообщений вместо текста.
+
+#### Отправить логи на сервер
+
+```http
+POST /api/v0.2/debug-logs
+Content-Type: application/json
+
+{
+  "logs": [
+    {
+      "timestamp": "2025-01-15T10:30:00Z",
+      "level": "INFO",
+      "tag": "SyncService",
+      "message_code": "SYNC_START",
+      "context": {
+        "queueSize": 5,
+        "connectionStatus": "ONLINE"
+      },
+      "device_id": "android_abc123",
+      "device_info": "Samsung Galaxy (Android 12)",
+      "app_version": "1.0.0 (1)",
+      "dictionary_revision": "1.0"
+    }
+  ]
+}
+```
+
+**Формат лога:**
+- `timestamp` - время записи лога (ISO 8601)
+- `level` - уровень логирования: `DEBUG`, `INFO`, `WARN`, `ERROR`
+- `tag` - тег компонента (например, "SyncService", "LocalApi")
+- `message_code` - код сообщения из словаря (например, "SYNC_START", "TASK_CREATE")
+- `context` - JSON объект с дополнительными данными (переменные, параметры)
+- `device_id` - уникальный идентификатор устройства (автоматически генерируется)
+- `device_info` - информация об устройстве
+- `app_version` - версия приложения
+- `dictionary_revision` - ревизия словаря сообщений (например, "1.0")
+
+**Ответ:** 201 Created с массивом созданных записей логов.
+
+#### Получить логи
+
+```http
+GET /api/v0.2/debug-logs?device_id=android_abc123&level=ERROR&hours=24&limit=100
+```
+
+**Параметры запроса:**
+- `device_id` (опционально) - фильтр по идентификатору устройства
+- `level` (опционально) - фильтр по уровню: `DEBUG`, `INFO`, `WARN`, `ERROR`
+- `tag` (опционально) - фильтр по тегу компонента
+- `hours` (опционально, по умолчанию 24) - период времени назад в часах (1-168)
+- `limit` (опционально, по умолчанию 100) - максимальное количество логов (1-1000)
+
+**Ответ:** Массив логов, отсортированных по времени (новые первые).
+
+**Пример ответа:**
+```json
+[
+  {
+    "id": 1,
+    "timestamp": "2025-01-15T10:30:00Z",
+    "level": "ERROR",
+    "tag": "SyncService",
+    "message_code": "SYNC_FAIL_500",
+    "context": {
+      "httpCode": 500,
+      "retryAttempt": 1
+    },
+    "device_id": "android_abc123",
+    "device_info": "Samsung Galaxy (Android 12)",
+    "app_version": "1.0.0 (1)",
+    "dictionary_revision": "1.0"
+  }
+]
+```
+
+#### Получить список устройств
+
+```http
+GET /api/v0.2/debug-logs/devices
+```
+
+Возвращает список всех устройств, которые отправляли логи.
+
+**Ответ:**
+```json
+[
+  {
+    "device_id": "android_abc123",
+    "last_seen": "2025-01-15T10:30:00Z",
+    "device_info": "Samsung Galaxy (Android 12)",
+    "app_version": "1.0.0 (1)",
+    "log_count": 42
+  }
+]
+```
+
+#### Очистить старые логи
+
+```http
+DELETE /api/v0.2/debug-logs/cleanup?days=7
+```
+
+**Параметры запроса:**
+- `days` (опционально, по умолчанию 7) - удалить логи старше указанного количества дней (1-30)
+
+**Ответ:**
+```json
+{
+  "deleted": 150,
+  "cutoff_time": "2025-01-08T10:30:00Z"
+}
+```
+
+**Примечание:** Подробнее о бинарном формате логирования и словаре сообщений см. [LOGGING_FORMAT.md](LOGGING_FORMAT.md).
+

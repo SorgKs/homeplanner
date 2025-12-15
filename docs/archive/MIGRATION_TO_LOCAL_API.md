@@ -32,15 +32,15 @@
    - Расположение: `android/app/src/main/java/com/homeplanner/repository/OfflineRepository.kt`
    - Статус: Реализован и работает корректно
 
-5. **LocalApi** ❌
+5. **LocalApi** ✅
    - Работа с локальным хранилищем для UI
    - Расположение: `android/app/src/main/java/com/homeplanner/api/LocalApi.kt`
-   - Статус: Не реализован (планируется)
+   - Статус: Реализован и используется в `MainActivity`
 
-### Где используется TasksApiOffline
+### ~~Где используется TasksApiOffline~~ (устарело)
 
-- `MainActivity.kt` — основной компонент UI
-- `TasksApiOfflineTest.kt` — тесты
+- ~~`MainActivity.kt`~~ — ✅ Мигрировано на `LocalApi`
+- ~~`TasksApiOfflineTest.kt`~~ — ✅ Тесты переписаны/удалены
 
 ### Проблемы текущего подхода
 

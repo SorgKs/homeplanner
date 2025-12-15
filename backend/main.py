@@ -14,10 +14,11 @@ from common.versioning import compose_component_version
 
 from backend.config import get_settings
 from backend.database import engine, init_db
-from backend.models import Event, Group, Task, TaskHistory, User  # noqa: F401
+from backend.logging_config import setup_logging
+from backend.models import DebugLog, Event, Group, Task, TaskHistory, User  # noqa: F401
 from backend.routers import events, groups, task_history, tasks, time_control, users
 from backend.routers import download
-from backend.routers import realtime
+from backend.routers import realtime, debug_logs
 
 # System logger for application-level messages
 system_logger = logging.getLogger("homeplanner.system")
@@ -66,15 +67,10 @@ def create_app() -> FastAPI:
     Returns:
         FastAPI app with separate router sets for WebSocket and HTTP.
     """
-    # Configure logging to show INFO from our modules
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s %(levelname)s %(name)s %(message)s",
-    )
-    logging.getLogger("homeplanner").setLevel(logging.INFO)
-    logging.getLogger("homeplanner.realtime").setLevel(logging.INFO)
-    logging.getLogger("homeplanner.tasks").setLevel(logging.INFO)
     settings = get_settings()
+    
+    # Configure logging to write to both console and file
+    setup_logging(debug=settings.debug)
 
     app = FastAPI(
         title="HomePlanner API",
@@ -136,6 +132,7 @@ def create_app() -> FastAPI:
     app.include_router(task_history.router, prefix=api_version_path, tags=["task_history"])
     app.include_router(download.router, prefix="/download", tags=["download"])
     app.include_router(time_control.router, prefix=f"{api_version_path}/time", tags=["time"])
+    app.include_router(debug_logs.router, prefix=api_version_path, tags=["debug-logs"])
     
     # HTTP endpoint from realtime (separate from WebSocket route)
     http_realtime_router = APIRouter()
@@ -168,6 +165,10 @@ if __name__ == "__main__":
 
     settings = get_settings()
     
+    # Ensure logging is configured before starting server
+    # (setup_logging is idempotent, so safe to call multiple times)
+    setup_logging(debug=settings.debug)
+    
     # Validate SSL configuration if provided
     if settings.ssl_certfile or settings.ssl_keyfile:
         if not settings.ssl_certfile or not settings.ssl_keyfile:
@@ -193,6 +194,8 @@ if __name__ == "__main__":
         "*.prof",
         "*.pyc",
         "*.txt",  # Exclude test output files
+        "logs/*",  # Exclude entire logs directory
+        "backend/logs/*",  # Explicitly exclude backend logs
     ]
     
     # Configure logging to show which file triggered reload
@@ -253,6 +256,7 @@ if __name__ == "__main__":
         host=settings.host,
         port=settings.port,
         reload=settings.debug,
+        reload_dirs=["backend", "frontend", "common", "scripts", "tests"] if settings.debug else None,
         reload_excludes=reload_excludes if settings.debug else None,
         reload_delay=0.25,  # Small delay to batch multiple changes
         **ssl_kwargs

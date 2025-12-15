@@ -1005,7 +1005,7 @@ async function deleteUser(id) {
 /**
  * Switch between views.
  */
-function switchView(view) {
+async function switchView(view) {
     if (view === 'users' && !adminMode) {
         view = 'today';
     }
@@ -1037,7 +1037,7 @@ function switchView(view) {
         toggleUserFilterControls(false);
         if (settingsView) settingsView.style.display = 'none';
         if (tasksList) tasksList.style.display = 'block';
-        applyCurrentViewData();
+        await loadData();
         return;
     } else if (view === 'all') {
         allBtn.classList.add('active');

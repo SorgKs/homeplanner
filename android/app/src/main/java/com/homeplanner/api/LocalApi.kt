@@ -3,6 +3,9 @@ package com.homeplanner.api
 import android.util.Log
 import com.homeplanner.model.Task
 import com.homeplanner.repository.OfflineRepository
+import com.homeplanner.debug.BinaryLogger
+import com.homeplanner.debug.LogLevel
+import com.homeplanner.debug.LogMessageCode
 
 /**
  * API для работы с локальным хранилищем для UI.
@@ -51,6 +54,12 @@ class LocalApi(
     suspend fun createTask(task: Task, assignedUserIds: List<Int> = emptyList()): Task {
         // 1. Сразу сохраняем в кэш для немедленного отображения
         offlineRepository.saveTasksToCache(listOf(task))
+        BinaryLogger.getInstance()?.log(
+            LogLevel.INFO,
+            "LocalApi",
+            LogMessageCode.CACHE_UPDATED,
+            mapOf("tasks_count" to 1, "source" to "createTask")
+        )
         Log.d(TAG, "Created task locally: id=${task.id}, title=${task.title}")
         
         // 2. Добавляем в очередь синхронизации
@@ -74,6 +83,12 @@ class LocalApi(
     suspend fun updateTask(taskId: Int, task: Task, assignedUserIds: List<Int> = emptyList()): Task {
         // 1. Сразу обновляем в кэше для немедленного отображения
         offlineRepository.saveTasksToCache(listOf(task))
+        BinaryLogger.getInstance()?.log(
+            LogLevel.INFO,
+            "LocalApi",
+            LogMessageCode.CACHE_UPDATED,
+            mapOf("tasks_count" to 1, "source" to "updateTask")
+        )
         Log.d(TAG, "Updated task locally: id=$taskId, title=${task.title}, reminderTime=${task.reminderTime}")
         
         // 2. Добавляем в очередь синхронизации
@@ -99,6 +114,12 @@ class LocalApi(
             ?: throw Exception("Task not found in cache: id=$taskId")
         val updatedTask = cachedTask.copy(completed = true)
         offlineRepository.saveTasksToCache(listOf(updatedTask))
+        BinaryLogger.getInstance()?.log(
+            LogLevel.INFO,
+            "LocalApi",
+            LogMessageCode.CACHE_UPDATED,
+            mapOf("tasks_count" to 1, "source" to "completeTask")
+        )
         Log.d(TAG, "Completed task locally: id=$taskId")
         
         // 2. Добавляем в очередь синхронизации
@@ -124,6 +145,12 @@ class LocalApi(
             ?: throw Exception("Task not found in cache: id=$taskId")
         val updatedTask = cachedTask.copy(completed = false)
         offlineRepository.saveTasksToCache(listOf(updatedTask))
+        BinaryLogger.getInstance()?.log(
+            LogLevel.INFO,
+            "LocalApi",
+            LogMessageCode.CACHE_UPDATED,
+            mapOf("tasks_count" to 1, "source" to "uncompleteTask")
+        )
         Log.d(TAG, "Uncompleted task locally: id=$taskId")
         
         // 2. Добавляем в очередь синхронизации

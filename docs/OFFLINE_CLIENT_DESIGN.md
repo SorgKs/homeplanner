@@ -2,13 +2,13 @@
 
 Высокоуровневая архитектура клиентской части офлайн‑режима.
 
-> **Статус:** Текущая реализация (в процессе миграции на целевую архитектуру)  
+> **Статус:** ✅ Миграция завершена, используется целевая архитектура  
 > **Целевая архитектура:** См. [OFFLINE_FIRST_ARCHITECTURE.md](OFFLINE_FIRST_ARCHITECTURE.md)  
-> **План миграции:** См. [MIGRATION_TO_LOCAL_API.md](MIGRATION_TO_LOCAL_API.md)
+> **План миграции:** ✅ Завершена (см. [archive/MIGRATION_TO_LOCAL_API.md](archive/MIGRATION_TO_LOCAL_API.md))
 
 ### 1. Компоненты клиента (текущая реализация)
 
-> **Примечание:** В текущей реализации используется `TasksApiOffline`. После миграции будет использоваться `LocalApi` (см. целевую архитектуру в [OFFLINE_FIRST_ARCHITECTURE.md](OFFLINE_FIRST_ARCHITECTURE.md)).
+> **Примечание:** ✅ Миграция завершена. Используется `LocalApi` (см. целевую архитектуру в [OFFLINE_FIRST_ARCHITECTURE.md](OFFLINE_FIRST_ARCHITECTURE.md)).
 
 - **OfflineRepository**
   - Локальное хранилище (Room/SQLite, SharedPreferences и т.п.).
@@ -16,11 +16,10 @@
   - Работа с очередью операций (добавление/чтение/удаление).
   - Не содержит логики UI и не управляет уведомлениями.
 
-- **TasksApiOffline** ⚠️ (временный компонент, планируется замена на `LocalApi`)
-  - Прослойка над обычным API задач.
-  - При наличии сети использует онлайн‑API и обновляет кэш.
-  - При отсутствии сети работает только с `OfflineRepository` и очередью операций.
-  - **Статус:** Используется в текущей реализации, планируется миграция на `LocalApi` (см. [MIGRATION_TO_LOCAL_API.md](MIGRATION_TO_LOCAL_API.md))
+- ~~**TasksApiOffline**~~ ✅ (заменён на `LocalApi`, миграция завершена)
+  - ~~Прослойка над обычным API задач~~ (удалена)
+  - ✅ Используется `LocalApi` для работы с локальным хранилищем (см. [OFFLINE_FIRST_ARCHITECTURE.md](OFFLINE_FIRST_ARCHITECTURE.md))
+  - **Статус:** ✅ Миграция завершена, компонент удалён (см. [archive/MIGRATION_TO_LOCAL_API.md](archive/MIGRATION_TO_LOCAL_API.md))
 
 - **SyncService**
   - Обрабатывает очередь синхронизации.
@@ -99,7 +98,7 @@
 
 ### 5. Целевая архитектура (после миграции)
 
-После завершения миграции (см. [MIGRATION_TO_LOCAL_API.md](MIGRATION_TO_LOCAL_API.md)) архитектура будет следующей:
+✅ Миграция завершена (см. [archive/MIGRATION_TO_LOCAL_API.md](archive/MIGRATION_TO_LOCAL_API.md)). Текущая архитектура:
 
 - **LocalApi** (заменит `TasksApiOffline`)
   - **Назначение:** Работа с локальным хранилищем для UI

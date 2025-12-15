@@ -8,6 +8,9 @@ import com.homeplanner.database.entity.SyncQueueItem
 import com.homeplanner.database.entity.TaskCache
 import com.homeplanner.model.Task
 import com.homeplanner.utils.TaskDateCalculator
+import com.homeplanner.debug.BinaryLogger
+import com.homeplanner.debug.LogLevel
+import com.homeplanner.debug.LogMessageCode
 import org.json.JSONObject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -54,6 +57,7 @@ class OfflineRepository(
             
             cleanupOldCache()
             updateStorageMetadata()
+            
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Error saving tasks to cache", e)
@@ -516,6 +520,12 @@ class OfflineRepository(
 
             // Перезаписываем кэш пересчитанными задачами
             saveTasksToCache(updatedTasks)
+            BinaryLogger.getInstance()?.log(
+                LogLevel.INFO,
+                "OfflineRepository",
+                LogMessageCode.CACHE_UPDATED,
+                mapOf("tasks_count" to updatedTasks.size, "source" to "updateRecurringTasksForNewDay")
+            )
             setLastUpdateTimestamp(now, dayStartHour)
 
             Log.d(TAG, "updateRecurringTasksForNewDay: recalculated ${updatedTasks.size} tasks")

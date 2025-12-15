@@ -11,6 +11,9 @@ import com.homeplanner.api.UsersApi
 import com.homeplanner.database.entity.SyncQueueItem
 import com.homeplanner.model.Task
 import com.homeplanner.repository.OfflineRepository
+import com.homeplanner.debug.BinaryLogger
+import com.homeplanner.debug.LogLevel
+import com.homeplanner.debug.LogMessageCode
 import org.json.JSONObject
 import kotlinx.coroutines.delay
 import java.security.MessageDigest
@@ -65,6 +68,12 @@ class SyncService(
             Log.d(TAG, "syncStateBeforeRecalculation: loading tasks from server")
             val serverTasks = tasksApi.getTasks(activeOnly = false)
             repository.saveTasksToCache(serverTasks)
+            BinaryLogger.getInstance()?.log(
+                LogLevel.INFO,
+                "SyncService",
+                LogMessageCode.SYNC_CACHE_UPDATED,
+                mapOf("tasks_count" to serverTasks.size, "source" to "syncStateBeforeRecalculation")
+            )
             true
         } catch (e: Exception) {
             Log.e(TAG, "syncStateBeforeRecalculation: error during pre-recalculation sync", e)
@@ -98,6 +107,12 @@ class SyncService(
                 }
                 // Обновляем кэш актуальными данными с сервера (сервер сам решил, какие операции применить)
                 repository.saveTasksToCache(tasks)
+                BinaryLogger.getInstance()?.log(
+                    LogLevel.INFO,
+                    "SyncService",
+                    LogMessageCode.SYNC_CACHE_UPDATED,
+                    mapOf("tasks_count" to tasks.size, "queue_items" to queueItems.size, "source" to "syncQueue")
+                )
             }
 
             val syncResult = SyncResult(
@@ -154,10 +169,11 @@ class SyncService(
         groupsApi: GroupsApi? = null,
         usersApi: UsersApi? = null
     ): Result<SyncCacheResult> {
-        // 1. Проверка наличия интернета
-        if (!isOnline()) {
-            Log.d(TAG, "syncCacheWithServer: offline, skipping")
-            return Result.failure(Exception("No internet connection"))
+        // 1. Проверка наличия интернета - но пытаемся синхронизироваться даже если статус неизвестен
+        // Это гарантирует обновление локального хранилища при запуске приложения
+        val hasInternet = isOnline()
+        if (!hasInternet) {
+            Log.d(TAG, "syncCacheWithServer: No internet connection detected, but will try sync anyway")
         }
         
         return try {
@@ -177,9 +193,17 @@ class SyncService(
             val serverHash = calculateTasksHash(serverTasks)
             
             // 6. Сравнение хешей и обновление кэша при различиях
+            // Если кэш пустой, а на сервере есть задачи - хеши будут разными, и задачи сохранятся автоматически
+            // Если на сервере нет задач - хеши совпадут (оба пустые), и сохранять нечего
             val cacheUpdated = if (cachedHash != serverHash) {
                 Log.d(TAG, "syncCacheWithServer: hash mismatch, updating cache (cached: ${cachedHash.take(16)}..., server: ${serverHash.take(16)}...)")
                 repository.saveTasksToCache(serverTasks)
+                BinaryLogger.getInstance()?.log(
+                    LogLevel.INFO,
+                    "SyncService",
+                    LogMessageCode.SYNC_CACHE_UPDATED,
+                    mapOf("tasks_count" to serverTasks.size, "source" to "syncCacheWithServer")
+                )
                 true
             } else {
                 Log.d(TAG, "syncCacheWithServer: hashes match, cache is up to date")
