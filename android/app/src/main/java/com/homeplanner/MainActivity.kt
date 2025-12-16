@@ -88,7 +88,6 @@ import com.homeplanner.UserSettings
 import com.homeplanner.debug.BinaryLogger
 import com.homeplanner.debug.ChunkSender
 import com.homeplanner.debug.LogCleanupManager
-import com.homeplanner.debug.LogSender
 import com.homeplanner.debug.LogLevel
 import com.homeplanner.debug.LogMessageCode
 import com.homeplanner.api.TasksApi
@@ -290,7 +289,9 @@ fun TasksScreen() {
         connectionStatus = ConnectionStatus.ONLINE
         isOnline = true
         android.util.Log.d("TasksScreen", "Marked successful request, status=ONLINE")
-        BinaryLogger.getInstance()?.log(com.homeplanner.debug.LogLevel.INFO, "MainActivity", com.homeplanner.debug.LogMessageCode.CONNECTION_ONLINE, emptyMap<String, Any>())
+        BinaryLogger.getInstance()?.log(
+            com.homeplanner.debug.LogMessageCode.CONNECTION_ONLINE
+        )
     }
     
     // Function to mark failed request
@@ -302,12 +303,18 @@ fun TasksScreen() {
         connectionStatus = when {
             consecutiveFailures >= 5 -> {
                 android.util.Log.d("TasksScreen", "5+ consecutive failures, status=OFFLINE")
-                BinaryLogger.getInstance()?.log(com.homeplanner.debug.LogLevel.ERROR, "MainActivity", com.homeplanner.debug.LogMessageCode.CONNECTION_OFFLINE, mapOf<String, Any>("failures" to consecutiveFailures))
+                BinaryLogger.getInstance()?.log(
+                    com.homeplanner.debug.LogMessageCode.CONNECTION_OFFLINE,
+                    mapOf<String, Any>("failures" to consecutiveFailures)
+                )
                 ConnectionStatus.OFFLINE
             }
             consecutiveFailures > 0 -> {
                 android.util.Log.d("TasksScreen", "1-4 consecutive failures, status=DEGRADED")
-                BinaryLogger.getInstance()?.log(com.homeplanner.debug.LogLevel.WARN, "MainActivity", com.homeplanner.debug.LogMessageCode.CONNECTION_DEGRADED, mapOf<String, Any>("failures" to consecutiveFailures))
+                BinaryLogger.getInstance()?.log(
+                    com.homeplanner.debug.LogMessageCode.CONNECTION_DEGRADED,
+                    mapOf<String, Any>("failures" to consecutiveFailures)
+                )
                 ConnectionStatus.DEGRADED
             }
             else -> connectionStatus // Не должно случиться, но на всякий случай
@@ -331,16 +338,6 @@ fun TasksScreen() {
         if (BuildConfig.DEBUG && currentConfig != null) {
             // Initialize BinaryLogger
             BinaryLogger.initialize(context)
-            
-            // Start LogSender for sending logs to server (JSON v1 format)
-            LogSender.start(context, currentConfig)
-            
-            // Link BinaryLogger with LogSender
-            val logger = BinaryLogger.getInstance()
-            val sender = LogSender.getInstance()
-            if (logger != null && sender != null) {
-                logger.setLogSender(sender)
-            }
             
             // Start ChunkSender for sending binary chunks (v2 format)
             val storage = BinaryLogger.getStorage()
@@ -610,7 +607,10 @@ fun TasksScreen() {
         return withContext(Dispatchers.IO) {
             try {
                 android.util.Log.d("TasksScreen", "syncCacheWithServer: Starting sync from $apiBaseUrl")
-                BinaryLogger.getInstance()?.log(com.homeplanner.debug.LogLevel.INFO, "MainActivity", com.homeplanner.debug.LogMessageCode.SYNC_START, mapOf("cache_size" to cachedTasksCount))
+                BinaryLogger.getInstance()?.log(
+                    com.homeplanner.debug.LogMessageCode.SYNC_START,
+                    mapOf("cache_size" to cachedTasksCount)
+                )
 
                 // 1. Загружаем текущие данные из кэша для сравнения
                 val cachedTasks = offlineRepository.loadTasksFromCache()
@@ -665,8 +665,6 @@ fun TasksScreen() {
                 android.util.Log.d("TasksScreen", "syncCacheWithServer: Cache differs from server, updating cache")
                 offlineRepository.saveTasksToCache(serverTasks)
                 BinaryLogger.getInstance()?.log(
-                    com.homeplanner.debug.LogLevel.INFO,
-                    "MainActivity",
                     com.homeplanner.debug.LogMessageCode.SYNC_CACHE_UPDATED,
                     mapOf<String, Any>("tasks_count" to serverTasks.size, "source" to "syncCacheWithServer")
                 )
@@ -679,11 +677,21 @@ fun TasksScreen() {
                 }
                 
                 android.util.Log.d("TasksScreen", "syncCacheWithServer: Cache updated, ${serverTasks.size} tasks, ${syncedGroups.size} groups, ${syncedUsers.size} users")
-                BinaryLogger.getInstance()?.log(com.homeplanner.debug.LogLevel.INFO, "MainActivity", com.homeplanner.debug.LogMessageCode.SYNC_SUCCESS, mapOf<String, Any>("server_tasks" to serverTasks.size, "groups" to syncedGroups.size, "users" to syncedUsers.size))
+                BinaryLogger.getInstance()?.log(
+                    com.homeplanner.debug.LogMessageCode.SYNC_SUCCESS,
+                    mapOf<String, Any>(
+                        "server_tasks" to serverTasks.size,
+                        "groups" to syncedGroups.size,
+                        "users" to syncedUsers.size
+                    )
+                )
                 return@withContext Pair(true, syncedUsers) // Были изменения
             } catch (e: Exception) {
                 android.util.Log.e("TasksScreen", "syncCacheWithServer: Error during sync", e)
-                BinaryLogger.getInstance()?.log(com.homeplanner.debug.LogLevel.ERROR, "MainActivity", com.homeplanner.debug.LogMessageCode.SYNC_FAIL_NETWORK, mapOf<String, Any>("error" to (e.message ?: "unknown")))
+                BinaryLogger.getInstance()?.log(
+                    com.homeplanner.debug.LogMessageCode.SYNC_FAIL_NETWORK,
+                    mapOf<String, Any>("error" to (e.message ?: "unknown"))
+                )
                 return@withContext Pair(false, emptyList())
             }
         }
@@ -1593,7 +1601,13 @@ fun TasksScreen() {
                                                                 }
                                                             }
                                                             Log.d("TasksScreen", "Task completed: id=${updated.id}, completed=${updated.completed}")
-                                                            BinaryLogger.getInstance()?.log(com.homeplanner.debug.LogLevel.INFO, "MainActivity", com.homeplanner.debug.LogMessageCode.TASK_COMPLETE, mapOf<String, Any>("task_id" to updated.id, "title" to updated.title))
+                                                            BinaryLogger.getInstance()?.log(
+                                                                com.homeplanner.debug.LogMessageCode.TASK_COMPLETE,
+                                                                mapOf<String, Any>(
+                                                                    "task_id" to updated.id,
+                                                                    "title" to updated.title
+                                                                )
+                                                            )
                                                             // Обновляем allTasks только если задача действительно изменилась (предотвращаем моргание)
                                                             val currentTask = allTasks.find { it.id == updated.id }
                                                             if (currentTask == null || currentTask.completed != updated.completed) {
@@ -1822,7 +1836,13 @@ fun TasksScreen() {
                                                                     }
                                                                 }
                                                                 Log.d("TasksScreen", "Task completed: id=${updated.id}, completed=${updated.completed}")
-                                                                BinaryLogger.getInstance()?.log(LogLevel.INFO, "MainActivity", LogMessageCode.TASK_COMPLETE, mapOf("task_id" to updated.id, "title" to updated.title))
+                                                                BinaryLogger.getInstance()?.log(
+                                                                    LogMessageCode.TASK_COMPLETE,
+                                                                    mapOf(
+                                                                        "task_id" to updated.id,
+                                                                        "title" to updated.title
+                                                                    )
+                                                                )
                                                                 // Обновляем allTasks, getVisibleTasks() пересчитается при следующей рекомпозиции
                                                                 val newAllTasks = allTasks.map { if (it.id == updated.id) updated else it }
                                                                 allTasks = newAllTasks
@@ -1921,7 +1941,13 @@ fun TasksScreen() {
                                                 }
                                             }
                                             android.util.Log.d("TasksScreen", "Task created via API: id=${created.id}, refreshing list")
-                                            BinaryLogger.getInstance()?.log(LogLevel.INFO, "MainActivity", LogMessageCode.TASK_CREATE, mapOf("task_id" to created.id, "title" to created.title))
+                                            BinaryLogger.getInstance()?.log(
+                                                LogMessageCode.TASK_CREATE,
+                                                mapOf(
+                                                    "task_id" to created.id,
+                                                    "title" to created.title
+                                                )
+                                            )
                                             // Обновляем UI из кэша (задача уже создана и сохранена локально)
                                             // WebSocket message will also trigger update, but this ensures immediate update
                                             uiRefreshKey += 1
@@ -1965,8 +1991,14 @@ fun TasksScreen() {
                                         // Update via API (offline-first: оптимистичное обновление, синхронизация в фоне)
                                         try {
                                             val updated = withContext(Dispatchers.IO) { localApi.updateTask(base.id, finalPayload, editAssignedUserIds) }
-                                            android.util.Log.d("TasksScreen", "Task updated via API: id=${updated.id}, reminderTime=${updated.reminderTime}, refreshing list")
-                                            BinaryLogger.getInstance()?.log(LogLevel.INFO, "MainActivity", LogMessageCode.TASK_UPDATE, mapOf<String, Any>("task_id" to updated.id, "title" to updated.title))
+                                        android.util.Log.d("TasksScreen", "Task updated via API: id=${updated.id}, reminderTime=${updated.reminderTime}, refreshing list")
+                                        BinaryLogger.getInstance()?.log(
+                                            LogMessageCode.TASK_UPDATE,
+                                            mapOf<String, Any>(
+                                                "task_id" to updated.id,
+                                                "title" to updated.title
+                                            )
+                                        )
                                             // Явная синхронизация в фоне
                                             if (syncService.isOnline()) {
                                                 scope.launch(Dispatchers.IO) {

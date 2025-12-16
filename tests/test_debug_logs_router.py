@@ -434,6 +434,8 @@ def test_receive_binary_chunk(client: TestClient) -> None:
     import struct
     from io import BytesIO
 
+    now = datetime.now()
+
     # Create a test binary chunk
     stream = BytesIO()
 
@@ -441,9 +443,9 @@ def test_receive_binary_chunk(client: TestClient) -> None:
     stream.write(b"HDBG")  # Magic
     stream.write(struct.pack("<B", 1))  # Format major version
     stream.write(struct.pack("<B", 1))  # Format minor version
-    stream.write(struct.pack("<H", 2025))  # Year
-    stream.write(struct.pack("<B", 1))  # Month
-    stream.write(struct.pack("<B", 15))  # Day
+    stream.write(struct.pack("<H", now.year))  # Year
+    stream.write(struct.pack("<B", now.month))  # Month
+    stream.write(struct.pack("<B", now.day))  # Day
     stream.write(struct.pack("<B", 1))  # Dictionary revision major
     stream.write(struct.pack("<B", 0))  # Dictionary revision minor
 
@@ -560,6 +562,8 @@ def test_get_logs_with_text_filter(client: TestClient) -> None:
     import struct
     from io import BytesIO
 
+    now = datetime.now()
+
     # Create a test binary chunk with different messages
     stream = BytesIO()
 
@@ -567,9 +571,9 @@ def test_get_logs_with_text_filter(client: TestClient) -> None:
     stream.write(b"HDBG")
     stream.write(struct.pack("<B", 1))  # Format major
     stream.write(struct.pack("<B", 1))  # Format minor
-    stream.write(struct.pack("<H", 2025))  # Year
-    stream.write(struct.pack("<B", 1))  # Month
-    stream.write(struct.pack("<B", 15))  # Day
+    stream.write(struct.pack("<H", now.year))  # Year
+    stream.write(struct.pack("<B", now.month))  # Month
+    stream.write(struct.pack("<B", now.day))  # Day
     stream.write(struct.pack("<B", 1))  # Dict major
     stream.write(struct.pack("<B", 0))  # Dict minor
     stream.write(struct.pack("<B", 0))  # Device ID length (none)

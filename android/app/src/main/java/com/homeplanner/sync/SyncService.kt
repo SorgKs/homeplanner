@@ -69,8 +69,6 @@ class SyncService(
             val serverTasks = tasksApi.getTasks(activeOnly = false)
             repository.saveTasksToCache(serverTasks)
             BinaryLogger.getInstance()?.log(
-                LogLevel.INFO,
-                "SyncService",
                 LogMessageCode.SYNC_CACHE_UPDATED,
                 mapOf("tasks_count" to serverTasks.size, "source" to "syncStateBeforeRecalculation")
             )
@@ -108,8 +106,6 @@ class SyncService(
                 // Обновляем кэш актуальными данными с сервера (сервер сам решил, какие операции применить)
                 repository.saveTasksToCache(tasks)
                 BinaryLogger.getInstance()?.log(
-                    LogLevel.INFO,
-                    "SyncService",
                     LogMessageCode.SYNC_CACHE_UPDATED,
                     mapOf("tasks_count" to tasks.size, "queue_items" to queueItems.size, "source" to "syncQueue")
                 )
@@ -199,8 +195,6 @@ class SyncService(
                 Log.d(TAG, "syncCacheWithServer: hash mismatch, updating cache (cached: ${cachedHash.take(16)}..., server: ${serverHash.take(16)}...)")
                 repository.saveTasksToCache(serverTasks)
                 BinaryLogger.getInstance()?.log(
-                    LogLevel.INFO,
-                    "SyncService",
                     LogMessageCode.SYNC_CACHE_UPDATED,
                     mapOf("tasks_count" to serverTasks.size, "source" to "syncCacheWithServer")
                 )

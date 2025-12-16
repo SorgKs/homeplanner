@@ -281,72 +281,7 @@ enum class SyncErrorType {
 
 
 
-### Алгоритм отправки (JSON v1)
-
-- Логи автоматически отправляются на сервер в батчах (по 1кБайт записей или каждые 15 секунд).
-- Отправка происходит в фоне через `LogSender`, не блокируя UI.
-- Работает только в дебаг-версиях приложения (`BuildConfig.DEBUG`).
-- При неудачной отправке логи остаются в буфере для повторной попытки.
-
-### Инициализация
-
-```kotlin
-// В MainActivity
-LaunchedEffect(networkConfig) {
-    if (BuildConfig.DEBUG && networkConfig != null) {
-        // Инициализировать BinaryLogger
-        BinaryLogger.initialize(context)
-        
-        // Запустить LogSender для отправки на сервер
-        LogSender.start(context, networkConfig)
-        
-        // Связать BinaryLogger с LogSender
-        val logger = BinaryLogger.getInstance()
-        val sender = LogSender.getInstance()
-        if (logger != null && sender != null) {
-            logger.setLogSender(sender)
-        }
-    }
-}
-```
-
-### Структура отправляемых данных (JSON v1)
-
-Каждый лог содержит:
-- `timestamp` - время записи лога (ISO 8601).
-- `level` - уровень логирования (DEBUG, INFO, WARN, ERROR).
-- `tag` - тег компонента (например, "SyncService", "LocalApi").
-- `message_code` - код сообщения из словаря (например, "SYNC_START").
-- `context` - JSON объект с дополнительными данными (Map<String, Any>).
-- `device_id` - уникальный идентификатор устройства (генерируется автоматически).
-- `device_info` - информация об устройстве (модель, версия Android).
-- `app_version` - версия приложения.
-- `dictionary_revision` - ревизия словаря сообщений (например, "1.0").
-
-#### Отправка логов (JSON v1)
-
-```http
-POST /api/v0.2/debug-logs
-Content-Type: application/json
-
-{
-  "logs": [
-    {
-      "timestamp": "2025-01-15T10:30:00Z",
-      "level": "INFO",
-      "tag": "SyncService",
-      "message_code": "SYNC_START",
-      "context": {"queueSize": 5},
-      "device_id": "android_abc123",
-      "device_info": "Samsung Galaxy (Android 12)",
-      "app_version": "1.0.0 (1)",
-      "dictionary_revision": "1.0"
-    }
-  ]
-}
-```
-
-> В потоковом формате v2 основной канал передачи логов — бинарные чанки `POST /api/v0.2/debug-logs/chunks` (см. ниже). Эндпоинт `POST /api/v0.2/debug-logs` остаётся только для обратной совместимости и может быть отключён.
+> Историческая заметка: ранний JSON‑отправщик логов (формат v1, `POST /api/v0.2/debug-logs`) и связанный с ним компонент `LogSender` в Android‑клиенте удалены; текущий протокол использует только поток бинарных чанков (`/debug-logs/chunks`).
 
 #### Получение логов (v2)
 

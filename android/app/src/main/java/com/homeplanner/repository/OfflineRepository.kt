@@ -521,8 +521,6 @@ class OfflineRepository(
             // Перезаписываем кэш пересчитанными задачами
             saveTasksToCache(updatedTasks)
             BinaryLogger.getInstance()?.log(
-                LogLevel.INFO,
-                "OfflineRepository",
                 LogMessageCode.CACHE_UPDATED,
                 mapOf("tasks_count" to updatedTasks.size, "source" to "updateRecurringTasksForNewDay")
             )

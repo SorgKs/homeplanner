@@ -137,10 +137,8 @@ class LogCleanupManager private constructor(
             if (deletedCount > 0) {
                 val logger = BinaryLogger.getInstance()
                 logger?.log(
-                    level = LogLevel.INFO,
-                    tag = "LogCleanup",
-                    messageCode = LogMessageCode.LOGS_CLEANUP,
-                    context = mapOf(
+                    LogMessageCode.LOGS_CLEANUP,
+                    mapOf(
                         "deletedCount" to deletedCount,
                         "retentionDays" to LOG_RETENTION_DAYS,
                         "timestamp" to now

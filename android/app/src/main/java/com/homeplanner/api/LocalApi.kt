@@ -4,7 +4,6 @@ import android.util.Log
 import com.homeplanner.model.Task
 import com.homeplanner.repository.OfflineRepository
 import com.homeplanner.debug.BinaryLogger
-import com.homeplanner.debug.LogLevel
 import com.homeplanner.debug.LogMessageCode
 
 /**
@@ -55,8 +54,6 @@ class LocalApi(
         // 1. Сразу сохраняем в кэш для немедленного отображения
         offlineRepository.saveTasksToCache(listOf(task))
         BinaryLogger.getInstance()?.log(
-            LogLevel.INFO,
-            "LocalApi",
             LogMessageCode.CACHE_UPDATED,
             mapOf("tasks_count" to 1, "source" to "createTask")
         )
@@ -84,8 +81,6 @@ class LocalApi(
         // 1. Сразу обновляем в кэше для немедленного отображения
         offlineRepository.saveTasksToCache(listOf(task))
         BinaryLogger.getInstance()?.log(
-            LogLevel.INFO,
-            "LocalApi",
             LogMessageCode.CACHE_UPDATED,
             mapOf("tasks_count" to 1, "source" to "updateTask")
         )
@@ -115,8 +110,6 @@ class LocalApi(
         val updatedTask = cachedTask.copy(completed = true)
         offlineRepository.saveTasksToCache(listOf(updatedTask))
         BinaryLogger.getInstance()?.log(
-            LogLevel.INFO,
-            "LocalApi",
             LogMessageCode.CACHE_UPDATED,
             mapOf("tasks_count" to 1, "source" to "completeTask")
         )
@@ -146,8 +139,6 @@ class LocalApi(
         val updatedTask = cachedTask.copy(completed = false)
         offlineRepository.saveTasksToCache(listOf(updatedTask))
         BinaryLogger.getInstance()?.log(
-            LogLevel.INFO,
-            "LocalApi",
             LogMessageCode.CACHE_UPDATED,
             mapOf("tasks_count" to 1, "source" to "uncompleteTask")
         )
