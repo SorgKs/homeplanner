@@ -44,6 +44,7 @@ class OfflineStartupUiTest {
         val db = AppDatabase.getDatabase(context)
         val repository = OfflineRepository(db, context)
 
+        val currentTimeMillis = System.currentTimeMillis()
         val task1 = Task(
             id = 101,
             title = "Задача оффлайн 1",
@@ -56,7 +57,11 @@ class OfflineStartupUiTest {
             groupId = null,
             active = true,
             completed = false,
-            assignedUserIds = emptyList()
+            assignedUserIds = emptyList(),
+            updatedAt = currentTimeMillis,
+            lastAccessed = currentTimeMillis,
+            lastShownAt = null,
+            createdAt = currentTimeMillis
         )
         val task2 = task1.copy(
             id = 102,
@@ -64,7 +69,7 @@ class OfflineStartupUiTest {
         )
 
         runBlocking {
-            repository.clearAllCache()
+            repository.clearAllCacheLocal()
             repository.saveTasksToCache(listOf(task1, task2))
         }
     }

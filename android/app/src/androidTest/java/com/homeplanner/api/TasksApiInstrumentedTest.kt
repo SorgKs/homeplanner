@@ -3,6 +3,7 @@ package com.homeplanner.api
 import android.os.StrictMode
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.homeplanner.model.Task
+import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -20,7 +21,7 @@ import org.junit.runner.RunWith
 class TasksApiInstrumentedTest {
 
     private lateinit var server: MockWebServer
-    private lateinit var client: TasksApi
+    private lateinit var client: ServerApi
 
     private val sampleTask = Task(
         id = 123,
@@ -34,6 +35,11 @@ class TasksApiInstrumentedTest {
         groupId = 2,
         active = true,
         completed = false,
+        assignedUserIds = emptyList(),
+        updatedAt = System.currentTimeMillis(),
+        lastAccessed = System.currentTimeMillis(),
+        lastShownAt = null,
+        createdAt = System.currentTimeMillis()
     )
 
     @Before
@@ -56,7 +62,7 @@ class TasksApiInstrumentedTest {
                 server.start(0) // Случайный свободный порт
             }
             val baseUrl = server.url("/api/v0.2").toString().trimEnd('/')
-            client = TasksApi(
+            client = ServerApi(
                 httpClient = OkHttpClient.Builder().build(),
                 baseUrl = baseUrl,
             )
@@ -107,8 +113,8 @@ class TasksApiInstrumentedTest {
                     ),
             )
 
-            android.util.Log.d("TasksApiInstrumentedTest", "Calling client.getTasks()")
-            val tasks = client.getTasks(activeOnly = false)
+            android.util.Log.d("TasksApiInstrumentedTest", "Calling client.getTasksServer()")
+            val tasks = runBlocking { client.getTasksServer(activeOnly = false).getOrThrow() }
             android.util.Log.d("TasksApiInstrumentedTest", "Received ${tasks.size} tasks")
             
             val recordedRequest = server.takeRequest()
@@ -143,7 +149,7 @@ class TasksApiInstrumentedTest {
                 .setBody("[]"),
         )
 
-        client.getTasks()
+        runBlocking { client.getTasksServer().getOrThrow() }
         val recordedRequest = server.takeRequest()
 
         assertEquals("/api/v0.2/tasks/?active_only=true", recordedRequest.path)
@@ -154,7 +160,7 @@ class TasksApiInstrumentedTest {
         server.enqueue(MockResponse().setResponseCode(500))
 
         try {
-            client.getTasks(activeOnly = false)
+            runBlocking { client.getTasksServer(activeOnly = false).getOrThrow() }
             fail("Ожидалось исключение при ошибочном ответе сервера.")
         } catch (expected: IllegalStateException) {
             // ok
@@ -169,7 +175,7 @@ class TasksApiInstrumentedTest {
                 .setBody("[1, 2, 3]"),
         )
 
-        val ids = client.getTodayTaskIds()
+        val ids = runBlocking { client.getTodayTaskIds() }
         val recordedRequest = server.takeRequest()
         assertEquals("/api/v0.2/tasks/today/ids", recordedRequest.path)
         assertEquals(3, ids.size)
@@ -200,7 +206,7 @@ class TasksApiInstrumentedTest {
                 ),
         )
 
-        val created = client.createTask(sampleTask)
+        val created = runBlocking { client.createTaskServer(sampleTask).getOrThrow() }
         val recordedRequest = server.takeRequest()
         val bodyJson = JSONObject(recordedRequest.body.readUtf8())
 
@@ -236,7 +242,7 @@ class TasksApiInstrumentedTest {
                 ),
         )
 
-        val updated = client.updateTask(123, sampleTask)
+        val updated = runBlocking { client.updateTaskServer(123, sampleTask).getOrThrow() }
         val recordedRequest = server.takeRequest()
 
         assertEquals("/api/v0.2/tasks/123", recordedRequest.path)
@@ -268,7 +274,7 @@ class TasksApiInstrumentedTest {
                 ),
         )
 
-        val completed = client.completeTask(123)
+        val completed = runBlocking { client.completeTaskServer(123).getOrThrow() }
         val recordedRequest = server.takeRequest()
 
         assertEquals("/api/v0.2/tasks/123/complete", recordedRequest.path)
@@ -300,7 +306,7 @@ class TasksApiInstrumentedTest {
                 ),
         )
 
-        val uncompleted = client.uncompleteTask(123)
+        val uncompleted = runBlocking { client.uncompleteTaskServer(123).getOrThrow() }
         val recordedRequest = server.takeRequest()
 
         assertEquals("/api/v0.2/tasks/123/uncomplete", recordedRequest.path)
@@ -316,7 +322,7 @@ class TasksApiInstrumentedTest {
                 .setBody(""),
         )
 
-        client.deleteTask(321)
+        runBlocking { client.deleteTaskServer(321).getOrThrow() }
         val recordedRequest = server.takeRequest()
 
         assertEquals("/api/v0.2/tasks/321", recordedRequest.path)

@@ -16,17 +16,25 @@ LOG_MESSAGE_DICTIONARY: Dict[int, Dict[str, any]] = {
     1: {
         "template": "Синхронизация начата",
         "level": "INFO",
-        "context_schema": []
+        "context_schema": [
+            {"name": "cache_size", "type": "int"}
+        ]
     },
     2: {
         "template": "Синхронизация успешно завершена",
         "level": "INFO",
-        "context_schema": []
+        "context_schema": [
+            {"name": "server_tasks", "type": "int"},
+            {"name": "groups", "type": "int"},
+            {"name": "users", "type": "int"}
+        ]
     },
     3: {
         "template": "Ошибка синхронизации: проблемы с сетью",
         "level": "ERROR",
-        "context_schema": []
+        "context_schema": [
+            {"name": "error", "type": "string"}
+        ]
     },
     4: {
         "template": "Ошибка синхронизации: ошибка сервера 500",
@@ -68,39 +76,56 @@ LOG_MESSAGE_DICTIONARY: Dict[int, Dict[str, any]] = {
     11: {
         "template": "Соединение потеряно",
         "level": "WARN",
-        "context_schema": []
+        "context_schema": [
+            {"name": "failures", "type": "int"}
+        ]
     },
     12: {
         "template": "Соединение деградировало",
         "level": "WARN",
-        "context_schema": []
+        "context_schema": [
+            {"name": "failures", "type": "int"}
+        ]
     },
     
     # Задачи (коды 20-25)
     20: {
         "template": "Создана задача",
         "level": "INFO",
-        "context_schema": []
+        "context_schema": [
+            {"name": "task_id", "type": "int"},
+            {"name": "title", "type": "string"}
+        ]
     },
     21: {
         "template": "Задача обновлена",
         "level": "INFO",
-        "context_schema": []
+        "context_schema": [
+            {"name": "task_id", "type": "int"},
+            {"name": "title", "type": "string"}
+        ]
     },
     22: {
         "template": "Задача выполнена",
         "level": "INFO",
-        "context_schema": []
+        "context_schema": [
+            {"name": "task_id", "type": "int"},
+            {"name": "title", "type": "string"}
+        ]
     },
     23: {
         "template": "Задача удалена",
         "level": "INFO",
-        "context_schema": []
+        "context_schema": [
+            {"name": "task_id", "type": "int"}
+        ]
     },
     24: {
         "template": "Выполнение задачи отменено",
         "level": "INFO",
-        "context_schema": []
+        "context_schema": [
+            {"name": "task_id", "type": "int"}
+        ]
     },
     
     # Очередь (коды 30-32)
@@ -129,12 +154,11 @@ LOG_MESSAGE_DICTIONARY: Dict[int, Dict[str, any]] = {
     41: {
         "template": "Кэш обновлен после синхронизации",
         "level": "INFO",
-        "context_schema": []
-    },
-    42: {
-        "template": "Кэш обновлен",
-        "level": "INFO",
-        "context_schema": []
+        "context_schema": [
+            {"name": "tasks_count", "type": "int"},
+            {"name": "source", "type": "string"},
+            {"name": "queue_items", "type": "int"}
+        ]
     },
     
     # Инциденты (коды 50-51)
@@ -156,6 +180,196 @@ LOG_MESSAGE_DICTIONARY: Dict[int, Dict[str, any]] = {
         "context_schema": []
     },
     
+    # API операции (коды 200-299)
+    200: {
+        "template": "Загружены задачи из кэша",
+        "level": "DEBUG",
+        "context_schema": []
+    },
+    201: {
+        "template": "getTasks: [STEP 1] Выполнение HTTP запроса к серверу",
+        "level": "DEBUG",
+        "context_schema": []
+    },
+    202: {
+        "template": "getTasks: [STEP 2] Получен HTTP ответ",
+        "level": "DEBUG",
+        "context_schema": []
+    },
+    203: {
+        "template": "getTasks: [STEP 3] Получено тело ответа",
+        "level": "DEBUG",
+        "context_schema": []
+    },
+    204: {
+        "template": "getTasks: [STEP 4] Распарсен JSON массив",
+        "level": "DEBUG",
+        "context_schema": []
+    },
+    205: {
+        "template": "getTasks: [STEP 4] Успешно распарсена задача",
+        "level": "DEBUG",
+        "context_schema": [
+            {"name": "task_id", "type": "int"}
+        ]
+    },
+    206: {
+        "template": "getTasks: [STEP 5] Успешно распарсены задачи",
+        "level": "DEBUG",
+        "context_schema": []
+    },
+    207: {
+        "template": "Создание задачи",
+        "level": "DEBUG",
+        "context_schema": []
+    },
+    208: {
+        "template": "Отправка POST запроса",
+        "level": "DEBUG",
+        "context_schema": []
+    },
+    209: {
+        "template": "Получен ответ",
+        "level": "DEBUG",
+        "context_schema": []
+    },
+    210: {
+        "template": "Получено тело ответа",
+        "level": "DEBUG",
+        "context_schema": []
+    },
+    211: {
+        "template": "Обновление задачи",
+        "level": "DEBUG",
+        "context_schema": []
+    },
+    212: {
+        "template": "Отправка PATCH запроса",
+        "level": "DEBUG",
+        "context_schema": []
+    },
+    213: {
+        "template": "Задача имеет null reminder_time",
+        "level": "ERROR",
+        "context_schema": [
+            {"name": "task_id", "type": "int"}
+        ]
+    },
+    214: {
+        "template": "Задача имеет пустой reminder_time",
+        "level": "ERROR",
+        "context_schema": [
+            {"name": "task_id", "type": "int"}
+        ]
+    },
+    
+    # Синхронизация детальная (коды 300-399)
+    300: {
+        "template": "syncStateBeforeRecalculation: синхронизация ожидающих операций",
+        "level": "DEBUG",
+        "context_schema": []
+    },
+    301: {
+        "template": "syncStateBeforeRecalculation: syncQueue завершился с ошибкой, но продолжается",
+        "level": "WARN",
+        "context_schema": []
+    },
+    302: {
+        "template": "syncStateBeforeRecalculation: загрузка задач с сервера",
+        "level": "DEBUG",
+        "context_schema": []
+    },
+    303: {
+        "template": "syncCacheWithServer: [STEP 1] Начало синхронизации",
+        "level": "DEBUG",
+        "context_schema": []
+    },
+    304: {
+        "template": "syncCacheWithServer: [STEP 2] Получены задачи с сервера",
+        "level": "DEBUG",
+        "context_schema": []
+    },
+    305: {
+        "template": "syncCacheWithServer: загружены задачи из кэша",
+        "level": "DEBUG",
+        "context_schema": []
+    },
+    306: {
+        "template": "syncCacheWithServer: [STEP 6] Несоответствие хеша, обновление кэша",
+        "level": "DEBUG",
+        "context_schema": []
+    },
+    307: {
+        "template": "syncCacheWithServer: [STEP 7] Сохранение задач в кэш",
+        "level": "DEBUG",
+        "context_schema": []
+    },
+    308: {
+        "template": "syncCacheWithServer: [STEP 8] Успешно сохранены задачи в кэш",
+        "level": "DEBUG",
+        "context_schema": []
+    },
+    309: {
+        "template": "syncCacheWithServer: [STEP 6] Хеши совпадают, кэш актуален",
+        "level": "DEBUG",
+        "context_schema": []
+    },
+    310: {
+        "template": "syncCacheWithServer: синхронизация очереди завершилась с ошибкой, но продолжается",
+        "level": "WARN",
+        "context_schema": []
+    },
+    311: {
+        "template": "syncCacheWithServer: загружены группы",
+        "level": "DEBUG",
+        "context_schema": []
+    },
+    312: {
+        "template": "syncCacheWithServer: загружены пользователи",
+        "level": "DEBUG",
+        "context_schema": []
+    },
+    313: {
+        "template": "syncCacheWithServer: успешно завершено",
+        "level": "DEBUG",
+        "context_schema": []
+    },
+    314: {
+        "template": "saveTasksToCache: [STEP 1] Начало сохранения задач в кэш",
+        "level": "DEBUG",
+        "context_schema": [
+            {"name": "tasks_count", "type": "int"}
+        ]
+    },
+    315: {
+        "template": "saveTasksToCache: [STEP 2] Задачи преобразованы в TaskCache",
+        "level": "DEBUG",
+        "context_schema": [
+            {"name": "cache_tasks_count", "type": "int"}
+        ]
+    },
+    316: {
+        "template": "saveTasksToCache: [STEP 3] Задачи вставлены в базу данных",
+        "level": "DEBUG",
+        "context_schema": [
+            {"name": "inserted_count", "type": "int"}
+        ]
+    },
+    317: {
+        "template": "saveTasksToCache: [STEP 4] Обновлен lastAccessed для всех задач",
+        "level": "DEBUG",
+        "context_schema": [
+            {"name": "updated_count", "type": "int"}
+        ]
+    },
+    318: {
+        "template": "saveTasksToCache: [STEP 5] Успешно сохранено задач в кэш",
+        "level": "DEBUG",
+        "context_schema": [
+            {"name": "saved_count", "type": "int"}
+        ]
+    },
+    
     # Общие ошибки (коды 90-91)
     90: {
         "template": "Неизвестная ошибка",
@@ -163,9 +377,12 @@ LOG_MESSAGE_DICTIONARY: Dict[int, Dict[str, any]] = {
         "context_schema": []
     },
     91: {
-        "template": "Исключение",
+        "template": "Исключение: ожидалось %wait%, фактически %fact%",
         "level": "ERROR",
-        "context_schema": []
+        "context_schema": [
+            {"name": "wait", "type": "string"},
+            {"name": "fact", "type": "string"}
+        ]
     },
     
     # Общие события (коды 100-102)
@@ -193,48 +410,12 @@ LOG_MESSAGE_DICTIONARY: Dict[int, Dict[str, any]] = {
     },
 }
 
-# Обратная совместимость: строковые коды для старого JSON API
-STRING_CODE_TO_NUMERIC: Dict[str, int] = {
-    "SYNC_START": 1,
-    "SYNC_SUCCESS": 2,
-    "SYNC_FAIL_NETWORK": 3,
-    "SYNC_FAIL_500": 4,
-    "SYNC_FAIL_503": 5,
-    "SYNC_FAIL_409": 6,
-    "SYNC_FAIL_400": 7,
-    "SYNC_FAIL_401": 8,
-    "SYNC_FAIL_403": 9,
-    "CONNECTION_ONLINE": 10,
-    "CONNECTION_OFFLINE": 11,
-    "CONNECTION_DEGRADED": 12,
-    "TASK_CREATE": 20,
-    "TASK_UPDATE": 21,
-    "TASK_COMPLETE": 22,
-    "TASK_DELETE": 23,
-    "TASK_UNCOMPLETE": 24,
-    "QUEUE_ADD": 30,
-    "QUEUE_CLEAR": 31,
-    "QUEUE_SIZE": 32,
-    "SYNC_QUEUE_EMPTY": 40,
-    "SYNC_CACHE_UPDATED": 41,
-    "CACHE_UPDATED": 42,
-    "INCIDENTS_SENT": 50,
-    "INCIDENTS_SEND_FAIL": 51,
-    "LOGS_CLEANUP": 60,
-    "ERROR_UNKNOWN": 90,
-    "ERROR_EXCEPTION": 91,
-    "APP_START": 100,
-    "APP_STOP": 101,
-    "UI_UPDATE": 102,
-    "UNKNOWN": 0,
-}
 
-
-def get_message_description(code: str | int, dictionary_revision: str = "1.0") -> str:
+def get_message_description(code: int, dictionary_revision: str = "1.0") -> str:
     """Get description for a message code.
     
     Args:
-        code: Message code from log entry (string or numeric)
+        code: Numeric message code from log entry
         dictionary_revision: Dictionary revision (e.g., "1.0")
     
     Returns:
@@ -243,13 +424,6 @@ def get_message_description(code: str | int, dictionary_revision: str = "1.0") -
     # For now, we only support version 1.0
     # In the future, this could check revision and use appropriate dictionary
     if dictionary_revision.startswith("1."):
-        # Convert string code to numeric if needed
-        if isinstance(code, str):
-            numeric_code = STRING_CODE_TO_NUMERIC.get(code)
-            if numeric_code is None:
-                return code  # Unknown string code
-            code = numeric_code
-        
         # Get message info from dictionary
         message_info = LOG_MESSAGE_DICTIONARY.get(code)
         if message_info:

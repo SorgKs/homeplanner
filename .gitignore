@@ -88,3 +88,4 @@ frontend/.next/
 .DS_Store
 Thumbs.db
 
+.aider*

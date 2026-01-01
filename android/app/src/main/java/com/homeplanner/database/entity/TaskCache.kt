@@ -47,7 +47,9 @@ data class TaskCache(
 
     // Метаданные для LRU очистки
     val updatedAt: Long = System.currentTimeMillis(),
-    val lastAccessed: Long = System.currentTimeMillis()
+    val lastAccessed: Long = System.currentTimeMillis(),
+    val lastShownAt: Long? = null,
+    val createdAt: Long = System.currentTimeMillis()
 ) {
     fun toTask(): Task {
         val assignedIds = if (assignedUserIds.isNotEmpty()) {
@@ -56,7 +58,7 @@ data class TaskCache(
         } else {
             emptyList()
         }
-        
+
         return Task(
             id = id,
             title = title,
@@ -69,14 +71,18 @@ data class TaskCache(
             groupId = groupId,
             active = active,
             completed = completed,
-            assignedUserIds = assignedIds
+            assignedUserIds = assignedIds,
+            updatedAt = updatedAt,
+            lastAccessed = lastAccessed,
+            lastShownAt = lastShownAt,
+            createdAt = createdAt
         )
     }
     
     companion object {
         fun fromTask(task: Task, hasConflict: Boolean = false): TaskCache {
             val assignedIdsJson = task.assignedUserIds.joinToString(",", "[", "]")
-            
+
             return TaskCache(
                 id = task.id,
                 title = task.title,
@@ -91,10 +97,11 @@ data class TaskCache(
                 completed = task.completed,
                 assignedUserIds = assignedIdsJson,
                 hasConflict = hasConflict,
-                updatedAt = System.currentTimeMillis(),
-                lastAccessed = System.currentTimeMillis()
+                updatedAt = task.updatedAt,
+                lastAccessed = task.lastAccessed,
+                lastShownAt = task.lastShownAt,
+                createdAt = task.createdAt
             )
         }
     }
 }
-

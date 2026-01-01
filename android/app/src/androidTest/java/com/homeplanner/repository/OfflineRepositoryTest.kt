@@ -33,9 +33,13 @@ class OfflineRepositoryTest {
         groupId = null,
         active = true,
         completed = false,
-        assignedUserIds = emptyList()
+        assignedUserIds = emptyList(),
+        updatedAt = System.currentTimeMillis(),
+        lastAccessed = System.currentTimeMillis(),
+        lastShownAt = null,
+        createdAt = System.currentTimeMillis()
     )
-    
+
     private val sampleTask2 = Task(
         id = 2,
         title = "Задача 2",
@@ -48,7 +52,11 @@ class OfflineRepositoryTest {
         groupId = 1,
         active = true,
         completed = false,
-        assignedUserIds = emptyList()
+        assignedUserIds = emptyList(),
+        updatedAt = System.currentTimeMillis(),
+        lastAccessed = System.currentTimeMillis(),
+        lastShownAt = null,
+        createdAt = System.currentTimeMillis()
     )
 
     @Before
@@ -64,7 +72,7 @@ class OfflineRepositoryTest {
         // Очищаем оффлайн-кэш, очередь и связанные SharedPreferences перед каждым тестом,
         // чтобы избежать влияния предыдущих запусков/тестов.
         runBlocking {
-            repository.clearAllCache()
+            repository.clearAllCacheLocal()
             repository.clearAllQueue()
         }
         val prefs = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
@@ -165,7 +173,7 @@ class OfflineRepositoryTest {
     fun getCachedTasksCount_returnsCorrectCount() = runBlocking {
         repository.saveTasksToCache(listOf(sampleTask1, sampleTask2))
         
-        val count = repository.getCachedTasksCount()
+        val count = repository.getCachedTasksCountLocal()
         
         assertEquals(2, count)
     }

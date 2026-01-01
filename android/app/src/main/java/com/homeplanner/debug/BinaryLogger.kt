@@ -60,10 +60,13 @@ class BinaryLogger private constructor(
 
     /**
      * Записать лог.
+     * 
+     * @param code Числовой код сообщения (UShort, 2 байта)
+     * @param context Список значений контекста в порядке схемы (без ключей)
      */
     fun log(
-        messageCode: String,
-        context: Map<String, Any> = emptyMap()
+        code: UShort,
+        context: List<Any> = emptyList()
     ) {
         if (!BuildConfig.DEBUG) return
 
@@ -71,7 +74,7 @@ class BinaryLogger private constructor(
             timestamp = System.currentTimeMillis(),
             level = LogLevel.INFO,
             tag = "",
-            messageCode = messageCode,
+            messageCode = code,
             context = context
         )
 

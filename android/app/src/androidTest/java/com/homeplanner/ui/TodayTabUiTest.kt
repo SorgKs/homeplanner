@@ -60,7 +60,7 @@ class TodayTabUiTest {
         runBlocking {
             userSettings.clearSelectedUser()
             networkSettings.clearConfig()
-            repository.clearAllCache()
+            repository.clearAllCacheLocal()
             // Даем время на сохранение настроек
             Thread.sleep(200)
         }
@@ -72,7 +72,7 @@ class TodayTabUiTest {
         runBlocking {
             userSettings.clearSelectedUser()
             networkSettings.clearConfig()
-            repository.clearAllCache()
+            repository.clearAllCacheLocal()
         }
     }
 
@@ -88,6 +88,7 @@ class TodayTabUiTest {
         active: Boolean = true,
         assignedUserIds: List<Int> = listOf(testUserId)
     ): Task {
+        val currentTimeMillis = System.currentTimeMillis()
         return Task(
             id = id,
             title = title,
@@ -100,7 +101,11 @@ class TodayTabUiTest {
             groupId = null,
             active = active,
             completed = completed,
-            assignedUserIds = assignedUserIds
+            assignedUserIds = assignedUserIds,
+            updatedAt = currentTimeMillis,
+            lastAccessed = currentTimeMillis,
+            lastShownAt = null,
+            createdAt = currentTimeMillis
         )
     }
 

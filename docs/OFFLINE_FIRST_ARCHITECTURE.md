@@ -3,7 +3,8 @@
 > **Примечание:** Данный документ описывает архитектуру **Android APK приложения** (клиентская часть), а не всего проекта HomePlanner. Для общей архитектуры проекта см. [ARCHITECTURE_vNext.md](ARCHITECTURE_vNext.md).
 
 > **Статус архитектуры:** ✅ **Реализована**  
-> **Миграция:** Завершена (документ в архиве: [archive/MIGRATION_TO_LOCAL_API.md](archive/MIGRATION_TO_LOCAL_API.md))
+> **Миграция:** Завершена (документ в архиве: [archive/MIGRATION_TO_LOCAL_API.md](archive/MIGRATION_TO_LOCAL_API.md))  
+> **Последнее обновление:** 2025-12-28
 
 ## Обзор
 

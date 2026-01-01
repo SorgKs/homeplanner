@@ -1,19 +1,15 @@
 package com.homeplanner.sync
 
 import android.content.Context
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
-import android.util.Log
-import com.homeplanner.api.GroupsApi
-import com.homeplanner.api.TasksApi
+import com.homeplanner.api.GroupsServerApi
+import com.homeplanner.api.ServerApi
 import com.homeplanner.api.UserSummary
-import com.homeplanner.api.UsersApi
+import com.homeplanner.api.UsersServerApi
 import com.homeplanner.database.entity.SyncQueueItem
 import com.homeplanner.model.Task
 import com.homeplanner.repository.OfflineRepository
 import com.homeplanner.debug.BinaryLogger
 import com.homeplanner.debug.LogLevel
-import com.homeplanner.debug.LogMessageCode
 import org.json.JSONObject
 import kotlinx.coroutines.delay
 import java.security.MessageDigest
@@ -24,104 +20,129 @@ import java.security.MessageDigest
  */
 class SyncService(
     private val repository: OfflineRepository,
-    private val tasksApi: TasksApi,
+    private val serverApi: ServerApi,
     private val context: Context
 ) {
-    private val connectivityManager = 
-        context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-    
     companion object {
         private const val TAG = "SyncService"
-    }
-    
-    fun isOnline(): Boolean {
-        val network = connectivityManager.activeNetwork ?: return false
-        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
-        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
-               capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
     }
 
     /**
      * Синхронизация состояния перед пересчётом задач по новому дню.
      *
      * Алгоритм:
-     * 1. Если оффлайн — вернуть false (пересчёт будет только локальным).
-     * 2. Если в очереди есть операции — выполнить syncQueue().
-     * 3. Загрузить актуальные задачи с сервера и сохранить их в кэш.
+     * 1. Если в очереди есть операции — выполнить syncQueue().
+     * 2. Загрузить актуальные задачи с сервера и сохранить их в кэш.
+     * 
+     * Реальный статус соединения контролируется в MainActivity через connectionStatus
+     * на основе реальных попыток соединения с сервером (ONLINE/DEGRADED/OFFLINE).
      */
     suspend fun syncStateBeforeRecalculation(): Boolean {
-        if (!isOnline()) {
-            Log.d(TAG, "syncStateBeforeRecalculation: offline, skipping server sync")
-            return false
-        }
-
         return try {
             val pending = repository.getPendingOperationsCount()
             if (pending > 0) {
-                Log.d(TAG, "syncStateBeforeRecalculation: syncing $pending pending operations before recalculation")
+                // syncStateBeforeRecalculation: синхронизация ожидающих операций
+                BinaryLogger.getInstance()?.log(300u, emptyList())
                 val result = syncQueue()
                 if (result.isFailure) {
-                    Log.w(TAG, "syncStateBeforeRecalculation: syncQueue failed, but continuing with server reload")
+                    // syncStateBeforeRecalculation: syncQueue завершился с ошибкой, но продолжается
+                    BinaryLogger.getInstance()?.log(301u, emptyList())
                 }
             }
 
-            Log.d(TAG, "syncStateBeforeRecalculation: loading tasks from server")
-            val serverTasks = tasksApi.getTasks(activeOnly = false)
-            repository.saveTasksToCache(serverTasks)
+            // syncStateBeforeRecalculation: загрузка задач с сервера
+            BinaryLogger.getInstance()?.log(302u, emptyList())
+            val serverTasks = serverApi.getTasksServer(activeOnly = false).getOrThrow()
+            repository.saveTasksToCacheLocal(serverTasks)
+            val queueSize = repository.getPendingOperationsCount()
+            // Кэш обновлен после синхронизации: %tasks_count% задач из %source%, очередь: %queue_items%
             BinaryLogger.getInstance()?.log(
-                LogMessageCode.SYNC_CACHE_UPDATED,
-                mapOf("tasks_count" to serverTasks.size, "source" to "syncStateBeforeRecalculation")
+                41u,
+                listOf(serverTasks.size, "syncStateBeforeRecalculation", queueSize)
             )
             true
         } catch (e: Exception) {
-            Log.e(TAG, "syncStateBeforeRecalculation: error during pre-recalculation sync", e)
+            // Исключение: ожидалось %wait%, фактически %fact%
+            BinaryLogger.getInstance()?.log(
+                91u,
+                listOf(e.message ?: "Unknown error", e::class.simpleName ?: "Unknown")
+            )
             false
         }
     }
     
     suspend fun syncQueue(): Result<SyncResult> {
-        if (!isOnline()) {
-            Log.d(TAG, "No internet connection, skipping sync")
-            return Result.failure(Exception("No internet connection"))
-        }
+        // Реальный статус соединения контролируется в MainActivity через connectionStatus
+        // на основе реальных попыток соединения с сервером (ONLINE/DEGRADED/OFFLINE).
+        // Здесь просто пытаемся синхронизироваться, ошибки будут обработаны в MainActivity.
         
-        val queueItems = repository.getPendingQueueItems()
-        if (queueItems.isEmpty()) {
-            Log.d(TAG, "No pending items in queue")
+        // Получаем все pending операции с разумным лимитом (10000)
+        // Если операций больше, они будут синхронизированы в следующих вызовах
+        val allQueueItems = repository.getPendingQueueItems(limit = 10000)
+        if (allQueueItems.isEmpty()) {
+            // Очередь синхронизации пуста
+            BinaryLogger.getInstance()?.log(40u, emptyList())
             return Result.success(SyncResult(0, 0, 0))
         }
         
         return try {
-            Log.d(TAG, "Starting batched sync of ${queueItems.size} items")
-            // Сервер обрабатывает конфликты самостоятельно и возвращает актуальное состояние задач
-            val tasks = tasksApi.syncQueue(queueItems)
+            // Синхронизация начата
+            BinaryLogger.getInstance()?.log(
+                1u,
+                listOf(allQueueItems.size)
+            )
+            
+            // Разбиваем операции на группы по 100 элементов и отправляем последовательно
+            // Это позволяет обработать большое количество операций без перегрузки сервера
+            val BATCH_SIZE = 100
+            var totalSuccessCount = 0
+            var allTasks = emptyList<Task>()
+            
+            for (i in allQueueItems.indices step BATCH_SIZE) {
+                val batch = allQueueItems.subList(i, minOf(i + BATCH_SIZE, allQueueItems.size))
+                android.util.Log.d(TAG, "Syncing batch ${i / BATCH_SIZE + 1}: ${batch.size} operations")
+                
+                // Сервер обрабатывает конфликты самостоятельно и возвращает актуальное состояние задач
+                val batchTasks = serverApi.syncQueueServer(batch).getOrThrow()
+                totalSuccessCount += batch.size
+                
+                // Собираем все задачи из всех батчей
+                allTasks = allTasks + batchTasks
+            }
             
             // Сервер - источник истины: очищаем очередь и обновляем кэш актуальными данными с сервера
+            // Очищаем только те элементы, которые были успешно отправлены
+            // Если операций было больше лимита, остальные останутся в очереди для следующей синхронизации
             repository.clearAllQueue()
-            if (tasks.isNotEmpty()) {
-                // Логируем reminder_time для всех задач после синхронизации
-                tasks.forEach { task ->
-                    Log.d(TAG, "Task after sync: id=${task.id}, reminderTime=${task.reminderTime}")
-                }
+            if (allTasks.isNotEmpty()) {
                 // Обновляем кэш актуальными данными с сервера (сервер сам решил, какие операции применить)
-                repository.saveTasksToCache(tasks)
+                repository.saveTasksToCacheLocal(allTasks)
+                // Кэш обновлен после синхронизации: %tasks_count% задач из %source%, очередь: %queue_items%
                 BinaryLogger.getInstance()?.log(
-                    LogMessageCode.SYNC_CACHE_UPDATED,
-                    mapOf("tasks_count" to tasks.size, "queue_items" to queueItems.size, "source" to "syncQueue")
+                    41u,
+                    listOf(allTasks.size, "syncQueue", allQueueItems.size)
                 )
             }
 
             val syncResult = SyncResult(
-                successCount = queueItems.size,
+                successCount = totalSuccessCount,
                 failureCount = 0,
                 conflictCount = 0
             )
-            Log.d(TAG, "Batched sync completed successfully: $syncResult")
+            // Синхронизация успешно завершена
+            BinaryLogger.getInstance()?.log(
+                2u,
+                listOf(syncResult.successCount, 0, 0)
+            )
             Result.success(syncResult)
         } catch (e: Exception) {
-            Log.e(TAG, "Batched sync failed", e)
+            // Исключение: ожидалось %wait%, фактически %fact%
+            BinaryLogger.getInstance()?.log(
+                91u,
+                listOf(e.message ?: "Unknown error", e::class.simpleName ?: "Unknown")
+            )
             Result.failure(e)
-            }
+        }
     }
     
     data class SyncResult(
@@ -144,7 +165,7 @@ class SyncService(
      * 
      * Алгоритм:
      * 1. Проверка наличия интернета
-     * 2. Запрос данных с сервера через TasksApi.getTasks()
+     * 2. Запрос данных с сервера через ServerApi.getTasks()
      *    - Если запрос не удался → возврат ошибки (не тратим ресурсы на вычисление хеша кэша)
      * 3. Загрузка данных из кэша для сравнения
      * 4. Вычисление хеша кэшированных данных
@@ -162,86 +183,104 @@ class SyncService(
      * @return Результат синхронизации с флагом обновления кэша и опциональными данными
      */
     suspend fun syncCacheWithServer(
-        groupsApi: GroupsApi? = null,
-        usersApi: UsersApi? = null
+        groupsApi: GroupsServerApi? = null,
+        usersApi: UsersServerApi? = null
     ): Result<SyncCacheResult> {
-        // 1. Проверка наличия интернета - но пытаемся синхронизироваться даже если статус неизвестен
-        // Это гарантирует обновление локального хранилища при запуске приложения
-        val hasInternet = isOnline()
-        if (!hasInternet) {
-            Log.d(TAG, "syncCacheWithServer: No internet connection detected, but will try sync anyway")
-        }
+        // Реальный статус соединения контролируется в MainActivity через connectionStatus
+        // на основе реальных попыток соединения с сервером (ONLINE/DEGRADED/OFFLINE).
+        // Здесь просто пытаемся синхронизироваться, ошибки будут обработаны в MainActivity.
+        
+        // syncCacheWithServer: [STEP 1] Начало синхронизации
+        BinaryLogger.getInstance()?.log(303u, emptyList())
         
         return try {
-            // 2. Запрос данных с сервера (сначала, чтобы не тратить ресурсы на вычисление хеша кэша при ошибке)
-            Log.d(TAG, "syncCacheWithServer: fetching tasks from server")
-            val serverTasks = tasksApi.getTasks(activeOnly = false)
-            Log.d(TAG, "syncCacheWithServer: received ${serverTasks.size} tasks from server")
+            // Единый код синхронизации: просто вызываем syncQueue()
+            // В онлайн режиме он работает сразу, в оффлайн - вернет ошибку, но при восстановлении сети сработает так же
+            // syncQueue() сам обновит кэш актуальными данными с сервера после применения операций
+            val queueSyncResult = syncQueue()
             
-            // 3. Загрузка данных из кэша для сравнения
-            val cachedTasks = repository.loadTasksFromCache()
-            Log.d(TAG, "syncCacheWithServer: loaded ${cachedTasks.size} tasks from cache")
-            
-            // 4. Вычисление хеша кэшированных данных
-            val cachedHash = calculateTasksHash(cachedTasks)
-            
-            // 5. Вычисление хеша данных с сервера
-            val serverHash = calculateTasksHash(serverTasks)
-            
-            // 6. Сравнение хешей и обновление кэша при различиях
-            // Если кэш пустой, а на сервере есть задачи - хеши будут разными, и задачи сохранятся автоматически
-            // Если на сервере нет задач - хеши совпадут (оба пустые), и сохранять нечего
-            val cacheUpdated = if (cachedHash != serverHash) {
-                Log.d(TAG, "syncCacheWithServer: hash mismatch, updating cache (cached: ${cachedHash.take(16)}..., server: ${serverHash.take(16)}...)")
-                repository.saveTasksToCache(serverTasks)
-                BinaryLogger.getInstance()?.log(
-                    LogMessageCode.SYNC_CACHE_UPDATED,
-                    mapOf("tasks_count" to serverTasks.size, "source" to "syncCacheWithServer")
-                )
-                true
+            // Если syncQueue() успешно выполнился и были операции, кэш уже обновлен актуальными данными с сервера
+            // Если очередь была пуста или вернул ошибку, загружаем задачи с сервера для полной синхронизации
+            val cacheUpdated = if (queueSyncResult.isSuccess) {
+                val syncResult = queueSyncResult.getOrNull()
+                if (syncResult != null && syncResult.successCount > 0) {
+                    // Кэш уже обновлен syncQueue()
+                    true
+                } else {
+                    // Очередь была пуста - загружаем задачи с сервера для полной синхронизации
+                    try {
+                        val serverTasks = serverApi.getTasksServer(activeOnly = false).getOrThrow()
+                        val cachedTasks = repository.loadTasksFromCacheLocal()
+                        val cachedHash = calculateTasksHash(cachedTasks)
+                        val serverHash = calculateTasksHash(serverTasks)
+                        
+                        if (cachedHash != serverHash) {
+                            repository.saveTasksToCacheLocal(serverTasks)
+                            true
+                        } else {
+                            false
+                        }
+                    } catch (e: Exception) {
+                        BinaryLogger.getInstance()?.log(
+                            91u,
+                            listOf(e.message ?: "Unknown error", e::class.simpleName ?: "Unknown")
+                        )
+                        false
+                    }
+                }
             } else {
-                Log.d(TAG, "syncCacheWithServer: hashes match, cache is up to date")
+                // syncCacheWithServer: синхронизация очереди завершилась с ошибкой, но продолжаем для загрузки групп/пользователей
+                BinaryLogger.getInstance()?.log(310u, emptyList())
                 false
             }
             
-            // 7. Синхронизация очереди операций
-            val queueSyncResult = syncQueue()
-            if (queueSyncResult.isFailure) {
-                Log.w(TAG, "syncCacheWithServer: queue sync failed, but continuing")
-            }
-            
-            // 8. Опционально: загрузка групп и пользователей
+            // Опционально: загрузка групп и пользователей
             var groups: Map<Int, String>? = null
             var users: List<UserSummary>? = null
             
             if (groupsApi != null) {
                 try {
                     groups = groupsApi.getAll()
-                    Log.d(TAG, "syncCacheWithServer: loaded ${groups.size} groups")
+                    // syncCacheWithServer: загружены группы
+                    BinaryLogger.getInstance()?.log(311u, emptyList())
                 } catch (e: Exception) {
-                    Log.w(TAG, "syncCacheWithServer: failed to load groups", e)
+                    // Исключение: ожидалось %wait%, фактически %fact%
+                    BinaryLogger.getInstance()?.log(
+                        91u,
+                        listOf(e.message ?: "Unknown error", e::class.simpleName ?: "Unknown")
+                    )
                 }
             }
             
             if (usersApi != null) {
                 try {
                     users = usersApi.getUsers()
-                    Log.d(TAG, "syncCacheWithServer: loaded ${users.size} users")
+                    // syncCacheWithServer: загружены пользователи
+                    BinaryLogger.getInstance()?.log(312u, emptyList())
                 } catch (e: Exception) {
-                    Log.w(TAG, "syncCacheWithServer: failed to load users", e)
+                    // Исключение: ожидалось %wait%, фактически %fact%
+                    BinaryLogger.getInstance()?.log(
+                        91u,
+                        listOf(e.message ?: "Unknown error", e::class.simpleName ?: "Unknown")
+                    )
                 }
             }
             
-            // 9. Возврат результата
+            // Возврат результата
             val result = SyncCacheResult(
                 cacheUpdated = cacheUpdated,
                 users = users,
                 groups = groups
             )
-            Log.d(TAG, "syncCacheWithServer: completed successfully, cacheUpdated=$cacheUpdated")
+            // syncCacheWithServer: успешно завершено
+            BinaryLogger.getInstance()?.log(313u, emptyList())
             Result.success(result)
         } catch (e: Exception) {
-            Log.e(TAG, "syncCacheWithServer: error during sync", e)
+            // Исключение: ожидалось %wait%, фактически %fact%
+            BinaryLogger.getInstance()?.log(
+                91u,
+                listOf(e.message ?: "Unknown error", e::class.simpleName ?: "Unknown")
+            )
             Result.failure(e)
         }
     }

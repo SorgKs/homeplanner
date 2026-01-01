@@ -1,7 +1,8 @@
 #!/bin/bash
 # Bash script to build Android app
 # Usage: ./build.sh [--debug|-d]
-#   --debug, -d: Build debug version (doesn't increment version, doesn't require signing)
+#   --debug, -d: Build debug version
+# Patch version is incremented after successful build
 
 set -e  # Exit on error
 
@@ -28,9 +29,9 @@ done
 echo ""
 echo "========================================"
 if [ "$BUILD_DEBUG" = true ]; then
-    echo "Building debug version (patch will be incremented)"
+    echo "Building debug version"
 else
-    echo "Building release version (patch will be incremented)"
+    echo "Building release version"
 fi
 echo "========================================"
 echo ""
@@ -45,9 +46,8 @@ if [ -f "$LOCAL_PROPS_PATH" ]; then
     fi
 fi
 
-# Read and increment version BEFORE build (so APK has the new version)
+# Read current version (for logging)
 VERSION_FILE="$SCRIPT_DIR/version.json"
-NEW_PATCH=""
 
 if [ ! -f "$VERSION_FILE" ]; then
     echo "ERROR: version.json not found at $VERSION_FILE" >&2
@@ -57,43 +57,27 @@ fi
 # Check if jq is available for JSON parsing
 if command -v jq &> /dev/null; then
     CURRENT_PATCH=$(jq -r '.patch' "$VERSION_FILE")
-    
+
     if [ "$CURRENT_PATCH" = "null" ] || [ -z "$CURRENT_PATCH" ]; then
         echo "ERROR: Could not read patch version from version.json" >&2
         exit 1
     fi
-    
+
     echo "Current patch version: $CURRENT_PATCH"
-    
-    # Increment patch version BEFORE build (always, for both debug and release)
-    NEW_PATCH=$((CURRENT_PATCH + 1))
-    echo "Incrementing patch version: $CURRENT_PATCH -> $NEW_PATCH"
-    
-    # Update version.json BEFORE build
-    jq ".patch = $NEW_PATCH" "$VERSION_FILE" > "$VERSION_FILE.tmp" && mv "$VERSION_FILE.tmp" "$VERSION_FILE"
-    
-    echo "APK will be built with version: $NEW_PATCH"
+    echo "APK will be built with version: $CURRENT_PATCH"
     echo ""
 else
     # Fallback: manual JSON parsing if jq is not available
     echo "WARNING: jq not found, using manual JSON parsing"
     CURRENT_PATCH=$(grep -o '"patch"[[:space:]]*:[[:space:]]*[0-9]*' "$VERSION_FILE" | grep -o '[0-9]*')
-    
+
     if [ -z "$CURRENT_PATCH" ]; then
         echo "ERROR: Could not read patch version from version.json" >&2
         exit 1
     fi
-    
+
     echo "Current patch version: $CURRENT_PATCH"
-    
-    # Increment patch version BEFORE build (always, for both debug and release)
-    NEW_PATCH=$((CURRENT_PATCH + 1))
-    echo "Incrementing patch version: $CURRENT_PATCH -> $NEW_PATCH"
-    
-    # Update version.json manually
-    sed -i "s/\"patch\"[[:space:]]*:[[:space:]]*$CURRENT_PATCH/\"patch\": $NEW_PATCH/" "$VERSION_FILE"
-    
-    echo "APK will be built with version: $NEW_PATCH"
+    echo "APK will be built with version: $CURRENT_PATCH"
     echo ""
 fi
 
@@ -140,6 +124,22 @@ echo "BUILD SUCCESSFUL!"
 echo "========================================"
 echo ""
 
+# Increment patch version AFTER successful build
+NEW_PATCH=$((CURRENT_PATCH + 1))
+echo "Incrementing patch version after successful build: $CURRENT_PATCH -> $NEW_PATCH"
+
+# Check if jq is available for JSON parsing
+if command -v jq &> /dev/null; then
+    # Update version.json AFTER build
+    jq ".patch = $NEW_PATCH" "$VERSION_FILE" > "$VERSION_FILE.tmp" && mv "$VERSION_FILE.tmp" "$VERSION_FILE"
+else
+    # Update version.json manually
+    sed -i "s/\"patch\"[[:space:]]*:[[:space:]]*$CURRENT_PATCH/\"patch\": $NEW_PATCH/" "$VERSION_FILE"
+fi
+
+echo "Version incremented successfully."
+echo ""
+
 # Find the APK file
 if [ "$BUILD_DEBUG" = true ]; then
     APK_DIR="$SCRIPT_DIR/app/build/outputs/apk/debug"
@@ -169,10 +169,7 @@ fi
 
 echo ""
 echo "Build completed successfully!"
-if [ -n "$NEW_PATCH" ]; then
-    NEXT_PATCH=$((NEW_PATCH + 1))
-    echo "Next build will use patch: $NEXT_PATCH"
-fi
+echo "Next build will use patch: $NEW_PATCH"
 echo ""
 
 # Ask if user wants to install

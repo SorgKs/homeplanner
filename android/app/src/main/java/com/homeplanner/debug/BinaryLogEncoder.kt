@@ -21,69 +21,6 @@ object BinaryLogEncoder {
     private const val MAX_INTERVALS_PER_DAY: Long = 8_640_000L
 
     /**
-     * Преобразование строки кода сообщения в числовой идентификатор (0–65535).
-     *
-     * Список кодов синхронизирован с `LogMessageCode` и словарём
-     * `backend/debug_log_dictionary.py` (ревизия 1.0).
-     *
-     * ВАЖНО: порядок и значения должны сохраняться между версиями
-     * в рамках одной мажорной ревизии словаря.
-     */
-    private val MESSAGE_CODE_TO_ID: Map<String, Int> = mapOf(
-        // Синхронизация (коды 1-9)
-        LogMessageCode.SYNC_START to 1,
-        LogMessageCode.SYNC_SUCCESS to 2,
-        LogMessageCode.SYNC_FAIL_NETWORK to 3,
-        LogMessageCode.SYNC_FAIL_500 to 4,
-        LogMessageCode.SYNC_FAIL_503 to 5,
-        LogMessageCode.SYNC_FAIL_409 to 6,
-        LogMessageCode.SYNC_FAIL_400 to 7,
-        LogMessageCode.SYNC_FAIL_401 to 8,
-        LogMessageCode.SYNC_FAIL_403 to 9,
-
-        // Подключение (коды 10-12)
-        LogMessageCode.CONNECTION_ONLINE to 10,
-        LogMessageCode.CONNECTION_OFFLINE to 11,
-        LogMessageCode.CONNECTION_DEGRADED to 12,
-
-        // Задачи (коды 20-25)
-        LogMessageCode.TASK_CREATE to 20,
-        LogMessageCode.TASK_UPDATE to 21,
-        LogMessageCode.TASK_COMPLETE to 22,
-        LogMessageCode.TASK_DELETE to 23,
-        LogMessageCode.TASK_UNCOMPLETE to 24,
-        
-        // Очередь (коды 30-32)
-        LogMessageCode.QUEUE_ADD to 30,
-        LogMessageCode.QUEUE_CLEAR to 31,
-        LogMessageCode.QUEUE_SIZE to 32,
-        
-        // Состояние (коды 40-42)
-        LogMessageCode.SYNC_QUEUE_EMPTY to 40,
-        LogMessageCode.SYNC_CACHE_UPDATED to 41,
-        LogMessageCode.CACHE_UPDATED to 42,
-        
-        // Инциденты (коды 50-51)
-        LogMessageCode.INCIDENTS_SENT to 50,
-        LogMessageCode.INCIDENTS_SEND_FAIL to 51,
-        
-        // Очистка (код 60)
-        LogMessageCode.LOGS_CLEANUP to 60,
-        
-        // Общие ошибки (коды 90-91)
-        LogMessageCode.ERROR_UNKNOWN to 90,
-        LogMessageCode.ERROR_EXCEPTION to 91,
-        
-        // Общие события (коды 100-102)
-        LogMessageCode.APP_START to 100,
-        LogMessageCode.APP_STOP to 101,
-        LogMessageCode.UI_UPDATE to 102,
-        
-        // Fallback (код 0)
-        LogMessageCode.UNKNOWN to 0,
-    )
-
-    /**
      * Закодировать одну запись лога в бинарный формат.
      *
      * @param entry Запись лога.
@@ -94,8 +31,7 @@ object BinaryLogEncoder {
         val output = ByteArrayOutputStream()
 
         // 1. messageCode (2 байта, unsigned short, little-endian)
-        val codeId: Int = MESSAGE_CODE_TO_ID[entry.messageCode] ?: 0
-        writeUnsignedShortLE(output, codeId)
+        writeUnsignedShortLE(output, entry.messageCode.toInt())
 
         // 2. timestamp (3 байта, unsigned 24-bit, little-endian)
         val relativeMillis: Long = (entry.timestamp - dayStartMillis).coerceAtLeast(0L)
@@ -104,8 +40,10 @@ object BinaryLogEncoder {
             .coerceAtMost(0xFFFFFFL)
         writeUnsigned24BitLE(output, intervals.toInt())
 
-        // 3. Данные контекста (значения без ключей, в порядке вставки в Map)
-        for (value in entry.context.values) {
+        // 3. Данные контекста (значения без ключей, в порядке схемы)
+        // ВАЖНО: порядок записи должен совпадать с порядком схемы на сервере!
+        // Записываем все значения контекста как есть
+        for (value in entry.context) {
             writeContextValue(output, value)
         }
 

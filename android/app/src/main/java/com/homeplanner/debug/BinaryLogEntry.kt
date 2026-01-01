@@ -9,8 +9,8 @@ data class BinaryLogEntry(
     val timestamp: Long,           // Время записи лога (Unix timestamp в миллисекундах)
     val level: LogLevel,           // Уровень логирования
     val tag: String,               // Тег компонента (например, "SyncService", "LocalApi")
-    val messageCode: String,       // Код сообщения из словаря
-    val context: Map<String, Any> = emptyMap()  // Дополнительный контекст
+    val messageCode: UShort,       // Числовой код сообщения (2 байта)
+    val context: List<Any> = emptyList()  // Список значений контекста в порядке схемы (без ключей)
 ) {
     /**
      * Конвертировать в формат для отправки на сервер (JSON).
@@ -20,7 +20,7 @@ data class BinaryLogEntry(
             "timestamp" to timestamp,
             "level" to level.name,
             "tag" to tag,
-            "message_code" to messageCode,
+            "message_code" to messageCode.toInt(),
             "context" to context
         )
     }

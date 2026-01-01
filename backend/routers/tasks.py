@@ -102,6 +102,7 @@ def create_task(
 
 @router.get("/", response_model=list[TaskResponse])
 def get_tasks(
+    request: Request,
     active_only: bool = Query(False, description="Filter only active tasks"),
     days_ahead: int | None = Query(None, ge=1, description="Get tasks due in next N days"),
     db: Session = Depends(get_db),
@@ -114,12 +115,20 @@ def get_tasks(
     
     Note: Для получения задач на сегодня используйте GET /tasks/today/ids
     """
+    client_ip = request.client.host if request.client else "unknown"
+    selected_user_id = _resolve_selected_user_id(request)
+    logger.info("get_tasks: [SERVER STEP 1] Request received from %s, active_only=%s, days_ahead=%s, selected_user_id=%s", 
+                client_ip, active_only, days_ahead, selected_user_id)
+    
     if days_ahead:
         tasks = TaskService.get_upcoming_tasks(db, days_ahead=days_ahead)
-        return [TaskResponse.model_validate(task) for task in tasks]
     else:
         tasks = TaskService.get_all_tasks(db, active_only=active_only)
-        return [TaskResponse.model_validate(task) for task in tasks]
+    
+    logger.info("get_tasks: [SERVER STEP 2] Found %d tasks in database", len(tasks))
+    result = [TaskResponse.model_validate(task) for task in tasks]
+    logger.info("get_tasks: [SERVER STEP 3] Returning %d tasks to client", len(result))
+    return result
 
 @router.get("/today", response_model=list[TaskResponse])
 def get_today_tasks_view(

@@ -1,10 +1,11 @@
 package com.homeplanner.api
 
-import android.util.Log
 import com.homeplanner.model.Task
+import com.homeplanner.model.Group
+import com.homeplanner.model.User
 import com.homeplanner.repository.OfflineRepository
+import com.homeplanner.utils.TaskDateCalculator
 import com.homeplanner.debug.BinaryLogger
-import com.homeplanner.debug.LogMessageCode
 
 /**
  * API для работы с локальным хранилищем для UI.
@@ -22,7 +23,8 @@ import com.homeplanner.debug.LogMessageCode
  * Синхронизация с сервером должна выполняться явно через SyncService.
  */
 class LocalApi(
-    private val offlineRepository: OfflineRepository
+    private val offlineRepository: OfflineRepository,
+    private val taskDateCalculator: TaskDateCalculator
 ) {
     companion object {
         private const val TAG = "LocalApi"
@@ -30,14 +32,15 @@ class LocalApi(
     
     /**
      * Загружает задачи из локального кэша.
-     * 
+     *
      * @param activeOnly Если true, возвращает только активные задачи (используется для фильтрации на стороне UI)
      * @return Список задач из кэша
      */
-    suspend fun getTasks(activeOnly: Boolean = true): List<Task> {
+    suspend fun getTasksLocal(activeOnly: Boolean = true): Result<List<Task>> = runCatching {
         val cachedTasks = offlineRepository.loadTasksFromCache()
-        Log.d(TAG, "Loaded ${cachedTasks.size} tasks from cache")
-        return cachedTasks
+        // Загружены задачи из кэша
+        BinaryLogger.getInstance()?.log(200u, emptyList())
+        cachedTasks
     }
     
     /**
@@ -50,20 +53,20 @@ class LocalApi(
      * @param assignedUserIds Список ID пользователей, которым назначена задача
      * @return Созданная задача (оптимистичное обновление)
      */
-    suspend fun createTask(task: Task, assignedUserIds: List<Int> = emptyList()): Task {
+    suspend fun createTaskLocal(task: Task, assignedUserIds: List<Int> = emptyList()): Result<Task> = runCatching {
         // 1. Сразу сохраняем в кэш для немедленного отображения
         offlineRepository.saveTasksToCache(listOf(task))
+        // Создана задача
         BinaryLogger.getInstance()?.log(
-            LogMessageCode.CACHE_UPDATED,
-            mapOf("tasks_count" to 1, "source" to "createTask")
+            20u,
+            listOf(task.id, task.title)
         )
-        Log.d(TAG, "Created task locally: id=${task.id}, title=${task.title}")
-        
+
         // 2. Добавляем в очередь синхронизации
-        offlineRepository.addToSyncQueue("create", "task", null, task)
-        
+        addToSyncQueue("create", "task", null, task)
+
         // 3. Возвращаем задачу немедленно (оптимистичное обновление)
-        return task
+        task
     }
     
     /**
@@ -77,20 +80,20 @@ class LocalApi(
      * @param assignedUserIds Список ID пользователей, которым назначена задача
      * @return Обновлённая задача (оптимистичное обновление)
      */
-    suspend fun updateTask(taskId: Int, task: Task, assignedUserIds: List<Int> = emptyList()): Task {
+    suspend fun updateTaskLocal(taskId: Int, task: Task, assignedUserIds: List<Int> = emptyList()): Result<Task> = runCatching {
         // 1. Сразу обновляем в кэше для немедленного отображения
         offlineRepository.saveTasksToCache(listOf(task))
+        // Задача обновлена
         BinaryLogger.getInstance()?.log(
-            LogMessageCode.CACHE_UPDATED,
-            mapOf("tasks_count" to 1, "source" to "updateTask")
+            21u,
+            listOf(taskId, task.title)
         )
-        Log.d(TAG, "Updated task locally: id=$taskId, title=${task.title}, reminderTime=${task.reminderTime}")
-        
+
         // 2. Добавляем в очередь синхронизации
-        offlineRepository.addToSyncQueue("update", "task", taskId, task)
-        
+        addToSyncQueue("update", "task", taskId, task)
+
         // 3. Возвращаем задачу немедленно (оптимистичное обновление)
-        return task
+        task
     }
     
     /**
@@ -103,23 +106,23 @@ class LocalApi(
      * @return Обновлённая задача с completed=true (оптимистичное обновление)
      * @throws Exception Если задача не найдена в кэше
      */
-    suspend fun completeTask(taskId: Int): Task {
+    suspend fun completeTaskLocal(taskId: Int): Result<Task> = runCatching {
         // 1. Сразу обновляем в кэше для немедленного отображения
         val cachedTask = offlineRepository.getTaskFromCache(taskId)
             ?: throw Exception("Task not found in cache: id=$taskId")
         val updatedTask = cachedTask.copy(completed = true)
         offlineRepository.saveTasksToCache(listOf(updatedTask))
+        // Задача выполнена
         BinaryLogger.getInstance()?.log(
-            LogMessageCode.CACHE_UPDATED,
-            mapOf("tasks_count" to 1, "source" to "completeTask")
+            22u,
+            listOf(taskId, updatedTask.title)
         )
-        Log.d(TAG, "Completed task locally: id=$taskId")
-        
+
         // 2. Добавляем в очередь синхронизации
-        offlineRepository.addToSyncQueue("complete", "task", taskId)
-        
+        addToSyncQueue("complete", "task", taskId, null)
+
         // 3. Возвращаем задачу немедленно (оптимистичное обновление)
-        return updatedTask
+        updatedTask
     }
     
     /**
@@ -132,23 +135,23 @@ class LocalApi(
      * @return Обновлённая задача с completed=false (оптимистичное обновление)
      * @throws Exception Если задача не найдена в кэше
      */
-    suspend fun uncompleteTask(taskId: Int): Task {
+    suspend fun uncompleteTaskLocal(taskId: Int): Result<Task> = runCatching {
         // 1. Сразу обновляем в кэше для немедленного отображения
         val cachedTask = offlineRepository.getTaskFromCache(taskId)
             ?: throw Exception("Task not found in cache: id=$taskId")
         val updatedTask = cachedTask.copy(completed = false)
         offlineRepository.saveTasksToCache(listOf(updatedTask))
+        // Выполнение задачи отменено
         BinaryLogger.getInstance()?.log(
-            LogMessageCode.CACHE_UPDATED,
-            mapOf("tasks_count" to 1, "source" to "uncompleteTask")
+            24u,
+            listOf(taskId)
         )
-        Log.d(TAG, "Uncompleted task locally: id=$taskId")
-        
+
         // 2. Добавляем в очередь синхронизации
-        offlineRepository.addToSyncQueue("uncomplete", "task", taskId)
-        
+        addToSyncQueue("uncomplete", "task", taskId, null)
+
         // 3. Возвращаем задачу немедленно (оптимистичное обновление)
-        return updatedTask
+        updatedTask
     }
     
     /**
@@ -159,16 +162,82 @@ class LocalApi(
      * 
      * @param taskId ID задачи для удаления
      */
-    suspend fun deleteTask(taskId: Int) {
+    suspend fun deleteTaskLocal(taskId: Int): Result<Unit> = runCatching {
         // 1. Сразу удаляем из кэша для немедленного отображения
         try {
             offlineRepository.deleteTaskFromCache(taskId)
-            Log.d(TAG, "Deleted task locally: id=$taskId")
+            // Задача удалена
+            BinaryLogger.getInstance()?.log(
+                23u,
+                listOf(taskId)
+            )
         } catch (e: Exception) {
-            Log.w(TAG, "Failed to delete task from cache", e)
+            // Исключение: ожидалось %wait%, фактически %fact%
+            BinaryLogger.getInstance()?.log(
+                91u,
+                listOf(e.message ?: "Unknown error", e::class.simpleName ?: "Unknown")
+            )
+            throw e
         }
-        
+
         // 2. Добавляем в очередь синхронизации
-        offlineRepository.addToSyncQueue("delete", "task", taskId)
+        addToSyncQueue("delete", "task", taskId, null)
+    }
+
+    // === Группы ===
+    suspend fun getGroupsLocal(): Result<List<Group>> = runCatching {
+        offlineRepository.loadGroupsFromCache()
+    }
+
+    suspend fun createGroupLocal(group: Group): Result<Group> = runCatching {
+        offlineRepository.saveGroupsToCache(listOf(group))
+        addToSyncQueue("create", "group", null, group)
+        group
+    }
+
+    suspend fun updateGroupLocal(groupId: Int, group: Group): Result<Group> = runCatching {
+        offlineRepository.saveGroupsToCache(listOf(group))
+        addToSyncQueue("update", "group", groupId, group)
+        group
+    }
+
+    suspend fun deleteGroupLocal(groupId: Int): Result<Unit> = runCatching {
+        offlineRepository.deleteGroupFromCache(groupId)
+        addToSyncQueue("delete", "group", groupId, null)
+    }
+
+    // === Пользователи ===
+    suspend fun getUsersLocal(): Result<List<User>> = runCatching {
+        offlineRepository.loadUsersFromCache()
+    }
+
+    suspend fun createUserLocal(user: User): Result<User> = runCatching {
+        offlineRepository.saveUsersToCache(listOf(user))
+        addToSyncQueue("create", "user", null, user)
+        user
+    }
+
+    suspend fun updateUserLocal(userId: Int, user: User): Result<User> = runCatching {
+        offlineRepository.saveUsersToCache(listOf(user))
+        addToSyncQueue("update", "user", userId, user)
+        user
+    }
+
+    suspend fun deleteUserLocal(userId: Int): Result<Unit> = runCatching {
+        offlineRepository.deleteUserFromCache(userId)
+        addToSyncQueue("delete", "user", userId, null)
+    }
+
+    // === Внутренние методы ===
+    private suspend fun updateRecurringTasksIfNeeded(dayStartHour: Int) {
+        val updated = offlineRepository.updateRecurringTasksForNewDay(dayStartHour)
+        if (updated) {
+            // TODO: Обновить UI или уведомить о изменениях
+        }
+    }
+
+    private suspend fun addToSyncQueue(action: String, entityType: String, entityId: Int?, entity: Any?) {
+        offlineRepository.addToSyncQueue(action, entityType, entityId, entity)
+        offlineRepository.requestSync = true
     }
 }

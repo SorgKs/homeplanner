@@ -39,6 +39,12 @@ class ChunkSender private constructor(
     private var isRunning = false
     private var lastAcknowledgedChunkId: Long? = null
     private var pendingChunks = mutableListOf<Pair<File, Long>>()
+    @Volatile
+    private var lastSendAttemptTime: Long? = null
+    @Volatile
+    private var lastSendResult: String? = null
+    @Volatile
+    private var lastSendChunkId: Long? = null
     
     companion object {
         private const val SEND_INTERVAL_MS = 15_000L  // 15 seconds
@@ -74,6 +80,34 @@ class ChunkSender private constructor(
          * Получить экземпляр ChunkSender.
          */
         fun getInstance(): ChunkSender? = instance
+        
+        /**
+         * Получить время последней попытки отправки чанка (в миллисекундах с эпохи).
+         * Возвращает null, если отправка еще не выполнялась.
+         */
+        fun getLastSendAttemptTime(): Long? {
+            return instance?.lastSendAttemptTime
+        }
+        
+        /**
+         * Получить статус ChunkSender.
+         * Возвращает пару (isRunning, lastResult, lastChunkId), где:
+         * - isRunning: запущен ли ChunkSender
+         * - lastResult: результат последней отправки ("ACK", "REPIT", "ERROR", "UNRECOVERABLE", "NO_CHUNKS", null)
+         * - lastChunkId: ID последнего отправленного чанка
+         */
+        fun getStatus(): Triple<Boolean, String?, Long?> {
+            val inst = instance ?: return Triple(false, null, null)
+            return Triple(inst.isRunning, inst.lastSendResult, inst.lastSendChunkId)
+        }
+        
+        /**
+         * Принудительно отправить следующий чанк (если есть).
+         * Выполняется асинхронно в фоновом потоке.
+         */
+        fun forceSendNextChunk() {
+            instance?.forceSendNextChunkInternal()
+        }
 
         /**
          * Остановить отправку чанков.
@@ -106,6 +140,7 @@ class ChunkSender private constructor(
 
     /**
      * Цикл периодической отправки чанков.
+     * Каждые 15 секунд завершает текущий чанк (если в нем есть записи) и отправляет его.
      */
     private suspend fun sendChunksLoop() {
         while (scope.isActive && isRunning) {
@@ -113,16 +148,22 @@ class ChunkSender private constructor(
                 // Ожидание интервала отправки
                 delay(SEND_INTERVAL_MS)
                 
+                // Завершаем текущий активный чанк, если в нем есть записи
+                if (storage.hasEntriesInCurrentChunk()) {
+                    storage.closeCurrentChunk()
+                }
+                
                 // Обновить список завершённых чанков
                 updatePendingChunks()
                 
-                // Отправить следующий чанк, если предыдущий был подтверждён
+                // Отправить следующий чанк
                 sendNextChunk()
             } catch (e: Exception) {
                 // Не логируем ошибки, чтобы не зациклиться
             }
         }
     }
+    
 
     /**
      * Обновить список ожидающих отправки чанков.
@@ -139,15 +180,44 @@ class ChunkSender private constructor(
     }
 
     /**
+     * Принудительная отправка следующего чанка.
+     * Выполняется в фоновом потоке.
+     * 
+     * Перед отправкой закрывает текущий активный чанк, чтобы гарантировать
+     * полную запись всех данных.
+     */
+    private fun forceSendNextChunkInternal() {
+        if (!isRunning) return
+        
+        scope.launch {
+            // Закрываем текущий чанк перед отправкой, чтобы гарантировать
+            // полную запись всех данных
+            storage.closeCurrentChunk()
+            
+            // Обновляем список завершенных чанков
+            updatePendingChunks()
+            
+            // Отправляем следующий чанк
+            sendNextChunk()
+        }
+    }
+    
+    /**
      * Отправить следующий чанк, если есть ожидающие.
      */
     private suspend fun sendNextChunk() {
+        // Обновляем время последней попытки отправки
+        lastSendAttemptTime = System.currentTimeMillis()
+        
         if (pendingChunks.isEmpty()) {
+            lastSendResult = "NO_CHUNKS"
+            lastSendChunkId = null
             return
         }
 
         // Берём первый чанк из очереди
         val (file, chunkId) = pendingChunks.first()
+        lastSendChunkId = chunkId
 
         try {
             val result = sendChunkToServer(file, chunkId)
@@ -158,21 +228,26 @@ class ChunkSender private constructor(
                     file.delete()
                     pendingChunks.removeAt(0)
                     lastAcknowledgedChunkId = chunkId
+                    lastSendResult = "ACK"
                 }
                 ChunkSendResult.REPIT -> {
                     // Нужна повторная отправка - оставляем в очереди
                     // При следующем цикле попробуем ещё раз
+                    lastSendResult = "REPIT"
                 }
                 ChunkSendResult.UNRECOVERABLE -> {
                     // Чанк невосстановим - удаляем файл и чанк из очереди
                     file.delete()
                     pendingChunks.removeAt(0)
+                    lastSendResult = "UNRECOVERABLE"
                 }
                 ChunkSendResult.ERROR -> {
                     // Ошибка сети - оставляем в очереди для повторной попытки
+                    lastSendResult = "ERROR"
                 }
             }
         } catch (e: Exception) {
+            lastSendResult = "ERROR"
             // Не логируем ошибки, чтобы не зациклиться
         }
     }

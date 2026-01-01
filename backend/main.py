@@ -145,16 +145,20 @@ def create_app() -> FastAPI:
     app.include_router(http_realtime_router, prefix=api_version_path, tags=["realtime-http"])
 
     # Serve common config files (for frontend to read configuration)
-    app.mount("/common/config", HTTPOnlyStaticFiles(directory="common/config", html=False), name="common-config")
+    from pathlib import Path
+    common_config_path = Path(__file__).parent.parent / "common" / "config"
+    app.mount("/common/config", HTTPOnlyStaticFiles(directory=str(common_config_path), html=False), name="common-config")
 
     # Serve frontend static files (ONLY HTTP requests, rejects WebSocket)
     # Uses HTTPOnlyStaticFiles to ensure WebSocket requests never reach here
-    app.mount("/", HTTPOnlyStaticFiles(directory="frontend", html=True), name="frontend")
+    frontend_path = Path(__file__).parent.parent / "frontend"
+    app.mount("/", HTTPOnlyStaticFiles(directory=str(frontend_path), html=True), name="frontend")
 
     return app
 
 
 app = create_app()
+application = app  # Alias for uvicorn auto-discovery
 
 
 if __name__ == "__main__":
@@ -196,21 +200,24 @@ if __name__ == "__main__":
         "*.txt",  # Exclude test output files
         "logs/*",  # Exclude entire logs directory
         "backend/logs/*",  # Explicitly exclude backend logs
+        "backend/backend.log",  # Exclude our log file from watch
+        "backend/backend_errors.log",  # Exclude error log
     ]
     
     # Configure logging to show which file triggered reload
     if settings.debug:
         # Intercept watchfiles.main logger to show file names
         watchfiles_logger = logging.getLogger("watchfiles.main")
-        original_info = watchfiles_logger.info
+        original_debug = watchfiles_logger.debug
         
-        def logged_info(msg: str, *args: Any, **kwargs: Any) -> None:
-            """Wrap watchfiles info to show file details when available."""
-            # Pass message and args as-is to original logger
-            # The logger will handle formatting internally
-            original_info(msg, *args, **kwargs)
+        def logged_debug(msg: str, *args: Any, **kwargs: Any) -> None:
+            """Wrap watchfiles debug to filter out log file changes."""
+            formatted_msg = msg % args if args else msg
+            if "backend.log" in formatted_msg or "backend_errors.log" in formatted_msg:
+                return
+            original_debug(msg, *args, **kwargs)
         
-        watchfiles_logger.info = logged_info  # type: ignore[assignment]
+        watchfiles_logger.debug = logged_debug  # type: ignore[assignment]
         
         # Intercept uvicorn.error logger to extract and display file names
         uvicorn_logger = logging.getLogger("uvicorn.error")

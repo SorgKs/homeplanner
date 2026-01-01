@@ -51,8 +51,16 @@
 2. **`android/app/src/main/java/com/homeplanner/debug/BinaryLogEncoder.kt`**
    - Кодировщик записей в компактный бинарный формат
    - Поддержка всех типов данных (Int, Long, Float, Double, Boolean, String)
+   - **Запись полей контекста в порядке схемы** (`ContextSchema.getSchemaOrder()`)
+   - **Проверка обязательности всех полей** - выбрасывает `IllegalArgumentException`, если поле отсутствует
 
-3. **`android/app/src/main/java/com/homeplanner/debug/BinaryLogStorage.kt`**
+3. **`android/app/src/main/java/com/homeplanner/debug/ContextSchema.kt`**
+   - Определяет порядок полей контекста для каждого кода сообщения
+   - Должен быть синхронизирован с `backend/debug_log_dictionary.py`
+   - Используется `BinaryLogEncoder` для записи полей в правильном порядке
+   - Гарантирует соответствие порядка записи и декодирования
+
+4. **`android/app/src/main/java/com/homeplanner/debug/BinaryLogStorage.kt`**
    - Обновлено для формата v1.1 с `chunkId`
    - Хранение логов по дням (чанкам)
    - Генерация уникальных `chunkId` для каждого чанка
@@ -64,7 +72,7 @@
    - Удаление отправленных чанков
    - Retry для неуспешных отправок
 
-5. **`android/app/src/main/java/com/homeplanner/debug/LogCleanupManager.kt`**
+6. **`android/app/src/main/java/com/homeplanner/debug/LogCleanupManager.kt`**
    - Автоматическая очистка логов старше 7 дней
    - Периодическая проверка (каждые 24 часа)
    - Запуск при старте приложения
@@ -73,7 +81,7 @@
    - Обновлен для работы с `ChunkSender`
    - Метод `getStorage()` для доступа к `BinaryLogStorage`
 
-7. **`android/app/src/main/java/com/homeplanner/MainActivity.kt`**
+8. **`android/app/src/main/java/com/homeplanner/MainActivity.kt`**
    - Инициализация всех компонентов логирования:
      - `BinaryLogger` - основной логгер
      - `ChunkSender` - отправка бинарных чанков (v2)
@@ -187,19 +195,33 @@ Response:
 ```kotlin
 // Инициализация (выполняется автоматически в MainActivity)
 BinaryLogger.initialize(context)
-LogSender.start(context, networkConfig)
 ChunkSender.start(context, networkConfig, storage)
 LogCleanupManager.start(context)
 
 // Логирование
 val logger = BinaryLogger.getInstance()
+
+// ВАЖНО: Все поля контекста, определенные в ContextSchema для данного кода сообщения, обязательны
+// ВАЖНО: Порядок ключей в Map должен соответствовать порядку полей в схеме
 logger?.log(
     level = LogLevel.INFO,
     tag = "SyncService",
     messageCode = LogMessageCode.SYNC_START,
     context = mapOf(
-        "queueSize" to 5,
-        "timestamp" to System.currentTimeMillis()
+        "cache_size" to 5  // Обязательное поле для SYNC_START согласно схеме
+    )
+)
+
+// Пример с несколькими полями (SYNC_CACHE_UPDATED)
+// Порядок ключей соответствует схеме: tasks_count, source, queue_items
+logger?.log(
+    level = LogLevel.INFO,
+    tag = "SyncService",
+    messageCode = LogMessageCode.SYNC_CACHE_UPDATED,
+    context = mapOf(
+        "tasks_count" to serverTasks.size,    // 1-е поле схемы
+        "source" to "syncCacheWithServer",     // 2-е поле схемы
+        "queue_items" to queueSize             // 3-е поле схемы
     )
 )
 ```
@@ -240,4 +262,5 @@ for entry in entries:
 - [ ] Добавить метрики производительности логирования
 - [ ] Реализовать фоновую отправку чанков через WorkManager
 - [ ] Добавить UI для просмотра логов в приложении
+
 

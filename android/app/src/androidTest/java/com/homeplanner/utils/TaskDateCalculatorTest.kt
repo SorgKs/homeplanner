@@ -78,7 +78,11 @@ class TaskDateCalculatorTest {
             groupId = null,
             active = true,
             completed = true,
-            assignedUserIds = emptyList()
+            assignedUserIds = emptyList(),
+            updatedAt = System.currentTimeMillis(),
+            lastAccessed = System.currentTimeMillis(),
+            lastShownAt = null,
+            createdAt = System.currentTimeMillis()
         )
 
         val nextStr = TaskDateCalculator.calculateNextReminderTime(

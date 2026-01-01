@@ -1,6 +1,5 @@
 package com.homeplanner.model
 
-/** Data model for Task items used across network, cache, and UI layers. */
 data class Task(
     val id: Int,
     val title: String,
@@ -13,7 +12,11 @@ data class Task(
     val groupId: Int?,
     val active: Boolean,
     val completed: Boolean,
-    val assignedUserIds: List<Int> = emptyList(),
+    val assignedUserIds: List<Int>,
+    val updatedAt: Long,
+    val lastAccessed: Long,
+    val lastShownAt: Long?,
+    val createdAt: Long
 )
 
 

@@ -84,7 +84,7 @@ data class NetworkConfig(
  * Supported API versions.
  */
 object SupportedApiVersions {
-    val versions = listOf("0.2")
-    val defaultVersion = versions.firstOrNull() ?: "0.2"
+    val versions = listOf("0.3", "0.2")
+    val defaultVersion = versions.firstOrNull() ?: "0.3"
 }
 

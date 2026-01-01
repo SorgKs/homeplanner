@@ -185,31 +185,32 @@ class TaskService:
         )
 
     @staticmethod
-    def get_all_tasks(db: Session, active_only: bool = False) -> list[Task]:
-        """Get all tasks, optionally filtering by active status.
-        
-        Also updates dates for completed tasks if a new day has started
-        since last update. Uses last_update metadata to determine if it's a new day.
+    def _recalculate_completed_tasks_on_new_day(db: Session) -> None:
+        """Recalculate dates for completed tasks if a new day has started.
+
+        Uses last_update metadata to determine if it's a new day.
+        Updates dates for completed tasks and resets their completed status.
         """
         from backend.models.task import TaskType
-        
+
         # Check if new day has started using last_update metadata
         if TaskService._is_new_day(db):
             # New day - update tasks that need updating
             # All operations happen in a single transaction to ensure atomicity
             now = get_current_time()
-            today = TaskService._get_day_start(now)
-            
+            today_start = TaskService._get_day_start(now)
+
             # Find tasks that need date update:
             # - Are completed (completed = True)
-            # Update ALL completed tasks regardless of reminder_time position
-            tasks_to_update = (
+            # - Have reminder_time not in the past (past completed tasks remain visible)
+            all_completed_tasks = (
                 db.query(Task)
                 .options(selectinload(Task.assignees))
                 .filter(Task.completed == True)
                 .all()
             )
-            
+            tasks_to_update = [t for t in all_completed_tasks if TaskService._get_day_start(t.reminder_time) < today_start]
+
             # Update all tasks in memory (no commit yet)
             for task in tasks_to_update:
                 # Task date is in the past and task was completed
@@ -221,7 +222,7 @@ class TaskService:
                 elif task.task_type == TaskType.INTERVAL:
                     # Interval tasks: always shift from confirmation day start
                     interval_days = task.interval_days or 1
-                    next_date = today + timedelta(days=interval_days)
+                    next_date = now + timedelta(days=interval_days)
                     # Preserve original time component from reminder_time
                     if task.reminder_time is not None:
                         next_date = next_date.replace(
@@ -260,14 +261,24 @@ class TaskService:
                     task.reminder_time = candidate
                     # Reset completed flag - task should be active again
                     task.completed = False
-            
+
             # Update last_update timestamp to current time (in same transaction)
             # This happens even if no tasks were updated, to mark that we checked
             TaskService._set_last_update(db, now, commit=False)
-            
+
             # Commit all changes atomically: tasks updates + last_update
             db.commit()
-        
+
+    @staticmethod
+    def get_all_tasks(db: Session, active_only: bool = False) -> list[Task]:
+        """Get all tasks, optionally filtering by active status.
+
+        Also updates dates for completed tasks if a new day has started
+        since last update. Uses last_update metadata to determine if it's a new day.
+        """
+        # Recalculate completed tasks on new day
+        TaskService._recalculate_completed_tasks_on_new_day(db)
+
         # Now get all tasks (with updated dates)
         query = db.query(Task).options(selectinload(Task.assignees))
         if active_only:
@@ -958,19 +969,26 @@ class TaskService:
         elif recurrence_type == RecurrenceType.MONTHLY:
             # Monthly: same day of month and time
             reminder_day = reminder_time.day
-            next_date = current_date.replace(day=reminder_day, hour=reminder_hour, minute=reminder_minute, second=0, microsecond=0)
+            # Try to create date in current month
+            try:
+                next_date = current_date.replace(day=reminder_day, hour=reminder_hour, minute=reminder_minute, second=0, microsecond=0)
+            except ValueError:
+                # Month doesn't have that day, use last day of current month
+                from calendar import monthrange
+                last_day = monthrange(current_date.year, current_date.month)[1]
+                next_date = current_date.replace(day=last_day, hour=reminder_hour, minute=reminder_minute, second=0, microsecond=0)
+
             # If this month's occurrence has passed, move to next month(s)
             if next_date <= current_date:
                 # Calculate how many months to add
                 months_to_add = interval
                 # Move forward by that many months
-                from calendar import monthrange
                 target_month = current_date.month + months_to_add
                 target_year = current_date.year
                 while target_month > 12:
                     target_month -= 12
                     target_year += 1
-                
+
                 # Create date in target month
                 try:
                     next_date = current_date.replace(year=target_year, month=target_month, day=reminder_day)
@@ -1017,10 +1035,24 @@ class TaskService:
             # Yearly: same month, day, and time
             reminder_month = reminder_time.month
             reminder_day = reminder_time.day
-            next_date = current_date.replace(month=reminder_month, day=reminder_day, hour=reminder_hour, minute=reminder_minute, second=0, microsecond=0)
+            # Try to create date in current year
+            try:
+                next_date = current_date.replace(month=reminder_month, day=reminder_day, hour=reminder_hour, minute=reminder_minute, second=0, microsecond=0)
+            except ValueError:
+                # Year doesn't have that month/day combination, use last day of month
+                from calendar import monthrange
+                last_day = monthrange(current_date.year, reminder_month)[1]
+                next_date = current_date.replace(month=reminder_month, day=last_day, hour=reminder_hour, minute=reminder_minute, second=0, microsecond=0)
+
             # If this year's occurrence has passed, move forward by interval years
             if next_date <= current_date:
-                next_date = next_date.replace(year=current_date.year + interval)
+                try:
+                    next_date = next_date.replace(year=current_date.year + interval)
+                except ValueError:
+                    # Target year doesn't have that date, use last day of month
+                    target_year = current_date.year + interval
+                    last_day = monthrange(target_year, reminder_month)[1]
+                    next_date = next_date.replace(year=target_year, day=last_day)
             return next_date
         
         elif recurrence_type == RecurrenceType.YEARLY_WEEKDAY:
@@ -1190,7 +1222,7 @@ class TaskService:
                     weekday_num = reminder_time.weekday()
                     day_of_month = reminder_time.day
                     weekdays_ru = [
-                        "понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье"
+                        "понедельник", "вторник", "среду", "четверг", "пятницу", "субботу", "воскресенье"
                     ]
                     weekday_ru = weekdays_ru[weekday_num]
                     # Determine which occurrence (1st, 2nd, 3rd, 4th, or last)
@@ -1245,7 +1277,7 @@ class TaskService:
                     day_of_month = reminder_time.day
                     month_num = reminder_time.month
                     weekdays_ru = [
-                        "понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье"
+                        "понедельник", "вторник", "среду", "четверг", "пятницу", "субботу", "воскресенье"
                     ]
                     weekday_ru = weekdays_ru[weekday_num]
                     months_ru = {
@@ -1291,10 +1323,16 @@ class TaskService:
                     return f"раз в {interval_days} дня{time_str}"
                 elif interval_days % 7 == 0:
                     weeks = interval_days // 7
-                    return f"раз в {weeks} {'неделю' if weeks == 1 else 'недели'}{time_str}"
+                    if weeks == 1:
+                        return f"раз в неделю{time_str}"
+                    else:
+                        return f"раз в {weeks} недели{time_str}"
                 elif interval_days % 30 == 0:
                     months = interval_days // 30
-                    return f"раз в {months} {'месяц' if months == 1 else 'месяца'}{time_str}"
+                    if months == 1:
+                        return f"раз в месяц{time_str}"
+                    else:
+                        return f"раз в {months} месяца{time_str}"
                 else:
                     return f"раз в {interval_days} дней{time_str}"
             else:
@@ -1318,30 +1356,29 @@ class TaskService:
     @staticmethod
     def get_today_tasks(db: Session, user_id: int | None = None) -> list[Task]:
         """Return tasks that must be displayed in the 'today' view.
-        
+
         Args:
             db: Database session.
             user_id: Optional user identifier used to filter assignments.
-        
+
         Returns:
             Ordered list of tasks that should be shown to the current user.
         """
         from backend.models.task import TaskType
-        
-        if TaskService._is_new_day(db):
-            TaskService.get_all_tasks(db, active_only=False)
-        
+
+        # Ensure completed tasks are recalculated if it's a new day
+        TaskService._recalculate_completed_tasks_on_new_day(db)
+
         now = get_current_time()
         today_start = TaskService._get_day_start(now)
-        tomorrow_start = today_start + timedelta(days=1)
-        
+
         tasks = (
             db.query(Task)
             .options(selectinload(Task.assignees))
             .order_by(Task.reminder_time)
             .all()
         )
-        
+
         today_tasks: list[Task] = []
         for task in tasks:
             if task.reminder_time is None:
@@ -1358,26 +1395,29 @@ class TaskService:
                 pos = "FUTURE"
 
             include = False
-            if task.task_type == TaskType.ONE_TIME:
-                # Канонические правила:
-                # 1. Видна, если reminder_time сегодня или в прошлом — независимо от completed/active.
-                # 2. Видна, если completed = True, даже если reminder_time в будущем.
-                if pos in ("PAST", "TODAY") or task.completed:
-                    include = True
-            else:
-                # recurring / interval:
-                # Видна, если reminder_time сегодня или в прошлом (completed не влияет).
-                if pos in ("PAST", "TODAY"):
+            # Completed tasks are always visible, regardless of date
+            if task.completed:
+                include = True
+            # For non-completed tasks: only show if due today or past
+            elif pos in ("PAST", "TODAY"):
+                # For PAST/TODAY tasks: include if active OR if one-time (always visible)
+                if task.active or task.task_type == TaskType.ONE_TIME:
                     include = True
 
             if not include:
                 continue
 
-            if user_id is not None and user_id not in {user.id for user in task.assignees}:
-                continue
+            # Фильтрация по пользователю:
+            # - Если пользователь не выбран (user_id is None) - показываем все задачи
+            # - Если задача не назначена никому (пустой список assignees) - показываем всем
+            # - Если задача назначена пользователям - показываем только если user_id в списке
+            if user_id is not None:
+                assignee_ids = {user.id for user in task.assignees}
+                if assignee_ids and user_id not in assignee_ids:
+                    continue
 
             today_tasks.append(task)
-        
+
         return today_tasks
 
     @staticmethod
@@ -1414,4 +1454,3 @@ class TaskService:
             TaskHistoryService.log_task_first_shown(db, task.id, task.reminder_time)
         
         return task
-

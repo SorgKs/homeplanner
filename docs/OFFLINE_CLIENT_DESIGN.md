@@ -4,7 +4,8 @@
 
 > **Статус:** ✅ Миграция завершена, используется целевая архитектура  
 > **Целевая архитектура:** См. [OFFLINE_FIRST_ARCHITECTURE.md](OFFLINE_FIRST_ARCHITECTURE.md)  
-> **План миграции:** ✅ Завершена (см. [archive/MIGRATION_TO_LOCAL_API.md](archive/MIGRATION_TO_LOCAL_API.md))
+> **План миграции:** ✅ Завершена (см. [archive/MIGRATION_TO_LOCAL_API.md](archive/MIGRATION_TO_LOCAL_API.md))  
+> **Последнее обновление:** 2025-12-28
 
 ### 1. Компоненты клиента (текущая реализация)
 

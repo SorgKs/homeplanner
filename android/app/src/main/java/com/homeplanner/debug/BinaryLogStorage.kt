@@ -115,6 +115,33 @@ class BinaryLogStorage(
     }
     
     /**
+     * Проверить, есть ли записи в текущем активном чанке.
+     * Возвращает true, если текущий чанк существует и содержит данные (размер больше заголовка).
+     */
+    @Synchronized
+    fun hasEntriesInCurrentChunk(): Boolean {
+        val fileLength = getCurrentFileLength()
+        // Заголовок занимает минимум ~20 байт, если есть записи - размер будет больше
+        return fileLength > 20
+    }
+    
+    /**
+     * Закрыть текущий чанк для отправки.
+     * После закрытия чанк станет доступен в getCompletedChunks().
+     * 
+     * @return ID закрытого чанка или null, если чанк не был открыт.
+     */
+    @Synchronized
+    fun closeCurrentChunk(): Long? {
+        val chunkId = currentChunkId
+        if (currentDate != null && currentStream != null) {
+            close()
+            return chunkId
+        }
+        return null
+    }
+    
+    /**
      * Получить список завершённых чанков (файлов логов).
      * Возвращает список пар (файл, chunkId).
      */

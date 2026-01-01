@@ -10,7 +10,6 @@ import com.homeplanner.model.Task
 import com.homeplanner.utils.TaskDateCalculator
 import com.homeplanner.debug.BinaryLogger
 import com.homeplanner.debug.LogLevel
-import com.homeplanner.debug.LogMessageCode
 import org.json.JSONObject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -28,8 +27,10 @@ class OfflineRepository(
     private val syncQueueDao = db.syncQueueDao()
     private val metadataDao = db.metadataDao()
     
-    private val prefs: SharedPreferences = 
+    private val prefs: SharedPreferences =
         context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+
+    var requestSync: Boolean = false
     
     companion object {
         private const val TAG = "OfflineRepository"
@@ -45,49 +46,73 @@ class OfflineRepository(
     
     // ========== Работа с кэшем задач ==========
     
-    suspend fun saveTasksToCache(tasks: List<Task>): Result<Unit> {
+    suspend fun saveTasksToCache(tasks: List<Task>): Result<Unit> = saveTasksToCacheLocal(tasks)
+
+    suspend fun saveTasksToCacheLocal(tasks: List<Task>): Result<Unit> {
         return try {
+            // saveTasksToCacheLocal: [STEP 1] Начало сохранения задач в кэш
+            BinaryLogger.getInstance()?.log(314u, listOf(tasks.size))
             val cacheTasks = tasks.map { TaskCache.fromTask(it) }
+            // saveTasksToCacheLocal: [STEP 2] Задачи преобразованы в TaskCache
+            BinaryLogger.getInstance()?.log(315u, listOf(cacheTasks.size))
             taskCacheDao.insertTasks(cacheTasks)
-            
+            // saveTasksToCacheLocal: [STEP 3] Задачи вставлены в базу данных
+            BinaryLogger.getInstance()?.log(316u, listOf(cacheTasks.size))
+
             // Обновление lastAccessed для сохраненных задач
             tasks.forEach { task ->
                 taskCacheDao.updateLastAccessed(task.id)
             }
-            
-            cleanupOldCache()
+            // saveTasksToCacheLocal: [STEP 4] Обновлен lastAccessed для всех задач
+            BinaryLogger.getInstance()?.log(317u, listOf(tasks.size))
+
+            cleanupOldCacheLocal()
             updateStorageMetadata()
-            
+
+            // saveTasksToCacheLocal: [STEP 5] Успешно сохранено задач в кэш
+            BinaryLogger.getInstance()?.log(318u, listOf(tasks.size))
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e(TAG, "Error saving tasks to cache", e)
+            // saveTasksToCacheLocal: [ERROR] Ошибка сохранения задач в кэш: ожидалось %wait%, фактически %fact%
+            BinaryLogger.getInstance()?.log(
+                91u,
+                listOf(e.message ?: "Unknown error", e::class.simpleName ?: "Unknown")
+            )
             Result.failure(e)
         }
     }
     
-    suspend fun loadTasksFromCache(): List<Task> {
+    suspend fun loadTasksFromCache(): List<Task> = loadTasksFromCacheLocal()
+
+    suspend fun loadTasksFromCacheLocal(): List<Task> {
         return try {
             // Загрузка всех задач из кэша
             // Используем Flow.first() для получения первого значения
             val allCacheTasks = taskCacheDao.getAllTasks().first()
-            
+            Log.d(TAG, "loadTasksFromCacheLocal: loaded ${allCacheTasks.size} tasks from database")
+
             // Обновление lastAccessed для загруженных задач
             allCacheTasks.forEach { taskCache ->
                 taskCacheDao.updateLastAccessed(taskCache.id)
             }
-            
+
             // Очистка старых задач
             val cutoffTime = System.currentTimeMillis() - (CACHE_RETENTION_DAYS * 24 * 60 * 60 * 1000)
             taskCacheDao.deleteOldTasks(cutoffTime)
-            
-            allCacheTasks.map { it.toTask() }
+
+            val result = allCacheTasks.map { it.toTask() }
+            Log.d(TAG, "loadTasksFromCacheLocal: converted to ${result.size} Task objects")
+            result
         } catch (e: Exception) {
             Log.e(TAG, "Error loading tasks from cache", e)
+            e.printStackTrace()
             emptyList()
         }
     }
     
-    suspend fun getTaskFromCache(id: Int): Task? {
+    suspend fun getTaskFromCache(id: Int): Task? = getTaskFromCacheLocal(id)
+
+    suspend fun getTaskFromCacheLocal(id: Int): Task? {
         return try {
             val cacheTask = taskCacheDao.getTaskById(id)
             cacheTask?.let {
@@ -100,7 +125,9 @@ class OfflineRepository(
         }
     }
     
-    suspend fun deleteTaskFromCache(id: Int) {
+    suspend fun deleteTaskFromCache(id: Int) = deleteTaskFromCacheLocal(id)
+
+    suspend fun deleteTaskFromCacheLocal(id: Int) {
         try {
             taskCacheDao.deleteTaskById(id)
             updateStorageMetadata()
@@ -110,7 +137,7 @@ class OfflineRepository(
         }
     }
     
-    private suspend fun cleanupOldCache() {
+    private suspend fun cleanupOldCacheLocal() {
         try {
             val cutoffTime = System.currentTimeMillis() - (CACHE_RETENTION_DAYS * 24 * 60 * 60 * 1000)
             taskCacheDao.deleteOldTasks(cutoffTime)
@@ -232,9 +259,12 @@ class OfflineRepository(
         }
     }
     
-    suspend fun getPendingQueueItems(): List<SyncQueueItem> {
+    suspend fun getPendingQueueItems(limit: Int = 10000): List<SyncQueueItem> {
         return try {
-            syncQueueDao.getPendingItems(100)
+            // Получаем pending операции с разумным лимитом (по умолчанию 10000)
+            // Разбиение на группы будет в syncQueue() если операций много
+            // Используем лимит, чтобы избежать проблем с памятью при очень большом количестве операций
+            syncQueueDao.getPendingItems(limit)
         } catch (e: Exception) {
             Log.e(TAG, "Error getting pending queue items", e)
             emptyList()
@@ -340,7 +370,7 @@ class OfflineRepository(
         }
     }
     
-    suspend fun getCacheSizeBytes(): Long {
+    suspend fun getCacheSizeBytesLocal(): Long {
         return try {
             prefs.getLong("cache_size_bytes", 0L)
         } catch (e: Exception) {
@@ -348,7 +378,7 @@ class OfflineRepository(
         }
     }
     
-    suspend fun getCachedTasksCount(): Int {
+    suspend fun getCachedTasksCountLocal(): Int {
         return try {
             taskCacheDao.getTaskCount()
         } catch (e: Exception) {
@@ -377,7 +407,7 @@ class OfflineRepository(
         }.toString()
     }
     
-    suspend fun clearAllCache() {
+    suspend fun clearAllCacheLocal() {
         try {
             taskCacheDao.deleteAllTasks()
             updateStorageMetadata()
@@ -459,7 +489,7 @@ class OfflineRepository(
             val now = System.currentTimeMillis()
 
             // Сначала проверяем содержимое кэша: если нечего пересчитывать, сразу выходим.
-            val cachedTasks = loadTasksFromCache()
+            val cachedTasks = loadTasksFromCacheLocal()
             if (cachedTasks.isEmpty()) {
                 Log.d(TAG, "updateRecurringTasksForNewDay: cache is empty, nothing to recalculate")
                 return false
@@ -519,11 +549,7 @@ class OfflineRepository(
             }
 
             // Перезаписываем кэш пересчитанными задачами
-            saveTasksToCache(updatedTasks)
-            BinaryLogger.getInstance()?.log(
-                LogMessageCode.CACHE_UPDATED,
-                mapOf("tasks_count" to updatedTasks.size, "source" to "updateRecurringTasksForNewDay")
-            )
+            saveTasksToCacheLocal(updatedTasks)
             setLastUpdateTimestamp(now, dayStartHour)
 
             Log.d(TAG, "updateRecurringTasksForNewDay: recalculated ${updatedTasks.size} tasks")
@@ -533,5 +559,17 @@ class OfflineRepository(
             false
         }
     }
+
+    // Стubs for groups and users caching (not implemented yet)
+    suspend fun loadGroupsFromCache(): List<com.homeplanner.model.Group> = emptyList()
+    suspend fun saveGroupsToCache(groups: List<com.homeplanner.model.Group>) {}
+    suspend fun deleteGroupFromCache(groupId: Int) {}
+
+    suspend fun loadUsersFromCache(): List<com.homeplanner.model.User> = emptyList()
+    suspend fun saveUsersToCache(users: List<com.homeplanner.model.User>) {}
+    suspend fun deleteUserFromCache(userId: Int) {}
+
+    suspend fun getAll(): List<com.homeplanner.model.UserSummary> = emptyList()
+    suspend fun getUsers(): List<com.homeplanner.model.UserSummary> = emptyList()
 }
 

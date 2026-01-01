@@ -429,9 +429,9 @@ suspend fun updateRecurringTasksForNewDay(dayStartHour: Int): Boolean
 ### 5.1. Две разные архитектуры в документации
 
 **Проблема:**
-- `OFFLINE_FIRST_ARCHITECTURE.md` описывает **целевую архитектуру** с `LocalApi`
-- `OFFLINE_CLIENT_DESIGN.md` описывает **текущую архитектуру** с `TasksApiOffline`
-- `MIGRATION_TO_LOCAL_API.md` описывает план миграции с `TasksApiOffline` на `LocalApi`
+- `OFFLINE_FIRST_ARCHITECTURE.md` описывает **целевую архитектуру** с `LocalApi` ✅ Миграция завершена
+- `OFFLINE_CLIENT_DESIGN.md` описывает **текущую архитектуру** с `TasksApiOffline` ✅ Миграция завершена
+- `MIGRATION_TO_LOCAL_API.md` описывает план миграции с `TasksApiOffline` на `LocalApi` ✅ Миграция завершена
 
 **Последствия:**
 - Неясно, какая архитектура актуальна
@@ -520,4 +520,3 @@ suspend fun updateRecurringTasksForNewDay(dayStartHour: Int): Boolean
 6. **Вспомогательные компоненты** - ⚠️ Описаны только в `OFFLINE_CLIENT_DESIGN.md`
 
 **Основная проблема:** Документация описывает две разные архитектуры без четкого указания, какая является целевой, а какая текущей. Требуется синхронизация документов и уточнение статуса миграции.
-

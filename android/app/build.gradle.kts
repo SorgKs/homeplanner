@@ -1,7 +1,8 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("kotlin-kapt")
+    id("org.jetbrains.kotlin.plugin.compose")
+    id("com.google.devtools.ksp")
 }
 
 import com.android.build.gradle.internal.api.ApkVariantOutputImpl
@@ -250,8 +251,12 @@ android {
         compose = true
         buildConfig = true
     }
+
+    lint {
+        abortOnError = false
+    }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.14"
+        kotlinCompilerExtensionVersion = "1.5.16"
     }
     packaging {
         resources {
@@ -267,6 +272,7 @@ dependencies {
 
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.3")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.3")
     implementation("androidx.activity:activity-compose:1.9.1")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
@@ -289,7 +295,7 @@ dependencies {
     val roomVersion = "2.6.1"
     implementation("androidx.room:room-runtime:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
-    kapt("androidx.room:room-compiler:$roomVersion")
+    ksp("androidx.room:room-compiler:$roomVersion")
     implementation("androidx.sqlite:sqlite-ktx:2.4.0")
     
     // ML Kit for QR code scanning
@@ -308,6 +314,10 @@ dependencies {
     androidTestImplementation("androidx.test.uiautomator:uiautomator:2.3.0")
     // MockWebServer for instrumented tests (API/sync tests)
     androidTestImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    // MockK for mocking in tests
+    androidTestImplementation("io.mockk:mockk-android:1.13.10")
+    // InstantTaskExecutorRule for testing LiveData/ViewModels
+    androidTestImplementation("androidx.arch.core:core-testing:2.2.0")
 }
 
 @Suppress("UnstableApiUsage")

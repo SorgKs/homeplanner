@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.homeplanner.api.TasksApi
+import com.homeplanner.api.ServerApi
 import com.homeplanner.database.AppDatabase
 import com.homeplanner.model.Task
 import com.homeplanner.repository.OfflineRepository
@@ -24,7 +24,7 @@ import org.junit.runner.RunWith
 class SyncServiceTest {
 
     private lateinit var server: MockWebServer
-    private lateinit var tasksApi: TasksApi
+    private lateinit var tasksApi: ServerApi
     private lateinit var db: AppDatabase
     private lateinit var repository: OfflineRepository
     private lateinit var syncService: SyncService
@@ -42,7 +42,11 @@ class SyncServiceTest {
         groupId = null,
         active = true,
         completed = false,
-        assignedUserIds = emptyList()
+        assignedUserIds = emptyList(),
+        updatedAt = System.currentTimeMillis(),
+        lastAccessed = System.currentTimeMillis(),
+        lastShownAt = null,
+        createdAt = System.currentTimeMillis()
     )
 
     @Before
@@ -53,7 +57,7 @@ class SyncServiceTest {
         server = MockWebServer()
         server.start()
         val baseUrl = server.url("/api/v0.2").toString().trimEnd('/')
-        tasksApi = TasksApi(
+        tasksApi = ServerApi(
             httpClient = OkHttpClient.Builder().build(),
             baseUrl = baseUrl
         )
@@ -305,13 +309,6 @@ class SyncServiceTest {
         assertEquals(sampleTask.id, cached[0].id)
     }
 
-    @Test
-    fun isOnline_checksConnectivity() {
-        // Проверяем метод isOnline
-        val isOnline = syncService.isOnline()
-        
-        // Может быть true или false в зависимости от тестового окружения
-        assertNotNull(isOnline)
-    }
+
 }
 

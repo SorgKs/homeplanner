@@ -17,7 +17,7 @@ def setup_logging(log_dir: Path | None = None, debug: bool = False) -> None:
     This function is idempotent - multiple calls will only configure logging once.
 
     Args:
-        log_dir: Directory for log files. If None, uses 'logs' in project root.
+        log_dir: Directory for log files. If None, uses backend directory.
         debug: If True, sets DEBUG level, otherwise INFO.
     """
     global _logging_configured
@@ -28,7 +28,7 @@ def setup_logging(log_dir: Path | None = None, debug: bool = False) -> None:
 
     # Determine log directory
     if log_dir is None:
-        log_dir = Path(__file__).parent.parent / "logs"
+        log_dir = Path(__file__).parent
     
     # Create log directory if it doesn't exist
     log_dir.mkdir(parents=True, exist_ok=True)
@@ -53,7 +53,7 @@ def setup_logging(log_dir: Path | None = None, debug: bool = False) -> None:
     console_handler.setFormatter(console_formatter)
     
     # File handler with rotation (rotates daily, keeps 30 days)
-    log_file = log_dir / "homeplanner.log"
+    log_file = log_dir / "backend.log"
     file_handler = logging.handlers.TimedRotatingFileHandler(
         filename=str(log_file),
         when="midnight",
@@ -69,7 +69,7 @@ def setup_logging(log_dir: Path | None = None, debug: bool = False) -> None:
     file_handler.setFormatter(file_formatter)
     
     # Error log file handler (only ERROR and above)
-    error_log_file = log_dir / "homeplanner_errors.log"
+    error_log_file = log_dir / "backend_errors.log"
     error_file_handler = logging.handlers.TimedRotatingFileHandler(
         filename=str(error_log_file),
         when="midnight",

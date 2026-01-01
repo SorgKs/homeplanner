@@ -184,20 +184,24 @@ class BinaryChunkDecoder:
         # Read message code (2 bytes, unsigned short, little-endian)
         message_code = struct.unpack("<H", stream.read(2))[0]
 
-        # Read timestamp (3 bytes, unsigned 24-bit, little-endian)
-        ts_bytes = stream.read(3)
-        if len(ts_bytes) < 3:
-            raise struct.error("Incomplete timestamp")
-        intervals = struct.unpack("<I", ts_bytes + b"\x00")[0]  # Add padding byte
+        # Read timestamp (3 bytes, unsigned 24-bit, BIG-ENDIAN)
+        expected_ts_length = 3
+        ts_bytes = stream.read(expected_ts_length)
+        if len(ts_bytes) < expected_ts_length:
+            # Pad with zeros to complete 3 bytes (little-endian zero padding)
+            padding_length = expected_ts_length - len(ts_bytes)
+            logger.warning(
+                "Incomplete timestamp: expected %d bytes, got %d. Padding with %d zeros",
+                expected_ts_length,
+                len(ts_bytes),
+                padding_length,
+            )
+            ts_bytes += b'\x00' * padding_length
+        
+        # Big-endian unpack (3 bytes -> uint32)
+        timestamp_int = int.from_bytes(ts_bytes, byteorder='big')
+        timestamp = base_date + timedelta(milliseconds=timestamp_int)
 
-        # Calculate absolute timestamp
-        timestamp = base_date + timedelta(milliseconds=intervals * 10)
-
-        # Read context data (depends on message code)
-        # For now, we'll use simple schema from dictionary
-        context_values = self._decode_context(stream, message_code, dict_revision)
-
-        # Get message template and level from dictionary
         message_info = LOG_MESSAGE_DICTIONARY.get(message_code)
         if message_info:
             text = message_info["template"]
@@ -206,8 +210,10 @@ class BinaryChunkDecoder:
             text = f"Unknown message code: {message_code}"
             level = "INFO"
 
-        # TODO: Replace placeholders in text with context values
-        # For now, just append context as string if present
+        # Decode context values
+        context_values = self._decode_context(stream, message_code, dict_revision)
+
+        # Replace placeholders in text with context values
         if context_values:
             context_str = ", ".join(f"{k}={v}" for k, v in context_values.items())
             text = f"{text} [{context_str}]"
@@ -236,12 +242,13 @@ class BinaryChunkDecoder:
         if not context_schema:
             return {}
 
-        # Decode values according to schema
+        # Decode values according to schema (all little-endian)
         context: dict[str, Any] = {}
         for field in context_schema:
             field_name = field["name"]
             field_type = field["type"]
 
+            # Value decoding remains little-endian
             if field_type == "int":
                 value = struct.unpack("<i", stream.read(4))[0]
             elif field_type == "long":

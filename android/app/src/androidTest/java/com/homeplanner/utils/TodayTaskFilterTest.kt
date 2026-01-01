@@ -30,7 +30,11 @@ class TodayTaskFilterTest {
             groupId = null,
             active = active,
             completed = completed,
-            assignedUserIds = listOf(1)
+            assignedUserIds = listOf(1),
+            updatedAt = System.currentTimeMillis(),
+            lastAccessed = System.currentTimeMillis(),
+            lastShownAt = null,
+            createdAt = System.currentTimeMillis()
         )
     }
 

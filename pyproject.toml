@@ -36,7 +36,7 @@ path = "backend/__init__.py"
 
 [tool.homeplanner.versions]
 project_major = "0"
-project_minor = "2"
+project_minor = "3"
 
 [tool.homeplanner.package_suffixes]
 backend = ".0"
@@ -47,7 +47,7 @@ common = ".0"
 [tool.homeplanner.api]
 # Список поддерживаемых версий API
 # Для поддерживаемых версий допустимы исправления багов, но не создание новых функций или удаление
-supported_versions = ["0.2"]
+supported_versions = ["0.2", "0.3"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["backend", "common"]

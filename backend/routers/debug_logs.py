@@ -1,7 +1,7 @@
 """Router for debug logs endpoint."""
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -55,7 +55,7 @@ def _persist_and_log_bad_chunk(
         bad_chunks_dir = project_root / "logs" / "bad_debug_chunks"
         bad_chunks_dir.mkdir(parents=True, exist_ok=True)
 
-        timestamp_suffix = datetime.utcnow().strftime("%Y%m%dT%H%M%S%fZ")
+        timestamp_suffix = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
         safe_device = device_id_for_error.replace("/", "_")
         safe_chunk = chunk_id_for_error.replace("/", "_")
         file_name = f"{safe_device}_{safe_chunk}_{timestamp_suffix}.bin"
@@ -304,6 +304,7 @@ async def receive_binary_chunk(
         - {"result": "REPIT", "chunk_id": "..."} - chunk should be retried (first error)
         - {"result": "ACK", "chunk_id": "...", "error": "UNRECOVERABLE_CHUNK"} - chunk cannot be processed (second error)
     """
+    logger.info(f"Received binary chunk request: X-Chunk-Id={x_chunk_id}, X-Device-Id={x_device_id}")
     decoder: Optional[BinaryChunkDecoder] = None
     binary_data: bytes = b""
 

@@ -3,9 +3,6 @@ package com.homeplanner.ui
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.CloudDone
-import androidx.compose.material.icons.outlined.CloudOff
-import androidx.compose.material.icons.outlined.CloudSync
 import androidx.compose.material.icons.outlined.Report
 import androidx.compose.material.icons.outlined.SdCard
 import androidx.compose.material.icons.outlined.Storage
@@ -31,13 +28,10 @@ fun AppStatusBar(
     isSyncing: Boolean,
     storagePercentage: Float,
     pendingOperations: Int,
-    wsConnected: Boolean = false,
-    wsConnecting: Boolean = false,
     compactMode: Boolean = false,
     onNetworkClick: () -> Unit = {},
     onStorageClick: () -> Unit = {},
-    onSyncClick: (() -> Unit)? = null,
-    onWebSocketClick: () -> Unit = {}
+    onSyncClick: (() -> Unit)? = null
 ) {
     Surface(
         modifier = Modifier
@@ -82,14 +76,6 @@ fun AppStatusBar(
                     isSyncing = isSyncing,
                     compactMode = compactMode,
                     onClick = onNetworkClick
-                )
-                
-                // Индикатор WebSocket
-                WebSocketIndicator(
-                    isConnected = wsConnected,
-                    isConnecting = wsConnecting,
-                    compactMode = compactMode,
-                    onClick = onWebSocketClick
                 )
                 
                 if (pendingOperations > 0) {
@@ -168,44 +154,6 @@ fun NetworkIndicator(
                 style = MaterialTheme.typography.labelSmall
             )
         }
-    }
-}
-
-@Composable
-fun WebSocketIndicator(
-    isConnected: Boolean,
-    isConnecting: Boolean,
-    compactMode: Boolean = false,
-    onClick: () -> Unit
-) {
-    val icon = when {
-        isConnected -> Icons.Outlined.CloudDone
-        isConnecting -> Icons.Outlined.CloudSync
-        else -> Icons.Outlined.CloudOff
-    }
-    
-    val color = when {
-        isConnected -> Color.Green
-        isConnecting -> Color(0xFFFFA500)
-        else -> Color.Red
-    }
-    
-    val iconSize = if (compactMode) 18.dp else 20.dp
-    
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.clickable { onClick() }
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = when {
-                isConnected -> "WebSocket: Подключено"
-                isConnecting -> "WebSocket: Подключение..."
-                else -> "WebSocket: Отключено"
-            },
-            tint = color,
-            modifier = Modifier.size(iconSize)
-        )
     }
 }
 
