@@ -1,10 +1,10 @@
 """API router for users."""
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from backend.database import get_db
-from backend.schemas.user import UserCreate, UserResponse, UserUpdate
+from backend.schemas.user import UserCreate, UserResponse, UserSimple, UserUpdate
 from backend.services.user_service import UserService
 
 router = APIRouter()
@@ -17,11 +17,21 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)) -> UserResponse
     return UserResponse.model_validate(created)
 
 
-@router.get("/", response_model=list[UserResponse])
-def list_users(db: Session = Depends(get_db)) -> list[UserResponse]:
-    """List all users."""
-    users = UserService.get_all_users(db)
-    return [UserResponse.model_validate(user) for user in users]
+@router.get("/", response_model=list[UserResponse] | list[UserSimple])
+def list_users(simple: bool = Query(False, description="Simplified response with only active users and basic fields"), db: Session = Depends(get_db)) -> list[UserResponse] | list[UserSimple]:
+    """List all users or active users with simplified fields."""
+    import logging
+    logger = logging.getLogger("homeplanner.api.users")
+    logger.info(f"GET /users endpoint called with simple={simple}")
+
+    if simple:
+        users = UserService.get_simple_users(db)
+        logger.info(f"Returning {len(users)} active users (simple mode) via API")
+        return [UserSimple(id=user_id, name=name) for user_id, name in users]
+    else:
+        users = UserService.get_all_users(db)
+        logger.info(f"Returning {len(users)} users (full mode) via API")
+        return [UserResponse.model_validate(user) for user in users]
 
 
 @router.get("/{user_id}", response_model=UserResponse)

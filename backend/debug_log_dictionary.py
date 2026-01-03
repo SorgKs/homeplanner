@@ -402,6 +402,70 @@ LOG_MESSAGE_DICTIONARY: Dict[int, Dict[str, any]] = {
         "context_schema": []
     },
     
+    # Пользователи (коды 400-408)
+    400: {
+        "template": "syncCacheWithServer: вызов загрузки пользователей с сервера",
+        "level": "DEBUG",
+        "context_schema": []
+    },
+    401: {
+        "template": "syncCacheWithServer: получен ответ от сервера с пользователями",
+        "level": "DEBUG",
+        "context_schema": [
+            {"name": "users_count", "type": "int"}
+        ]
+    },
+    402: {
+        "template": "syncCacheWithServer: пользователи сохранены в локальный кеш",
+        "level": "DEBUG",
+        "context_schema": [
+            {"name": "saved_count", "type": "int"}
+        ]
+    },
+    403: {
+        "template": "UsersServerApi: HTTP запрос к серверу",
+        "level": "DEBUG",
+        "context_schema": [
+            {"name": "url", "type": "string"}
+        ]
+    },
+    404: {
+        "template": "UsersServerApi: получен HTTP ответ",
+        "level": "DEBUG",
+        "context_schema": [
+            {"name": "code", "type": "int"},
+            {"name": "message", "type": "string"}
+        ]
+    },
+    405: {
+        "template": "UsersServerApi: распарсено пользователей",
+        "level": "DEBUG",
+        "context_schema": [
+            {"name": "parsed_count", "type": "int"}
+        ]
+    },
+    406: {
+        "template": "UsersServerApi: длина body ответа",
+        "level": "DEBUG",
+        "context_schema": [
+            {"name": "body_length", "type": "int"}
+        ]
+    },
+    407: {
+        "template": "UsersServerApi: длина JSONArray",
+        "level": "DEBUG",
+        "context_schema": [
+            {"name": "array_length", "type": "int"}
+        ]
+    },
+    408: {
+        "template": "saveUsersToCache: пользователи сохранены в SharedPreferences",
+        "level": "DEBUG",
+        "context_schema": [
+            {"name": "saved_count", "type": "int"}
+        ]
+    },
+
     # Fallback (код 0)
     0: {
         "template": "Неизвестное сообщение",

@@ -46,7 +46,7 @@ day_start_hour = 3
 
 [api]
 # Версия API без префикса `/api/v`
-version = "0.2"
+version = "0.3"
 
 [network]
 # Хост, по которому клиенты обращаются к backend (например IP сервера)

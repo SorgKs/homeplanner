@@ -2,6 +2,8 @@ package com.homeplanner.services
 
 import android.util.Log
 import com.homeplanner.api.ServerApi
+import com.homeplanner.api.GroupsServerApi
+import com.homeplanner.api.UsersServerApi
 import com.homeplanner.model.Task
 import com.homeplanner.repository.OfflineRepository
 import com.homeplanner.sync.SyncService
@@ -63,6 +65,9 @@ class TaskSyncManager(
         try {
             val serverTasks = serverApi.getTasksServer(activeOnly = false).getOrThrow()
             updateLocalCache(serverTasks).getOrThrow()
+
+            // Также синхронизируем пользователей и группы
+            syncGroupsAndUsersServer().getOrThrow()
         } catch (e: Exception) {
             Log.w("TaskSyncManager", "Server sync failed", e)
             throw e
@@ -80,13 +85,39 @@ class TaskSyncManager(
     }
 
     suspend fun syncGroupsAndUsersServer(): Result<Unit> = runCatching {
-        // TODO: Implement groups and users sync
-        // This should sync groups and users from server to local cache
+        // Синхронизация пользователей с сервера
+        try {
+            val usersServerApi = UsersServerApi(baseUrl = serverApi.baseUrl)
+            val serverUsers = usersServerApi.getUsers()
+            val userModels = serverUsers.map { summary ->
+                com.homeplanner.model.User(
+                    id = summary.id,
+                    name = summary.name
+                )
+            }
+            offlineRepository.saveUsersToCache(userModels)
+            Log.d("TaskSyncManager", "Synced ${userModels.size} users from server")
+        } catch (e: Exception) {
+            Log.w("TaskSyncManager", "Failed to sync users", e)
+            // Continue with groups sync even if users fail
+        }
+
+        // Синхронизация групп с сервера
+        try {
+            val groupsServerApi = GroupsServerApi(baseUrl = serverApi.baseUrl)
+            val serverGroups = groupsServerApi.getGroupsServer().getOrThrow()
+
+            offlineRepository.saveGroupsToCache(serverGroups)
+            Log.d("TaskSyncManager", "Synced ${serverGroups.size} groups from server")
+        } catch (e: Exception) {
+            Log.w("TaskSyncManager", "Failed to sync groups", e)
+        }
     }
 
     suspend fun performFullSyncExternal(): Result<Unit> = runCatching {
         syncTasksServer().getOrThrow()
         syncGroupsAndUsersServer().getOrThrow()
+        Log.d("TaskSyncManager", "Full sync completed successfully")
     }
 
     fun observeSyncRequests() {

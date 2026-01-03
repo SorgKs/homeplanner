@@ -29,5 +29,17 @@ def get_db():
 
 def init_db():
     """Initialize database tables."""
-    Base.metadata.create_all(bind=engine)
+    import logging
+    logger = logging.getLogger("homeplanner.database")
+    logger.info("Initializing database tables...")
+    try:
+        Base.metadata.create_all(bind=engine)
+        logger.info("Database tables created successfully")
+        # Log available tables
+        from sqlalchemy import inspect
+        inspector = inspect(engine)
+        tables = inspector.get_table_names()
+        logger.info(f"Available tables after init: {tables}")
+    except Exception as e:
+        logger.error(f"Error initializing database: {e}", exc_info=True)
 

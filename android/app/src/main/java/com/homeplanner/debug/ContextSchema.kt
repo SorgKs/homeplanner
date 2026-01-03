@@ -34,6 +34,16 @@ object ContextSchema {
             // Состояние (коды 40-42)
             41 -> listOf("tasks_count", "source", "queue_items")       // SYNC_CACHE_UPDATED
 
+            // Пользователи (коды 400-408)
+            401 -> listOf("users_count")                                 // USERS_RESPONSE_RECEIVED
+            402 -> listOf("saved_count")                                 // USERS_SAVED_TO_CACHE
+            403 -> listOf("url")                                         // USERS_HTTP_REQUEST
+            404 -> listOf("code", "message")                             // USERS_HTTP_RESPONSE
+            405 -> listOf("parsed_count")                                // USERS_PARSED
+            406 -> listOf("body_length")                                 // USERS_BODY_LENGTH
+            407 -> listOf("array_length")                                // USERS_ARRAY_LENGTH
+            408 -> listOf("saved_count")                                 // USERS_SAVED_TO_PREFS
+
             // API операции (коды 200-299)
             205 -> listOf("task_id")                                    // API_TASK_PARSED
             213 -> listOf("task_id")                                    // API_TASK_NULL_REMINDER

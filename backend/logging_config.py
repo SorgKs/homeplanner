@@ -26,6 +26,9 @@ def setup_logging(log_dir: Path | None = None, debug: bool = False) -> None:
     if _logging_configured:
         return
 
+    # Logger for debug messages
+    logger = logging.getLogger("homeplanner.system")
+
     # Determine log directory
     if log_dir is None:
         log_dir = Path(__file__).parent
@@ -94,10 +97,15 @@ def setup_logging(log_dir: Path | None = None, debug: bool = False) -> None:
     # Reduce noise from third-party libraries
     logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
     logging.getLogger("uvicorn").setLevel(logging.INFO if not debug else logging.DEBUG)
+
+    # Debug: log current levels
+    logger.info(f"uvicorn.access level: {logging.getLogger('uvicorn.access').level}")
+    logger.info(f"uvicorn level: {logging.getLogger('uvicorn').level}")
+    logger.info(f"uvicorn.access handlers: {logging.getLogger('uvicorn.access').handlers}")
+    logger.info(f"uvicorn handlers: {logging.getLogger('uvicorn').handlers}")
     
     # Mark as configured
     _logging_configured = True
-    
+
     # Log that logging is configured
-    logger = logging.getLogger("homeplanner.system")
     logger.info(f"Logging configured: level={logging.getLevelName(log_level)}, log_dir={log_dir}")

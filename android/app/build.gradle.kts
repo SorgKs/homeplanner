@@ -254,6 +254,7 @@ android {
 
     lint {
         abortOnError = false
+        disable.add("StateFlowValueCalledInComposition")
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.16"
@@ -261,6 +262,7 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "/META-INF/LICENSE*"
         }
     }
 }
@@ -318,6 +320,10 @@ dependencies {
     androidTestImplementation("io.mockk:mockk-android:1.13.10")
     // InstantTaskExecutorRule for testing LiveData/ViewModels
     androidTestImplementation("androidx.arch.core:core-testing:2.2.0")
+
+    // Koin for dependency injection
+    implementation("io.insert-koin:koin-android:3.5.0")
+    implementation("io.insert-koin:koin-androidx-compose:3.5.0")
 }
 
 @Suppress("UnstableApiUsage")

@@ -1,6 +1,7 @@
 package com.homeplanner.api
 
 import com.homeplanner.model.User
+import com.homeplanner.debug.BinaryLogger
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -30,7 +31,7 @@ class UsersServerApi(
     companion object {
         /**
          * Создает OkHttpClient с настроенными таймаутами для предотвращения зависаний.
-         * 
+         *
          * Таймауты:
          * - connectTimeout: 10 секунд - время на установку соединения
          * - readTimeout: 30 секунд - время на чтение ответа от сервера
@@ -75,85 +76,38 @@ class UsersServerApi(
     }
 
     suspend fun getUsersServer(): Result<List<User>> = runCatching {
-        val url = "$baseUrl/users/"
+        val url = "$baseUrl/users/?simple=true"
+        android.util.Log.i("UsersServerApi", "Making GET request to: $url")
+        BinaryLogger.getInstance()?.log(403u, listOf(url))
         val request = Request.Builder().url(url).build()
 
         executeAsync(request).use { response ->
+            android.util.Log.i("UsersServerApi", "Response received: code=${response.code}, message=${response.message}")
+            BinaryLogger.getInstance()?.log(404u, listOf(response.code, response.message))
             if (response.code == 500) throw IllegalStateException("HTTP ${response.code}")
             val body = response.body?.string() ?: "[]"
+            android.util.Log.i("UsersServerApi", "Response body: $body")
+            BinaryLogger.getInstance()?.log(406u, listOf(body.length))
             val usersJson = JSONArray(body)
+            BinaryLogger.getInstance()?.log(407u, listOf(usersJson.length()))
             val result = ArrayList<User>(usersJson.length())
             for (i in 0 until usersJson.length()) {
                 val obj = usersJson.getJSONObject(i)
                 val user = User(
                     id = obj.getInt("id"),
-                    name = obj.getString("name"),
-                    email = obj.getString("email"),
-                    role = obj.getString("role"),
-                    status = obj.getString("status"),
-                    updatedAt = obj.getLong("updated_at")
+                    name = obj.getString("name")
                 )
                 result.add(user)
             }
+            android.util.Log.i("UsersServerApi", "Parsed ${result.size} users from server")
+            BinaryLogger.getInstance()?.log(405u, listOf(result.size))
             result
         }
     }
 
-    suspend fun createUserServer(user: User): Result<User> = runCatching {
-        val url = "$baseUrl/users/"
-        val json = JSONObject().apply {
-            put("name", user.name)
-            put("email", user.email)
-            put("role", user.role)
-            put("status", user.status)
-        }.toString()
-        val mediaType = "application/json; charset=utf-8".toMediaType()
-        val request = Request.Builder()
-            .url(url)
-            .post(json.toRequestBody(mediaType))
-            .build()
-        executeAsync(request).use { response ->
-            if (response.code == 500) throw IllegalStateException("HTTP ${response.code}")
-            val body = response.body?.string() ?: throw IllegalStateException("Empty body")
-            val obj = JSONObject(body)
-            User(
-                id = obj.getInt("id"),
-                name = obj.getString("name"),
-                email = obj.getString("email"),
-                role = obj.getString("role"),
-                status = obj.getString("status"),
-                updatedAt = obj.getLong("updated_at")
-            )
-        }
-    }
 
-    suspend fun updateUserServer(userId: Int, user: User): Result<User> = runCatching {
-        val url = "$baseUrl/users/$userId"
-        val json = JSONObject().apply {
-            put("name", user.name)
-            put("email", user.email)
-            put("role", user.role)
-            put("status", user.status)
-        }.toString()
-        val mediaType = "application/json; charset=utf-8".toMediaType()
-        val request = Request.Builder()
-            .url(url)
-            .put(json.toRequestBody(mediaType))
-            .build()
-        executeAsync(request).use { response ->
-            if (response.code == 500) throw IllegalStateException("HTTP ${response.code}")
-            val body = response.body?.string() ?: throw IllegalStateException("Empty body")
-            val obj = JSONObject(body)
-            User(
-                id = obj.getInt("id"),
-                name = obj.getString("name"),
-                email = obj.getString("email"),
-                role = obj.getString("role"),
-                status = obj.getString("status"),
-                updatedAt = obj.getLong("updated_at")
-            )
-        }
-    }
+
+
 
     suspend fun deleteUserServer(userId: Int): Result<Unit> = runCatching {
         val url = "$baseUrl/users/$userId"
@@ -171,10 +125,7 @@ class UsersServerApi(
         return getUsersServer().getOrDefault(emptyList()).map {
             UserSummary(
                 id = it.id,
-                name = it.name,
-                email = it.email,
-                role = it.role,
-                isActive = it.status == "active"
+                name = it.name
             )
         }
     }

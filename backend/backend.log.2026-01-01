@@ -1,0 +1,906 @@
+2026-01-01 15:20:30 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 15:21:07 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 15:21:07 INFO  homeplanner.system HTTP mode (SSL not configured)
+2026-01-01 15:21:08 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 15:21:08 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:21:08 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 15:21:08 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-01 15:21:08 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 15:21:08 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-01 15:21:08 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 15:21:08 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-01 15:21:08 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 15:21:08 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-01 15:21:08 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 15:21:08 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-01 15:21:08 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 15:21:08 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-01 15:21:08 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 15:21:08 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-01 15:21:08 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 15:21:08 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-01 15:21:08 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 15:21:08 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-01 15:21:08 DEBUG watchfiles.main 4 changes detected: {(<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/backend/__pycache__/main.cpython-312.pyc'), (<Change.deleted: 3>, '/mnt/ZFS/Dev/HomePlanner/backend/__pycache__/main.cpython-312.pyc.140090273179312'), (<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/backend/__pycache__/main.cpython-312.pyc.140090273179312'), (<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:21:09 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:21:09 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:21:09 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:21:10 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:21:10 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:21:10 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:21:11 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:21:11 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:21:11 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:21:12 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:21:12 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:21:13 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:21:13 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:21:13 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:21:14 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:21:14 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:21:14 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:21:15 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:21:15 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:22:22 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 15:22:22 INFO  homeplanner.system HTTP mode (SSL not configured)
+2026-01-01 15:22:23 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 15:22:23 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:22:23 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 15:22:23 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-01 15:22:23 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 15:22:23 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-01 15:22:23 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 15:22:23 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-01 15:22:23 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 15:22:23 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-01 15:22:23 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 15:22:23 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-01 15:22:23 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 15:22:23 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-01 15:22:23 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 15:22:23 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-01 15:22:23 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 15:22:23 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-01 15:22:23 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 15:22:23 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-01 15:22:24 DEBUG watchfiles.main 4 changes detected: {(<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/backend/__pycache__/main.cpython-312.pyc.139696472008368'), (<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log'), (<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/backend/__pycache__/main.cpython-312.pyc'), (<Change.deleted: 3>, '/mnt/ZFS/Dev/HomePlanner/backend/__pycache__/main.cpython-312.pyc.139696472008368')}
+2026-01-01 15:22:24 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:22:24 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:22:25 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:22:25 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:22:25 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:22:26 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:22:26 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:22:26 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:22:27 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:22:27 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:22:27 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:22:28 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:22:28 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:22:28 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:27:50 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 15:27:50 INFO  homeplanner.system HTTP mode (SSL not configured)
+2026-01-01 15:27:51 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 15:27:51 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:27:51 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 15:27:51 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-01 15:27:51 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 15:27:51 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-01 15:27:51 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 15:27:51 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-01 15:27:51 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 15:27:51 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-01 15:27:51 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 15:27:51 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-01 15:27:51 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 15:27:51 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-01 15:27:51 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 15:27:51 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-01 15:27:51 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 15:27:51 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-01 15:27:51 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 15:27:51 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-01 15:27:51 DEBUG watchfiles.main 4 changes detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log'), (<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/backend/__pycache__/main.cpython-312.pyc'), (<Change.deleted: 3>, '/mnt/ZFS/Dev/HomePlanner/backend/__pycache__/main.cpython-312.pyc.140338316076720'), (<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/backend/__pycache__/main.cpython-312.pyc.140338316076720')}
+2026-01-01 15:27:52 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:27:52 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:27:52 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:27:53 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:27:53 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:27:53 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:27:54 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:27:54 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:27:54 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:27:55 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:27:55 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:27:55 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:27:56 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 15:27:56 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/backend.log')}
+2026-01-01 16:12:29 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 16:12:29 INFO  homeplanner.system HTTP mode (SSL not configured)
+2026-01-01 16:12:30 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 16:12:30 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 16:12:30 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-01 16:12:30 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 16:12:30 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-01 16:12:30 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 16:12:30 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-01 16:12:30 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 16:12:30 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-01 16:12:30 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 16:12:30 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-01 16:12:30 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 16:12:30 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-01 16:12:30 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 16:12:30 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-01 16:12:30 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 16:12:30 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-01 16:12:30 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 16:12:30 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-01 16:12:48 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-01 16:12:48 INFO  homeplanner.realtime WS connect: id=140372922141968 host=192.168.1.2 port=39130 total=1
+2026-01-01 16:13:00 INFO  homeplanner.realtime WS disconnect: id=140372922141968, total=0
+2026-01-01 16:13:10 INFO  homeplanner.tasks get_tasks: [SERVER STEP 1] Request received from 192.168.1.2, active_only=False, days_ahead=None, selected_user_id=1
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine [generated in 0.00162s] ('last_task_update', 1, 0)
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine [generated in 0.00195s] ()
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine SELECT groups.id AS groups_id, groups.name AS groups_name, groups.description AS groups_description, groups.created_at AS groups_created_at, groups.updated_at AS groups_updated_at 
+FROM groups ORDER BY groups.name
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine [cached since 0.01359s ago] ('last_task_update', 1, 0)
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine [generated in 0.00254s] ()
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine SELECT tasks_1.id AS tasks_1_id, users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM tasks AS tasks_1 JOIN task_users AS task_users_1 ON tasks_1.id = task_users_1.task_id JOIN users ON users.id = task_users_1.user_id 
+WHERE tasks_1.id IN (?, ?, ?, ?)
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine [generated in 0.00556s] ()
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine [generated in 0.00155s] (1, 2, 3, 5)
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine [cached since 0.01365s ago] ()
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?)
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine [cached since 0.03232s ago] ('last_task_update', 1, 0)
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine SELECT tasks_1.id AS tasks_1_id, users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM tasks AS tasks_1 JOIN task_users AS task_users_1 ON tasks_1.id = task_users_1.task_id JOIN users ON users.id = task_users_1.user_id 
+WHERE tasks_1.id IN (?, ?, ?, ?)
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine [generated in 0.00288s] (2, 1)
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine [cached since 0.01382s ago] (1, 2, 3, 5)
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine UPDATE app_metadata SET value=?, updated_at=? WHERE app_metadata."key" = ?
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine [generated in 0.00098s] ('2026-01-01 16:13:10.346595', '2026-01-01 16:13:10.378623', 'last_task_update')
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine [cached since 0.03994s ago] ('last_task_update', 1, 0)
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine UPDATE app_metadata SET value=?, updated_at=? WHERE app_metadata."key" = ?
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine UPDATE tasks SET reminder_time=?, completed=?, updated_at=? WHERE tasks.id = ?
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine [cached since 0.006826s ago] ('2026-01-01 16:13:10.362784', '2026-01-01 16:13:10.382834', 'last_task_update')
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine [generated in 0.00141s] [('2026-01-02 13:00:00.000000', 0, '2026-01-01 16:13:10.384413', 1), ('2026-01-08 22:00:00.000000', 0, '2026-01-01 16:13:10.384424', 2), ('2026-01-05 13:00:00.000000', 0, '2026-01-01 16:13:10.384428', 3), ('2026-01-01 20:32:00.000000', 0, '2026-01-01 16:13:10.384432', 5)]
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks ORDER BY tasks.reminder_time
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine [generated in 0.00034s] ()
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine SELECT tasks_1.id AS tasks_1_id, users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM tasks AS tasks_1 JOIN task_users AS task_users_1 ON tasks_1.id = task_users_1.task_id JOIN users ON users.id = task_users_1.user_id 
+WHERE tasks_1.id IN (?, ?, ?, ?, ?, ?, ?)
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine [cached since 0.0676s ago] (10, 11, 8, 5, 1, 3, 2)
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine UPDATE tasks SET reminder_time=?, completed=?, updated_at=? WHERE tasks.id = ?
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine [cached since 0.05691s ago] [('2026-01-02 13:00:00.000000', 0, '2026-01-01 16:13:10.440845', 1), ('2026-01-08 22:00:00.000000', 0, '2026-01-01 16:13:10.440864', 2), ('2026-01-05 13:00:00.000000', 0, '2026-01-01 16:13:10.440868', 3), ('2026-01-01 20:32:00.000000', 0, '2026-01-01 16:13:10.440872', 5)]
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks ORDER BY tasks.reminder_time
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine [cached since 0.05134s ago] ()
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine SELECT tasks_1.id AS tasks_1_id, users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM tasks AS tasks_1 JOIN task_users AS task_users_1 ON tasks_1.id = task_users_1.task_id JOIN users ON users.id = task_users_1.user_id 
+WHERE tasks_1.id IN (?, ?, ?, ?, ?, ?, ?)
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine [cached since 0.1204s ago] (10, 11, 8, 5, 1, 3, 2)
+2026-01-01 16:13:10 INFO  homeplanner.tasks get_tasks: [SERVER STEP 2] Found 7 tasks in database
+2026-01-01 16:13:10 INFO  homeplanner.tasks get_tasks: [SERVER STEP 3] Returning 7 tasks to client
+2026-01-01 16:13:10 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-01 16:13:10 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-01 16:13:10 INFO  homeplanner.realtime WS connect: id=140372922953808 host=192.168.1.2 port=48610 total=1
+2026-01-01 16:13:14 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 16:13:14 INFO  sqlalchemy.engine.Engine SELECT task_history.id AS task_history_id, task_history.task_id AS task_history_task_id, task_history.action AS task_history_action, task_history.action_timestamp AS task_history_action_timestamp, task_history.iteration_date AS task_history_iteration_date, task_history.meta_data AS task_history_meta_data, task_history.comment AS task_history_comment 
+FROM task_history ORDER BY task_history.action_timestamp DESC
+2026-01-01 16:13:14 INFO  sqlalchemy.engine.Engine [generated in 0.00053s] ()
+2026-01-01 16:13:14 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-01 16:13:16 INFO  homeplanner.tasks get_tasks: [SERVER STEP 1] Request received from 192.168.1.2, active_only=False, days_ahead=None, selected_user_id=1
+2026-01-01 16:13:16 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 16:13:16 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 16:13:16 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 16:13:16 INFO  sqlalchemy.engine.Engine SELECT groups.id AS groups_id, groups.name AS groups_name, groups.description AS groups_description, groups.created_at AS groups_created_at, groups.updated_at AS groups_updated_at 
+FROM groups ORDER BY groups.name
+2026-01-01 16:13:16 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 16:13:16 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-01 16:13:16 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-01 16:13:16 INFO  sqlalchemy.engine.Engine [cached since 5.944s ago] ()
+2026-01-01 16:13:16 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-01 16:13:16 INFO  sqlalchemy.engine.Engine [cached since 5.958s ago] ('last_task_update', 1, 0)
+2026-01-01 16:13:16 INFO  sqlalchemy.engine.Engine [cached since 5.958s ago] ('last_task_update', 1, 0)
+2026-01-01 16:13:16 INFO  sqlalchemy.engine.Engine [cached since 5.944s ago] ()
+2026-01-01 16:13:16 INFO  sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks ORDER BY tasks.reminder_time
+2026-01-01 16:13:16 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-01 16:13:16 INFO  sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks ORDER BY tasks.reminder_time
+2026-01-01 16:13:16 INFO  sqlalchemy.engine.Engine [cached since 5.878s ago] ()
+2026-01-01 16:13:16 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?)
+2026-01-01 16:13:16 INFO  sqlalchemy.engine.Engine [cached since 5.879s ago] ()
+2026-01-01 16:13:16 INFO  sqlalchemy.engine.Engine [cached since 5.934s ago] (2, 1)
+2026-01-01 16:13:16 INFO  sqlalchemy.engine.Engine SELECT tasks_1.id AS tasks_1_id, users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM tasks AS tasks_1 JOIN task_users AS task_users_1 ON tasks_1.id = task_users_1.task_id JOIN users ON users.id = task_users_1.user_id 
+WHERE tasks_1.id IN (?, ?, ?, ?, ?, ?, ?)
+2026-01-01 16:13:16 INFO  sqlalchemy.engine.Engine [cached since 5.947s ago] (10, 11, 8, 5, 1, 3, 2)
+2026-01-01 16:13:16 INFO  sqlalchemy.engine.Engine SELECT tasks_1.id AS tasks_1_id, users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM tasks AS tasks_1 JOIN task_users AS task_users_1 ON tasks_1.id = task_users_1.task_id JOIN users ON users.id = task_users_1.user_id 
+WHERE tasks_1.id IN (?, ?, ?, ?, ?, ?, ?)
+2026-01-01 16:13:16 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-01 16:13:16 INFO  sqlalchemy.engine.Engine [cached since 5.949s ago] (10, 11, 8, 5, 1, 3, 2)
+2026-01-01 16:13:16 INFO  homeplanner.tasks get_tasks: [SERVER STEP 2] Found 7 tasks in database
+2026-01-01 16:13:16 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-01 16:13:16 INFO  homeplanner.tasks get_tasks: [SERVER STEP 3] Returning 7 tasks to client
+2026-01-01 16:13:16 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-01 16:13:18 INFO  homeplanner.tasks get_tasks: [SERVER STEP 1] Request received from 192.168.1.2, active_only=False, days_ahead=None, selected_user_id=1
+2026-01-01 16:13:18 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 16:13:18 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 16:13:18 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 16:13:18 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-01 16:13:18 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 16:13:18 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-01 16:13:18 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-01 16:13:18 INFO  sqlalchemy.engine.Engine [cached since 8.15s ago] ('last_task_update', 1, 0)
+2026-01-01 16:13:18 INFO  sqlalchemy.engine.Engine SELECT groups.id AS groups_id, groups.name AS groups_name, groups.description AS groups_description, groups.created_at AS groups_created_at, groups.updated_at AS groups_updated_at 
+FROM groups ORDER BY groups.name
+2026-01-01 16:13:18 INFO  sqlalchemy.engine.Engine [cached since 8.136s ago] ()
+2026-01-01 16:13:18 INFO  sqlalchemy.engine.Engine [cached since 8.151s ago] ('last_task_update', 1, 0)
+2026-01-01 16:13:18 INFO  sqlalchemy.engine.Engine [cached since 8.139s ago] ()
+2026-01-01 16:13:18 INFO  sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks ORDER BY tasks.reminder_time
+2026-01-01 16:13:18 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?)
+2026-01-01 16:13:18 INFO  sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks ORDER BY tasks.reminder_time
+2026-01-01 16:13:18 INFO  sqlalchemy.engine.Engine [cached since 8.074s ago] ()
+2026-01-01 16:13:18 INFO  sqlalchemy.engine.Engine [cached since 8.13s ago] (2, 1)
+2026-01-01 16:13:18 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-01 16:13:18 INFO  sqlalchemy.engine.Engine [cached since 8.076s ago] ()
+2026-01-01 16:13:18 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-01 16:13:18 INFO  sqlalchemy.engine.Engine SELECT tasks_1.id AS tasks_1_id, users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM tasks AS tasks_1 JOIN task_users AS task_users_1 ON tasks_1.id = task_users_1.task_id JOIN users ON users.id = task_users_1.user_id 
+WHERE tasks_1.id IN (?, ?, ?, ?, ?, ?, ?)
+2026-01-01 16:13:18 INFO  sqlalchemy.engine.Engine [cached since 8.148s ago] (10, 11, 8, 5, 1, 3, 2)
+2026-01-01 16:13:18 INFO  sqlalchemy.engine.Engine SELECT tasks_1.id AS tasks_1_id, users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM tasks AS tasks_1 JOIN task_users AS task_users_1 ON tasks_1.id = task_users_1.task_id JOIN users ON users.id = task_users_1.user_id 
+WHERE tasks_1.id IN (?, ?, ?, ?, ?, ?, ?)
+2026-01-01 16:13:18 INFO  homeplanner.tasks get_tasks: [SERVER STEP 2] Found 7 tasks in database
+2026-01-01 16:13:18 INFO  sqlalchemy.engine.Engine [cached since 8.151s ago] (10, 11, 8, 5, 1, 3, 2)
+2026-01-01 16:13:18 INFO  homeplanner.tasks get_tasks: [SERVER STEP 3] Returning 7 tasks to client
+2026-01-01 16:13:18 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-01 16:13:18 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-01 16:20:57 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 16:20:57 INFO  homeplanner.system HTTP mode (SSL not configured)
+2026-01-01 16:21:09 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/routers/debug_logs.py')}
+2026-01-01 16:21:09 WARNING homeplanner.system WatchFiles detected changes in 'backend/routers/debug_logs.py'. Reloading...
+2026-01-01 16:21:09 INFO  homeplanner.realtime WS disconnect: id=140372922953808, total=0
+2026-01-01 16:21:10 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 16:21:10 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 16:21:10 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-01 16:21:10 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 16:21:10 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-01 16:21:10 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 16:21:10 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-01 16:21:10 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 16:21:10 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-01 16:21:10 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 16:21:10 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-01 16:21:10 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 16:21:10 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-01 16:21:10 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 16:21:10 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-01 16:21:10 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 16:21:10 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-01 16:21:10 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 16:21:10 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-01 16:21:11 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-01 16:21:11 INFO  homeplanner.realtime WS connect: id=139978871125152 host=192.168.1.2 port=35796 total=1
+2026-01-01 16:21:19 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 16:21:19 INFO  sqlalchemy.engine.Engine SELECT debug_logs.id AS debug_logs_id, debug_logs.timestamp AS debug_logs_timestamp, debug_logs.level AS debug_logs_level, debug_logs.tag AS debug_logs_tag, debug_logs.message_code AS debug_logs_message_code, debug_logs.context AS debug_logs_context, debug_logs.text AS debug_logs_text, debug_logs.chunk_id AS debug_logs_chunk_id, debug_logs.device_id AS debug_logs_device_id, debug_logs.device_info AS debug_logs_device_info, debug_logs.app_version AS debug_logs_app_version, debug_logs.dictionary_revision AS debug_logs_dictionary_revision 
+FROM debug_logs 
+WHERE debug_logs.timestamp >= ? ORDER BY debug_logs.timestamp DESC
+ LIMIT ? OFFSET ?
+2026-01-01 16:21:19 INFO  sqlalchemy.engine.Engine [generated in 0.00057s] ('2025-12-31 16:21:19.596429', 10, 0)
+2026-01-01 16:21:19 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-01 16:32:53 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 16:32:53 INFO  sqlalchemy.engine.Engine SELECT debug_logs.id AS debug_logs_id, debug_logs.timestamp AS debug_logs_timestamp, debug_logs.level AS debug_logs_level, debug_logs.tag AS debug_logs_tag, debug_logs.message_code AS debug_logs_message_code, debug_logs.context AS debug_logs_context, debug_logs.text AS debug_logs_text, debug_logs.chunk_id AS debug_logs_chunk_id, debug_logs.device_id AS debug_logs_device_id, debug_logs.device_info AS debug_logs_device_info, debug_logs.app_version AS debug_logs_app_version, debug_logs.dictionary_revision AS debug_logs_dictionary_revision 
+FROM debug_logs 
+WHERE debug_logs.timestamp >= ? ORDER BY debug_logs.timestamp DESC
+ LIMIT ? OFFSET ?
+2026-01-01 16:32:53 INFO  sqlalchemy.engine.Engine [cached since 693.6s ago] ('2025-12-31 16:32:53.196881', 20, 0)
+2026-01-01 16:32:53 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-01 16:37:00 INFO  backend.routers.debug_logs Received binary chunk request: X-Chunk-Id=4, X-Device-Id=android_34e04403caa24936
+2026-01-01 16:37:00 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 16:37:00 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-01-01 16:37:00 INFO  sqlalchemy.engine.Engine [generated in 0.00037s] ('2026-01-01 03:12:31.067000', 'INFO', None, None, '{}', 'Приложение запущено', '4', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-01 16:37:00 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-01 16:37:00 INFO  backend.routers.debug_logs Successfully decoded and saved 1 log entries from chunk 4 (device: android_34e04403caa24936)
+2026-01-01 16:40:01 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 16:40:01 INFO  sqlalchemy.engine.Engine SELECT debug_logs.id AS debug_logs_id, debug_logs.timestamp AS debug_logs_timestamp, debug_logs.level AS debug_logs_level, debug_logs.tag AS debug_logs_tag, debug_logs.message_code AS debug_logs_message_code, debug_logs.context AS debug_logs_context, debug_logs.text AS debug_logs_text, debug_logs.chunk_id AS debug_logs_chunk_id, debug_logs.device_id AS debug_logs_device_id, debug_logs.device_info AS debug_logs_device_info, debug_logs.app_version AS debug_logs_app_version, debug_logs.dictionary_revision AS debug_logs_dictionary_revision 
+FROM debug_logs 
+WHERE debug_logs.timestamp >= ? ORDER BY debug_logs.timestamp DESC
+ LIMIT ? OFFSET ?
+2026-01-01 16:40:01 INFO  sqlalchemy.engine.Engine [cached since 1122s ago] ('2025-12-31 16:40:01.907050', 10, 0)
+2026-01-01 16:40:01 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-01 16:41:09 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/common/config/settings.toml.template')}
+2026-01-01 17:03:17 INFO  backend.routers.debug_logs Received binary chunk request: X-Chunk-Id=5, X-Device-Id=android_34e04403caa24936
+2026-01-01 17:03:17 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 17:03:17 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-01-01 17:03:17 INFO  sqlalchemy.engine.Engine [cached since 1577s ago] ('2026-01-01 02:51:06.973000', 'INFO', None, None, '{}', 'Приложение запущено', '5', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-01 17:03:17 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-01 17:03:17 INFO  backend.routers.debug_logs Successfully decoded and saved 1 log entries from chunk 5 (device: android_34e04403caa24936)
+2026-01-01 20:51:05 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 20:51:05 INFO  sqlalchemy.engine.Engine SELECT debug_logs.id AS debug_logs_id, debug_logs.timestamp AS debug_logs_timestamp, debug_logs.level AS debug_logs_level, debug_logs.tag AS debug_logs_tag, debug_logs.message_code AS debug_logs_message_code, debug_logs.context AS debug_logs_context, debug_logs.text AS debug_logs_text, debug_logs.chunk_id AS debug_logs_chunk_id, debug_logs.device_id AS debug_logs_device_id, debug_logs.device_info AS debug_logs_device_info, debug_logs.app_version AS debug_logs_app_version, debug_logs.dictionary_revision AS debug_logs_dictionary_revision 
+FROM debug_logs 
+WHERE debug_logs.timestamp >= ? ORDER BY debug_logs.timestamp DESC
+ LIMIT ? OFFSET ?
+2026-01-01 20:51:05 INFO  sqlalchemy.engine.Engine [cached since 1.619e+04s ago] ('2025-12-31 20:51:05.756874', 100, 0)
+2026-01-01 20:51:05 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-01 20:51:53 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/routers/tasks.py')}
+2026-01-01 20:51:53 WARNING homeplanner.system WatchFiles detected changes in 'backend/routers/tasks.py'. Reloading...
+2026-01-01 20:51:53 INFO  homeplanner.realtime WS disconnect: id=139978871125152, total=0
+2026-01-01 20:51:54 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 20:51:55 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 20:51:55 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-01 20:51:55 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 20:51:55 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-01 20:51:55 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 20:51:55 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-01 20:51:55 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 20:51:55 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-01 20:51:55 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 20:51:55 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-01 20:51:55 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 20:51:55 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-01 20:51:55 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 20:51:55 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-01 20:51:55 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 20:51:55 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-01 20:51:55 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 20:51:55 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-01 20:51:56 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-01 20:51:56 INFO  homeplanner.realtime WS connect: id=140340849031216 host=192.168.1.2 port=37012 total=1
+2026-01-01 20:52:22 INFO  homeplanner.tasks get_tasks: [SERVER STEP 1] Request received from 127.0.0.1, active_only=False, days_ahead=None, selected_user_id=None
+2026-01-01 20:52:22 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 20:52:22 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-01 20:52:22 INFO  sqlalchemy.engine.Engine [generated in 0.00086s] ('last_task_update', 1, 0)
+2026-01-01 20:52:22 INFO  sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks ORDER BY tasks.reminder_time
+2026-01-01 20:52:22 INFO  sqlalchemy.engine.Engine [generated in 0.00089s] ()
+2026-01-01 20:52:22 INFO  sqlalchemy.engine.Engine SELECT tasks_1.id AS tasks_1_id, users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM tasks AS tasks_1 JOIN task_users AS task_users_1 ON tasks_1.id = task_users_1.task_id JOIN users ON users.id = task_users_1.user_id 
+WHERE tasks_1.id IN (?, ?, ?, ?, ?, ?, ?)
+2026-01-01 20:52:22 INFO  sqlalchemy.engine.Engine [generated in 0.00075s] (10, 11, 8, 5, 1, 3, 2)
+2026-01-01 20:52:22 INFO  homeplanner.tasks get_tasks: [SERVER STEP 2] Found 7 tasks in database
+2026-01-01 20:52:22 INFO  homeplanner.tasks get_tasks: [SERVER STEP 3] Returning 7 tasks to client
+2026-01-01 20:52:22 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-01 20:52:44 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/routers/tasks.py')}
+2026-01-01 20:52:44 WARNING homeplanner.system WatchFiles detected changes in 'backend/routers/tasks.py'. Reloading...
+2026-01-01 20:52:44 INFO  homeplanner.realtime WS disconnect: id=140340849031216, total=0
+2026-01-01 20:52:46 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 20:52:46 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 20:52:46 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-01 20:52:46 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 20:52:46 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-01 20:52:46 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 20:52:46 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-01 20:52:46 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 20:52:46 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-01 20:52:46 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 20:52:46 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-01 20:52:46 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 20:52:46 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-01 20:52:46 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 20:52:46 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-01 20:52:46 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 20:52:46 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-01 20:52:46 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 20:52:46 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-01 20:52:46 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-01 20:52:46 INFO  homeplanner.realtime WS connect: id=140396767508816 host=192.168.1.2 port=56132 total=1
+2026-01-01 20:52:52 INFO  homeplanner.tasks get_tasks: [SERVER STEP 1] Request received from 127.0.0.1, active_only=False, days_ahead=None, selected_user_id=None
+2026-01-01 20:52:52 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 20:52:52 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-01 20:52:52 INFO  sqlalchemy.engine.Engine [generated in 0.00043s] ('last_task_update', 1, 0)
+2026-01-01 20:52:52 INFO  sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks ORDER BY tasks.reminder_time
+2026-01-01 20:52:52 INFO  sqlalchemy.engine.Engine [generated in 0.00035s] ()
+2026-01-01 20:52:52 INFO  sqlalchemy.engine.Engine SELECT tasks_1.id AS tasks_1_id, users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM tasks AS tasks_1 JOIN task_users AS task_users_1 ON tasks_1.id = task_users_1.task_id JOIN users ON users.id = task_users_1.user_id 
+WHERE tasks_1.id IN (?, ?, ?, ?, ?, ?, ?)
+2026-01-01 20:52:52 INFO  sqlalchemy.engine.Engine [generated in 0.00042s] (10, 11, 8, 5, 1, 3, 2)
+2026-01-01 20:52:52 INFO  homeplanner.tasks get_tasks: [SERVER STEP 2] Found 7 tasks in database
+2026-01-01 20:52:52 INFO  homeplanner.tasks get_tasks: [SERVER STEP 3] Returning 7 tasks to client
+2026-01-01 20:52:52 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-01 20:53:55 INFO  homeplanner.realtime WS disconnect: id=140396767508816, total=0
+2026-01-01 20:54:15 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 20:54:15 INFO  homeplanner.system HTTP mode (SSL not configured)
+2026-01-01 20:54:16 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 20:54:16 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 20:54:16 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-01 20:54:16 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 20:54:16 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-01 20:54:16 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 20:54:16 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-01 20:54:16 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 20:54:16 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-01 20:54:16 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 20:54:16 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-01 20:54:16 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 20:54:16 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-01 20:54:16 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 20:54:16 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-01 20:54:16 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 20:54:16 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-01 20:54:16 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 20:54:16 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-01 20:54:19 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-01 20:54:19 INFO  homeplanner.realtime WS connect: id=140437787572320 host=192.168.1.2 port=45538 total=1
+2026-01-01 20:55:20 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/common/config/settings.toml')}
+2026-01-01 20:55:55 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 20:55:55 INFO  homeplanner.system HTTP mode (SSL not configured)
+2026-01-01 20:56:02 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 20:56:02 INFO  homeplanner.system HTTP mode (SSL not configured)
+2026-01-01 20:56:04 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 20:56:04 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 20:56:04 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-01 20:56:04 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 20:56:04 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-01 20:56:04 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 20:56:04 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-01 20:56:04 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 20:56:04 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-01 20:56:04 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 20:56:04 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-01 20:56:04 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 20:56:04 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-01 20:56:04 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 20:56:04 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-01 20:56:04 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 20:56:04 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-01 20:56:04 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 20:56:04 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-01 20:56:05 INFO  backend.routers.debug_logs Received binary chunk request: X-Chunk-Id=6, X-Device-Id=android_34e04403caa24936
+2026-01-01 20:56:05 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 20:56:05 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-01-01 20:56:05 INFO  sqlalchemy.engine.Engine [generated in 0.00046s] ('2026-01-01 00:25:05.893000', 'INFO', None, None, '{}', 'Приложение запущено', '6', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-01 20:56:05 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-01 20:56:05 INFO  backend.routers.debug_logs Successfully decoded and saved 1 log entries from chunk 6 (device: android_34e04403caa24936)
+2026-01-01 20:56:20 INFO  backend.routers.debug_logs Received binary chunk request: X-Chunk-Id=7, X-Device-Id=android_34e04403caa24936
+2026-01-01 20:56:20 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 20:56:20 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-01-01 20:56:20 INFO  sqlalchemy.engine.Engine [cached since 15.43s ago] ('2026-01-01 03:57:23.186000', 'INFO', None, None, '{}', 'Приложение запущено', '7', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-01 20:56:20 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-01 20:56:20 INFO  backend.routers.debug_logs Successfully decoded and saved 1 log entries from chunk 7 (device: android_34e04403caa24936)
+2026-01-01 20:56:35 INFO  backend.routers.debug_logs Received binary chunk request: X-Chunk-Id=8, X-Device-Id=android_34e04403caa24936
+2026-01-01 20:56:35 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 20:56:35 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-01-01 20:56:35 INFO  sqlalchemy.engine.Engine [cached since 30.81s ago] ('2026-01-01 00:57:44.306000', 'INFO', None, None, '{}', 'Приложение запущено', '8', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-01 20:56:35 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-01 20:56:35 INFO  backend.routers.debug_logs Successfully decoded and saved 1 log entries from chunk 8 (device: android_34e04403caa24936)
+2026-01-01 20:59:06 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 20:59:06 INFO  homeplanner.system HTTP mode (SSL not configured)
+2026-01-01 21:22:35 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 21:22:35 INFO  homeplanner.system HTTP mode (SSL not configured)
+2026-01-01 21:23:37 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 21:23:37 INFO  homeplanner.system HTTP mode (SSL not configured)
+2026-01-01 21:23:54 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 21:23:54 INFO  homeplanner.system HTTP mode (SSL not configured)
+2026-01-01 21:23:59 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 21:23:59 INFO  homeplanner.system HTTP mode (SSL not configured)
+2026-01-01 21:24:40 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 21:24:40 INFO  homeplanner.system HTTP mode (SSL not configured)
+2026-01-01 21:24:41 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 21:24:41 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 21:24:41 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-01 21:24:41 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:24:41 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-01 21:24:41 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:24:41 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-01 21:24:41 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:24:41 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-01 21:24:41 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:24:41 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-01 21:24:41 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:24:41 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-01 21:24:41 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:24:41 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-01 21:24:41 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:24:41 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-01 21:24:41 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:24:41 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-01 21:25:12 INFO  backend.routers.debug_logs Received binary chunk request: X-Chunk-Id=9, X-Device-Id=android_34e04403caa24936
+2026-01-01 21:25:12 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 21:25:12 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-01-01 21:25:12 INFO  sqlalchemy.engine.Engine [generated in 0.00059s] ('2026-01-01 04:18:28.341000', 'INFO', None, None, '{}', 'Приложение запущено', '9', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-01 21:25:12 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-01 21:25:12 INFO  backend.routers.debug_logs Successfully decoded and saved 1 log entries from chunk 9 (device: android_34e04403caa24936)
+2026-01-01 21:26:27 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/logging_config.py')}
+2026-01-01 21:26:27 WARNING homeplanner.system WatchFiles detected changes in 'backend/logging_config.py'. Reloading...
+2026-01-01 21:26:28 DEBUG watchfiles.main 3 changes detected: {(<Change.deleted: 3>, '/mnt/ZFS/Dev/HomePlanner/backend/__pycache__/logging_config.cpython-312.pyc.140202500999856'), (<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/backend/__pycache__/logging_config.cpython-312.pyc'), (<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/backend/__pycache__/logging_config.cpython-312.pyc.140202500999856')}
+2026-01-01 21:27:42 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-01 21:27:42 INFO  homeplanner.system uvicorn level: 10
+2026-01-01 21:27:42 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-01 21:27:42 INFO  homeplanner.system uvicorn handlers: []
+2026-01-01 21:27:42 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 21:27:42 INFO  homeplanner.system HTTP mode (SSL not configured)
+2026-01-01 21:27:43 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-01 21:27:43 INFO  homeplanner.system uvicorn level: 10
+2026-01-01 21:27:43 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-01 21:27:43 INFO  homeplanner.system uvicorn handlers: []
+2026-01-01 21:27:43 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 21:27:43 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 21:27:43 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-01 21:27:43 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:27:43 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-01 21:27:43 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:27:43 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-01 21:27:43 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:27:43 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-01 21:27:43 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:27:43 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-01 21:27:43 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:27:43 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-01 21:27:43 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:27:43 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-01 21:27:43 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:27:43 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-01 21:27:43 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:27:43 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-01 21:28:08 INFO  backend.routers.debug_logs Received binary chunk request: X-Chunk-Id=10, X-Device-Id=android_34e04403caa24936
+2026-01-01 21:28:08 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 21:28:08 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-01-01 21:28:08 INFO  sqlalchemy.engine.Engine [generated in 0.00055s] ('2026-01-01 04:15:29.397000', 'INFO', None, None, '{}', 'Приложение запущено', '10', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-01 21:28:08 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-01 21:28:08 INFO  backend.routers.debug_logs Successfully decoded and saved 1 log entries from chunk 10 (device: android_34e04403caa24936)
+2026-01-01 21:29:36 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/services/user_service.py')}
+2026-01-01 21:29:36 WARNING homeplanner.system WatchFiles detected changes in 'backend/services/user_service.py'. Reloading...
+2026-01-01 21:29:38 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-01 21:29:38 INFO  homeplanner.system uvicorn level: 10
+2026-01-01 21:29:38 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-01 21:29:38 INFO  homeplanner.system uvicorn handlers: []
+2026-01-01 21:29:38 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 21:29:38 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 21:29:38 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-01 21:29:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:29:38 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-01 21:29:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:29:38 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-01 21:29:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:29:38 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-01 21:29:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:29:38 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-01 21:29:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:29:38 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-01 21:29:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:29:38 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-01 21:29:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:29:38 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-01 21:29:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:29:38 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-01 21:29:41 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/services/user_service.py')}
+2026-01-01 21:29:41 WARNING homeplanner.system WatchFiles detected changes in 'backend/services/user_service.py'. Reloading...
+2026-01-01 21:29:43 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-01 21:29:43 INFO  homeplanner.system uvicorn level: 10
+2026-01-01 21:29:43 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-01 21:29:43 INFO  homeplanner.system uvicorn handlers: []
+2026-01-01 21:29:43 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 21:29:43 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 21:29:43 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-01 21:29:43 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:29:43 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-01 21:29:43 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:29:43 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-01 21:29:43 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:29:43 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-01 21:29:43 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:29:43 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-01 21:29:43 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:29:43 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-01 21:29:43 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:29:43 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-01 21:29:43 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:29:43 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-01 21:29:43 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:29:43 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-01 21:29:46 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/routers/users.py')}
+2026-01-01 21:29:46 WARNING homeplanner.system WatchFiles detected changes in 'backend/routers/users.py'. Reloading...
+2026-01-01 21:29:48 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-01 21:29:48 INFO  homeplanner.system uvicorn level: 10
+2026-01-01 21:29:48 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-01 21:29:48 INFO  homeplanner.system uvicorn handlers: []
+2026-01-01 21:29:48 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 21:29:48 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 21:29:48 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-01 21:29:48 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:29:48 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-01 21:29:48 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:29:48 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-01 21:29:48 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:29:48 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-01 21:29:48 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:29:48 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-01 21:29:48 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:29:48 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-01 21:29:48 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:29:48 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-01 21:29:48 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:29:48 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-01 21:29:48 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:29:48 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-01 21:30:34 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/main.py')}
+2026-01-01 21:30:34 WARNING homeplanner.system WatchFiles detected changes in 'backend/main.py'. Reloading...
+2026-01-01 21:30:35 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-01 21:30:35 INFO  homeplanner.system uvicorn level: 10
+2026-01-01 21:30:35 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-01 21:30:35 INFO  homeplanner.system uvicorn handlers: []
+2026-01-01 21:30:35 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 21:30:35 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 21:30:35 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-01 21:30:35 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:30:35 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-01 21:30:35 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:30:35 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-01 21:30:35 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:30:35 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-01 21:30:35 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:30:35 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-01 21:30:35 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:30:35 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-01 21:30:35 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:30:35 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-01 21:30:35 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:30:35 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-01 21:30:35 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:30:35 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-01 21:30:45 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/main.py')}
+2026-01-01 21:30:45 WARNING homeplanner.system WatchFiles detected changes in 'backend/main.py'. Reloading...
+2026-01-01 21:30:46 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-01 21:30:46 INFO  homeplanner.system uvicorn level: 10
+2026-01-01 21:30:46 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-01 21:30:46 INFO  homeplanner.system uvicorn handlers: []
+2026-01-01 21:30:46 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 21:30:46 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-01 21:30:46 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-01 21:30:46 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 21:30:46 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-01 21:30:46 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:30:46 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-01 21:30:46 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:30:46 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-01 21:30:46 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:30:46 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-01 21:30:46 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:30:46 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-01 21:30:46 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:30:46 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-01 21:30:46 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:30:46 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-01 21:30:46 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:30:46 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-01 21:30:46 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:30:46 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-01 21:38:42 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-01 21:38:42 INFO  homeplanner.system uvicorn level: 10
+2026-01-01 21:38:42 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-01 21:38:42 INFO  homeplanner.system uvicorn handlers: []
+2026-01-01 21:38:42 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 21:38:42 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-01 21:38:42 INFO  homeplanner.system HTTP mode (SSL not configured)
+2026-01-01 21:38:43 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-01 21:38:43 INFO  homeplanner.system uvicorn level: 10
+2026-01-01 21:38:43 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-01 21:38:43 INFO  homeplanner.system uvicorn handlers: []
+2026-01-01 21:38:43 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 21:38:43 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-01 21:38:43 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-01 21:38:43 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 21:38:43 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-01 21:38:43 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:38:43 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-01 21:38:43 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:38:43 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-01 21:38:43 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:38:43 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-01 21:38:43 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:38:43 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-01 21:38:43 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:38:43 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-01 21:38:43 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:38:43 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-01 21:38:43 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:38:43 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-01 21:38:43 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:38:43 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-01 21:48:33 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-01 21:48:33 INFO  homeplanner.system uvicorn level: 10
+2026-01-01 21:48:33 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-01 21:48:33 INFO  homeplanner.system uvicorn handlers: []
+2026-01-01 21:48:33 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 21:48:33 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-01 21:48:34 INFO  homeplanner.system HTTP mode (SSL not configured)
+2026-01-01 21:50:31 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-01 21:50:31 INFO  homeplanner.system uvicorn level: 10
+2026-01-01 21:50:31 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-01 21:50:31 INFO  homeplanner.system uvicorn handlers: []
+2026-01-01 21:50:31 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 21:50:31 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-01 21:50:31 INFO  homeplanner.system HTTP mode (SSL not configured)
+2026-01-01 21:51:00 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-01 21:51:00 INFO  homeplanner.system uvicorn level: 10
+2026-01-01 21:51:00 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-01 21:51:00 INFO  homeplanner.system uvicorn handlers: []
+2026-01-01 21:51:00 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 21:51:00 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-01 21:51:00 INFO  homeplanner.system HTTP mode (SSL not configured)
+2026-01-01 21:51:34 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-01 21:51:34 INFO  homeplanner.system uvicorn level: 10
+2026-01-01 21:51:34 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-01 21:51:34 INFO  homeplanner.system uvicorn handlers: []
+2026-01-01 21:51:34 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 21:51:34 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-01 21:51:34 INFO  homeplanner.system HTTP mode (SSL not configured)
+2026-01-01 21:51:59 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-01 21:51:59 INFO  homeplanner.system uvicorn level: 10
+2026-01-01 21:51:59 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-01 21:51:59 INFO  homeplanner.system uvicorn handlers: []
+2026-01-01 21:51:59 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 21:51:59 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-01 21:51:59 INFO  homeplanner.system HTTP mode (SSL not configured)
+2026-01-01 21:52:00 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-01 21:52:00 INFO  homeplanner.system uvicorn level: 10
+2026-01-01 21:52:00 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-01 21:52:00 INFO  homeplanner.system uvicorn handlers: []
+2026-01-01 21:52:00 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 21:52:00 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-01 21:52:00 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-01 21:52:00 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 21:52:00 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-01 21:52:00 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:52:00 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-01 21:52:00 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:52:00 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-01 21:52:00 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:52:00 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-01 21:52:00 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:52:00 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-01 21:52:00 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:52:00 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-01 21:52:00 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:52:00 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-01 21:52:00 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:52:00 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-01 21:52:00 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:52:00 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-01 21:57:49 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-01 21:57:49 INFO  homeplanner.system uvicorn level: 10
+2026-01-01 21:57:49 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-01 21:57:49 INFO  homeplanner.system uvicorn handlers: []
+2026-01-01 21:57:49 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 21:57:49 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-01 21:57:49 INFO  homeplanner.system HTTP mode (SSL not configured)
+2026-01-01 21:57:50 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-01 21:57:50 INFO  homeplanner.system uvicorn level: 10
+2026-01-01 21:57:50 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-01 21:57:50 INFO  homeplanner.system uvicorn handlers: []
+2026-01-01 21:57:50 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 21:57:50 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-01 21:57:51 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-01 21:57:51 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 21:57:51 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-01 21:57:51 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:57:51 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-01 21:57:51 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:57:51 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-01 21:57:51 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:57:51 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-01 21:57:51 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:57:51 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-01 21:57:51 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:57:51 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-01 21:57:51 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:57:51 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-01 21:57:51 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:57:51 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-01 21:57:51 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:57:51 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-01 21:59:15 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-01 21:59:15 INFO  homeplanner.system uvicorn level: 10
+2026-01-01 21:59:15 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-01 21:59:15 INFO  homeplanner.system uvicorn handlers: []
+2026-01-01 21:59:15 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 21:59:15 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-01 21:59:15 INFO  homeplanner.system HTTP mode (SSL not configured)
+2026-01-01 21:59:16 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-01 21:59:16 INFO  homeplanner.system uvicorn level: 10
+2026-01-01 21:59:16 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-01 21:59:16 INFO  homeplanner.system uvicorn handlers: []
+2026-01-01 21:59:16 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-01 21:59:16 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-01 21:59:16 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-01 21:59:16 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 21:59:16 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-01 21:59:16 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:59:16 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-01 21:59:16 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:59:16 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-01 21:59:16 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:59:16 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-01 21:59:16 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:59:16 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-01 21:59:16 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:59:16 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-01 21:59:16 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:59:16 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-01 21:59:16 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:59:16 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-01 21:59:16 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-01 21:59:16 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-01 21:59:17 INFO  backend.routers.debug_logs Received binary chunk request: X-Chunk-Id=11, X-Device-Id=android_34e04403caa24936
+2026-01-01 21:59:17 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 21:59:17 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-01-01 21:59:17 INFO  sqlalchemy.engine.Engine [generated in 0.00039s] ('2026-01-01 04:21:29.848000', 'INFO', None, None, '{}', 'Приложение запущено', '11', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-01 21:59:17 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-01 21:59:17 INFO  backend.routers.debug_logs Successfully decoded and saved 1 log entries from chunk 11 (device: android_34e04403caa24936)
+2026-01-01 21:59:45 INFO  backend.routers.debug_logs Received binary chunk request: X-Chunk-Id=12, X-Device-Id=android_34e04403caa24936
+2026-01-01 21:59:45 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-01 21:59:45 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-01-01 21:59:45 INFO  sqlalchemy.engine.Engine [cached since 28.33s ago] ('2026-01-01 00:40:12.152000', 'INFO', None, None, '{}', 'Приложение запущено', '12', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-01 21:59:45 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-01 21:59:45 INFO  backend.routers.debug_logs Successfully decoded and saved 1 log entries from chunk 12 (device: android_34e04403caa24936)

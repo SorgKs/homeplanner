@@ -1,5 +1,6 @@
 """Service for managing users."""
 
+import logging
 from typing import TYPE_CHECKING
 
 from sqlalchemy.orm import Session
@@ -30,7 +31,28 @@ class UserService:
 
     @staticmethod
     def get_all_users(db: Session) -> list[User]:
-        return db.query(User).order_by(User.name).all()
+        logger = logging.getLogger("homeplanner.users")
+        logger.info("Starting query for all users")
+        try:
+            users = db.query(User).order_by(User.name).all()
+            logger.info(f"Query executed successfully, found {len(users)} users")
+            if not users:
+                logger.warning("No users found in database - checking if table exists")
+                # Check if table exists
+                from sqlalchemy import inspect
+                inspector = inspect(db.bind)
+                tables = inspector.get_table_names()
+                logger.warning(f"Available tables: {tables}")
+                if 'users' not in tables:
+                    logger.error("Users table does not exist in database!")
+                else:
+                    logger.warning("Users table exists but is empty")
+            else:
+                logger.debug(f"Users: {[{'id': u.id, 'name': u.name, 'email': u.email, 'is_active': u.is_active} for u in users]}")
+            return users
+        except Exception as e:
+            logger.error(f"Error querying users: {e}", exc_info=True)
+            return []
 
     @staticmethod
     def update_user(db: Session, user_id: int, user_data: "UserUpdate") -> User | None:
@@ -45,6 +67,19 @@ class UserService:
         db.commit()
         db.refresh(user)
         return user
+
+    @staticmethod
+    def get_simple_users(db: Session) -> list[tuple[int, str]]:
+        """Get active users with only id and name."""
+        logger = logging.getLogger("homeplanner.users")
+        logger.info("Starting query for simple users")
+        try:
+            users = db.query(User.id, User.name).filter(User.is_active == True).order_by(User.name).all()
+            logger.info(f"Query executed successfully, found {len(users)} active users")
+            return users
+        except Exception as e:
+            logger.error(f"Error querying simple users: {e}", exc_info=True)
+            return []
 
     @staticmethod
     def delete_user(db: Session, user_id: int) -> bool:

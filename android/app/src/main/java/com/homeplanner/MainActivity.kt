@@ -17,6 +17,7 @@ import com.homeplanner.viewmodel.TaskViewModel
 import com.homeplanner.viewmodel.TaskScreenState
 import com.homeplanner.model.Task
 import com.homeplanner.ui.tasks.TaskListScreen
+import org.koin.androidx.compose.koinViewModel
 
 class MainActivity : ComponentActivity() {
 
@@ -42,7 +43,7 @@ class MainActivity : ComponentActivity() {
 
     private fun setupComposeContent() {
         setContent {
-            val viewModel: TaskViewModel = viewModel()
+            val viewModel: TaskViewModel = koinViewModel()
             val state by viewModel.state.collectAsState()
             TasksScreen(state, ::handleUiEvents)
         }
@@ -80,7 +81,9 @@ sealed class UiEvent {
 
 @Composable
 fun TasksScreen(state: TaskScreenState, onEvent: (UiEvent) -> Unit) {
-    val viewModel: TaskViewModel = viewModel()
+    val viewModel: TaskViewModel = koinViewModel()
+    // Initialize viewModel with network settings if not already done
+    // viewModel.initialize(networkConfig, apiBaseUrl, selectedUser) // No longer needed
     val filteredTasks = viewModel.getFilteredTasks(state.tasks, state.currentFilter)
 
     val filteredState = state.copy(tasks = filteredTasks)

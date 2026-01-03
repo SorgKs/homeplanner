@@ -52,12 +52,22 @@ class UserSummary(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class UserSimple(BaseModel):
+    """Simplified schema for users - only id and name."""
+
+    id: int
+    name: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 __all__ = [
     "UserBase",
     "UserCreate",
     "UserUpdate",
     "UserResponse",
     "UserSummary",
+    "UserSimple",
 ]
 
 

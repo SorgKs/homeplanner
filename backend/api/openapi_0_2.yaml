@@ -15,6 +15,8 @@ tags:
     description: Управление участниками календарей
   - name: analytics
     description: Сбор телеметрии
+  - name: users
+    description: Управление пользователями
 paths:
   /tasks:
     post:
@@ -177,6 +179,36 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /users:
+    get:
+      tags: [users]
+      summary: Получение списка пользователей
+      description: >
+        Возвращает список пользователей. Поддерживает упрощённый режим для оптимизации загрузки.
+      parameters:
+        - name: simple
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: |
+            Если true, возвращает только активных пользователей с полями id и name.
+            Если false или отсутствует, возвращает всех пользователей со всеми полями.
+      responses:
+        '200':
+          description: Список пользователей
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/UserSimple'
+                    description: При simple=true
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/UserFull'
+                    description: При simple=false или отсутствии параметра
 components:
   securitySchemes:
     bearerAuth:
@@ -491,4 +523,52 @@ components:
           type: string
         message:
           type: string
+    UserSimple:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+          description: User ID
+        name:
+          type: string
+          description: User display name
+    UserFull:
+      type: object
+      required:
+        - id
+        - name
+        - email
+        - role
+        - is_active
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: integer
+          description: User ID
+        name:
+          type: string
+          description: User display name
+        email:
+          type: string
+          nullable: true
+          description: User email (optional)
+        role:
+          type: string
+          enum: [admin, regular, guest]
+          description: User privilege level
+        is_active:
+          type: boolean
+          description: Whether user can be assigned tasks
+        created_at:
+          type: string
+          format: date-time
+          description: User creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          description: User last update timestamp
 

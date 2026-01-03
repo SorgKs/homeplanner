@@ -60,6 +60,10 @@ class SyncService(
                 41u,
                 listOf(serverTasks.size, "syncStateBeforeRecalculation", queueSize)
             )
+
+            // Дополнительно синхронизируем пользователей и группы, если нужно
+            // TODO: Implement users and groups sync here if not already done
+
             true
         } catch (e: Exception) {
             // Исключение: ожидалось %wait%, фактически %fact%
@@ -192,7 +196,8 @@ class SyncService(
         
         // syncCacheWithServer: [STEP 1] Начало синхронизации
         BinaryLogger.getInstance()?.log(303u, emptyList())
-        
+        android.util.Log.i(TAG, "syncCacheWithServer: starting")
+
         return try {
             // Единый код синхронизации: просто вызываем syncQueue()
             // В онлайн режиме он работает сразу, в оффлайн - вернет ошибку, но при восстановлении сети сработает так же
@@ -253,17 +258,40 @@ class SyncService(
             }
             
             if (usersApi != null) {
+                android.util.Log.i(TAG, "syncCacheWithServer: attempting to load users")
+                // syncCacheWithServer: вызов загрузки пользователей с сервера
+                BinaryLogger.getInstance()?.log(400u, emptyList())
                 try {
                     users = usersApi.getUsers()
+                    android.util.Log.i(TAG, "syncCacheWithServer: loaded ${users?.size} users")
+                    // syncCacheWithServer: получен ответ от сервера с пользователями
+                    BinaryLogger.getInstance()?.log(401u, listOf(users?.size ?: 0))
                     // syncCacheWithServer: загружены пользователи
                     BinaryLogger.getInstance()?.log(312u, emptyList())
+
+                    // Save users to cache
+                    if (users != null && users.isNotEmpty()) {
+                        val userModels = users.map { summary ->
+                            com.homeplanner.model.User(
+                                id = summary.id,
+                                name = summary.name
+                            )
+                        }
+                        repository.saveUsersToCache(userModels)
+                        android.util.Log.i(TAG, "syncCacheWithServer: saved ${userModels.size} users to cache")
+                        // syncCacheWithServer: пользователи сохранены в локальный кеш
+                        BinaryLogger.getInstance()?.log(402u, listOf(userModels.size))
+                    }
                 } catch (e: Exception) {
+                    android.util.Log.e(TAG, "syncCacheWithServer: failed to load users", e)
                     // Исключение: ожидалось %wait%, фактически %fact%
                     BinaryLogger.getInstance()?.log(
                         91u,
                         listOf(e.message ?: "Unknown error", e::class.simpleName ?: "Unknown")
                     )
                 }
+            } else {
+                android.util.Log.w(TAG, "syncCacheWithServer: usersApi is null")
             }
             
             // Возврат результата

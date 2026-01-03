@@ -1,0 +1,635 @@
+2026-01-02 10:22:47 INFO  backend.routers.debug_logs Received binary chunk request: X-Chunk-Id=13, X-Device-Id=android_34e04403caa24936
+2026-01-02 10:22:47 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 10:22:47 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-01-02 10:22:47 INFO  sqlalchemy.engine.Engine [cached since 4.461e+04s ago] ('2026-01-02 04:34:09.080000', 'INFO', None, None, '{}', 'Приложение запущено', '13', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-02 10:22:47 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-02 10:22:47 INFO  backend.routers.debug_logs Successfully decoded and saved 1 log entries from chunk 13 (device: android_34e04403caa24936)
+2026-01-02 10:54:43 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/main.py')}
+2026-01-02 10:54:43 WARNING homeplanner.system WatchFiles detected changes in 'backend/main.py'. Reloading...
+2026-01-02 10:54:45 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-02 10:54:45 INFO  homeplanner.system uvicorn level: 10
+2026-01-02 10:54:45 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-02 10:54:45 INFO  homeplanner.system uvicorn handlers: []
+2026-01-02 10:54:45 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-02 10:54:45 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-02 10:54:45 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-02 10:54:45 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 10:54:45 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-02 10:54:45 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-02 10:54:45 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-02 10:54:45 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-02 10:54:45 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-02 10:54:45 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-02 10:54:45 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-02 10:54:45 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-02 10:54:45 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-02 10:54:45 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-02 10:54:45 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-02 10:54:45 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-02 10:54:45 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-02 10:54:45 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-02 10:54:45 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-02 10:54:45 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-02 10:54:45 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-02 10:55:16 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-02 10:55:16 INFO  homeplanner.realtime WS connect: id=140595370295568 host=192.168.1.2 port=37358 total=1
+2026-01-02 11:10:32 INFO  backend.routers.debug_logs Received binary chunk request: X-Chunk-Id=14, X-Device-Id=android_34e04403caa24936
+2026-01-02 11:10:32 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 11:10:32 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-01-02 11:10:32 INFO  sqlalchemy.engine.Engine [generated in 0.00058s] ('2026-01-02 00:20:03.773000', 'INFO', None, None, '{}', 'Приложение запущено', '14', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-02 11:10:32 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-02 11:10:32 INFO  backend.routers.debug_logs Successfully decoded and saved 1 log entries from chunk 14 (device: android_34e04403caa24936)
+2026-01-02 11:11:42 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/services/user_service.py')}
+2026-01-02 11:11:42 WARNING homeplanner.system WatchFiles detected changes in 'backend/services/user_service.py'. Reloading...
+2026-01-02 11:11:42 INFO  homeplanner.realtime WS disconnect: id=140595370295568, total=0
+2026-01-02 11:11:44 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-02 11:11:44 INFO  homeplanner.system uvicorn level: 10
+2026-01-02 11:11:44 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-02 11:11:44 INFO  homeplanner.system uvicorn handlers: []
+2026-01-02 11:11:44 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-02 11:11:44 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-02 11:11:44 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-02 11:11:44 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 11:11:44 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-02 11:11:44 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-02 11:11:44 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-02 11:11:44 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-02 11:11:44 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-02 11:11:44 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-02 11:11:44 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-02 11:11:44 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-02 11:11:44 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-02 11:11:44 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-02 11:11:44 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-02 11:11:44 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-02 11:11:44 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-02 11:11:44 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-02 11:11:44 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-02 11:11:44 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-02 11:11:44 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-02 11:11:45 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-02 11:11:45 INFO  homeplanner.realtime WS connect: id=140027214856272 host=192.168.1.2 port=56618 total=1
+2026-01-02 11:11:47 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/database.py')}
+2026-01-02 11:11:47 WARNING homeplanner.system WatchFiles detected changes in 'backend/database.py'. Reloading...
+2026-01-02 11:11:47 INFO  homeplanner.realtime WS disconnect: id=140027214856272, total=0
+2026-01-02 11:11:48 DEBUG watchfiles.main 3 changes detected: {(<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/backend/__pycache__/database.cpython-312.pyc.139967312010848'), (<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/backend/__pycache__/database.cpython-312.pyc'), (<Change.deleted: 3>, '/mnt/ZFS/Dev/HomePlanner/backend/__pycache__/database.cpython-312.pyc.139967312010848')}
+2026-01-02 11:11:48 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-02 11:11:48 INFO  homeplanner.system uvicorn level: 10
+2026-01-02 11:11:48 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-02 11:11:48 INFO  homeplanner.system uvicorn handlers: []
+2026-01-02 11:11:48 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-02 11:11:48 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-02 11:11:49 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-02 11:11:49 INFO  homeplanner.database Initializing database tables...
+2026-01-02 11:11:49 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 11:11:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-02 11:11:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-02 11:11:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-02 11:11:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-02 11:11:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-02 11:11:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-02 11:11:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-02 11:11:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-02 11:11:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-02 11:11:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-02 11:11:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-02 11:11:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-02 11:11:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-02 11:11:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-02 11:11:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-02 11:11:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-02 11:11:49 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-02 11:11:49 INFO  homeplanner.database Database tables created successfully
+2026-01-02 11:11:49 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 11:11:49 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-02 11:11:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-02 11:11:49 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-02 11:11:49 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-02 11:11:50 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-02 11:11:50 INFO  homeplanner.realtime WS connect: id=139967287967824 host=192.168.1.2 port=57318 total=1
+2026-01-02 11:13:14 INFO  homeplanner.tasks get_tasks: [SERVER STEP 1] Request received from 192.168.1.2, active_only=False, days_ahead=None, selected_user_id=1
+2026-01-02 11:13:14 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-02 11:13:14 INFO  homeplanner.users Starting query for all users
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine SELECT groups.id AS groups_id, groups.name AS groups_name, groups.description AS groups_description, groups.created_at AS groups_created_at, groups.updated_at AS groups_updated_at 
+FROM groups ORDER BY groups.name
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine [generated in 0.00431s] ('last_task_update', 1, 0)
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine [cached since 0.004669s ago] ('last_task_update', 1, 0)
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine [generated in 0.00277s] ()
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine [generated in 0.00130s] ()
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine [generated in 0.00091s] ()
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine [generated in 0.00274s] (3, 2, 1)
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine [cached since 0.02056s ago] ('last_task_update', 1, 0)
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine [cached since 0.01108s ago] ()
+2026-01-02 11:13:14 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine UPDATE app_metadata SET value=?, updated_at=? WHERE app_metadata."key" = ?
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-02 11:13:14 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine [generated in 0.00173s] ('2026-01-02 11:13:14.848202', '2026-01-02 11:13:14.867956', 'last_task_update')
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine [cached since 0.02791s ago] ('last_task_update', 1, 0)
+2026-01-02 11:13:14 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine UPDATE app_metadata SET value=?, updated_at=? WHERE app_metadata."key" = ?
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine [cached since 0.005976s ago] ('2026-01-02 11:13:14.860967', '2026-01-02 11:13:14.873229', 'last_task_update')
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks ORDER BY tasks.reminder_time
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine [generated in 0.00027s] ()
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine SELECT tasks_1.id AS tasks_1_id, users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM tasks AS tasks_1 JOIN task_users AS task_users_1 ON tasks_1.id = task_users_1.task_id JOIN users ON users.id = task_users_1.user_id 
+WHERE tasks_1.id IN (?, ?, ?, ?, ?, ?, ?)
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine [generated in 0.00037s] (10, 11, 8, 5, 1, 3, 2)
+2026-01-02 11:13:14 INFO  homeplanner.tasks get_tasks: [SERVER STEP 2] Found 7 tasks in database
+2026-01-02 11:13:14 INFO  homeplanner.tasks get_tasks: [SERVER STEP 3] Returning 7 tasks to client
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks ORDER BY tasks.reminder_time
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine [cached since 0.04488s ago] ()
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine SELECT tasks_1.id AS tasks_1_id, users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM tasks AS tasks_1 JOIN task_users AS task_users_1 ON tasks_1.id = task_users_1.task_id JOIN users ON users.id = task_users_1.user_id 
+WHERE tasks_1.id IN (?, ?, ?, ?, ?, ?, ?)
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine [cached since 0.04245s ago] (10, 11, 8, 5, 1, 3, 2)
+2026-01-02 11:13:14 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-02 11:13:15 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-02 11:13:15 INFO  homeplanner.realtime WS connect: id=139967253539888 host=192.168.1.2 port=59486 total=2
+2026-01-02 11:13:22 INFO  homeplanner.realtime WS disconnect: id=139967253539888, total=1
+2026-01-02 11:13:22 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-02 11:13:22 INFO  homeplanner.users Starting query for all users
+2026-01-02 11:13:22 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 11:13:22 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-02 11:13:22 INFO  sqlalchemy.engine.Engine [cached since 7.199s ago] ()
+2026-01-02 11:13:22 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-02 11:13:22 INFO  sqlalchemy.engine.Engine [cached since 7.189s ago] (3, 2, 1)
+2026-01-02 11:13:22 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-02 11:13:22 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-02 11:13:22 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-02 11:13:22 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-02 11:13:24 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-02 11:13:24 INFO  homeplanner.realtime WS connect: id=139967288513008 host=192.168.1.2 port=59940 total=2
+2026-01-02 12:48:53 INFO  backend.routers.debug_logs Received binary chunk request: X-Chunk-Id=15, X-Device-Id=android_34e04403caa24936
+2026-01-02 12:48:53 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 12:48:53 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-01-02 12:48:53 INFO  sqlalchemy.engine.Engine [generated in 0.00085s] ('2026-01-02 00:56:06.726000', 'INFO', None, None, '{}', 'Приложение запущено', '15', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-02 12:48:53 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-02 12:48:53 INFO  backend.routers.debug_logs Successfully decoded and saved 1 log entries from chunk 15 (device: android_34e04403caa24936)
+2026-01-02 22:05:49 INFO  backend.routers.debug_logs Received binary chunk request: X-Chunk-Id=16, X-Device-Id=android_34e04403caa24936
+2026-01-02 22:05:49 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 22:05:49 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-01-02 22:05:49 INFO  sqlalchemy.engine.Engine [cached since 3.342e+04s ago] ('2026-01-02 03:13:13.848000', 'INFO', None, None, '{}', 'Приложение запущено', '16', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-02 22:05:49 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-02 22:05:49 INFO  backend.routers.debug_logs Successfully decoded and saved 1 log entries from chunk 16 (device: android_34e04403caa24936)
+2026-01-02 22:06:04 INFO  backend.routers.debug_logs Received binary chunk request: X-Chunk-Id=17, X-Device-Id=android_34e04403caa24936
+2026-01-02 22:06:04 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 22:06:04 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-01-02 22:06:04 INFO  sqlalchemy.engine.Engine [cached since 3.343e+04s ago] ('2026-01-02 00:17:23.320000', 'INFO', None, None, '{}', 'Приложение запущено', '17', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-02 22:06:04 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-02 22:06:04 INFO  backend.routers.debug_logs Successfully decoded and saved 1 log entries from chunk 17 (device: android_34e04403caa24936)
+2026-01-02 22:06:19 INFO  backend.routers.debug_logs Received binary chunk request: X-Chunk-Id=18, X-Device-Id=android_34e04403caa24936
+2026-01-02 22:06:19 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 22:06:19 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-01-02 22:06:19 INFO  sqlalchemy.engine.Engine [cached since 3.345e+04s ago] ('2026-01-02 02:07:54.745000', 'INFO', None, None, '{}', 'Приложение запущено', '18', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-02 22:06:19 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-02 22:06:19 INFO  backend.routers.debug_logs Successfully decoded and saved 1 log entries from chunk 18 (device: android_34e04403caa24936)
+2026-01-02 22:06:34 INFO  backend.routers.debug_logs Received binary chunk request: X-Chunk-Id=19, X-Device-Id=android_34e04403caa24936
+2026-01-02 22:06:34 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 22:06:34 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-02 22:06:34 INFO  sqlalchemy.engine.Engine [generated in 0.00058s (insertmanyvalues) 1/2 (ordered; batch not supported)] ('2026-01-02 01:21:13.337000', 'INFO', None, None, '{}', 'Приложение запущено', '19', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-02 22:06:34 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-02 22:06:34 INFO  sqlalchemy.engine.Engine [insertmanyvalues 2/2 (ordered; batch not supported)] ('2026-01-02 03:00:37.113000', 'DEBUG', None, None, '{}', 'Загружены задачи из кэша', '19', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-02 22:06:34 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-02 22:06:34 INFO  backend.routers.debug_logs Successfully decoded and saved 2 log entries from chunk 19 (device: android_34e04403caa24936)
+2026-01-02 22:13:15 INFO  backend.routers.debug_logs Received binary chunk request: X-Chunk-Id=20, X-Device-Id=android_34e04403caa24936
+2026-01-02 22:13:15 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 22:13:15 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-02 22:13:15 INFO  sqlalchemy.engine.Engine [cached since 401.2s ago (insertmanyvalues) 1/2 (ordered; batch not supported)] ('2026-01-02 03:11:11.482000', 'INFO', None, None, '{}', 'Приложение запущено', '20', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-02 22:13:15 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-02 22:13:15 INFO  sqlalchemy.engine.Engine [insertmanyvalues 2/2 (ordered; batch not supported)] ('2026-01-02 00:13:09.370000', 'DEBUG', None, None, '{}', 'Загружены задачи из кэша', '20', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-02 22:13:15 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-02 22:13:16 INFO  backend.routers.debug_logs Successfully decoded and saved 2 log entries from chunk 20 (device: android_34e04403caa24936)
+2026-01-02 22:19:14 INFO  backend.routers.debug_logs Received binary chunk request: X-Chunk-Id=21, X-Device-Id=android_34e04403caa24936
+2026-01-02 22:19:14 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 22:19:14 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-02 22:19:14 INFO  sqlalchemy.engine.Engine [cached since 760s ago (insertmanyvalues) 1/2 (ordered; batch not supported)] ('2026-01-02 03:56:34.298000', 'INFO', None, None, '{}', 'Приложение запущено', '21', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-02 22:19:14 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-02 22:19:14 INFO  sqlalchemy.engine.Engine [insertmanyvalues 2/2 (ordered; batch not supported)] ('2026-01-02 00:49:47.898000', 'DEBUG', None, None, '{}', 'Загружены задачи из кэша', '21', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-02 22:19:14 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-02 22:19:14 INFO  backend.routers.debug_logs Successfully decoded and saved 2 log entries from chunk 21 (device: android_34e04403caa24936)
+2026-01-02 22:48:57 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-02 22:48:57 INFO  homeplanner.users Starting query for all users
+2026-01-02 22:48:57 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 22:48:57 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-02 22:48:57 INFO  sqlalchemy.engine.Engine [cached since 4.174e+04s ago] ()
+2026-01-02 22:48:57 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-02 22:48:57 INFO  sqlalchemy.engine.Engine [cached since 4.174e+04s ago] (3, 2, 1)
+2026-01-02 22:48:57 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-02 22:48:57 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-02 22:48:57 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-02 22:48:57 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-02 22:49:07 INFO  backend.routers.debug_logs Received binary chunk request: X-Chunk-Id=22, X-Device-Id=android_34e04403caa24936
+2026-01-02 22:49:07 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 22:49:07 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-02 22:49:07 INFO  sqlalchemy.engine.Engine [cached since 2553s ago (insertmanyvalues) 1/2 (ordered; batch not supported)] ('2026-01-02 01:10:15.677000', 'INFO', None, None, '{}', 'Приложение запущено', '22', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-02 22:49:07 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-02 22:49:07 INFO  sqlalchemy.engine.Engine [insertmanyvalues 2/2 (ordered; batch not supported)] ('2026-01-02 02:46:22.845000', 'DEBUG', None, None, '{}', 'Загружены задачи из кэша', '22', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-02 22:49:07 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-02 22:49:07 INFO  backend.routers.debug_logs Successfully decoded and saved 2 log entries from chunk 22 (device: android_34e04403caa24936)
+2026-01-02 22:53:30 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-02 22:53:30 INFO  homeplanner.users Starting query for all users
+2026-01-02 22:53:30 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 22:53:30 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-02 22:53:30 INFO  sqlalchemy.engine.Engine [cached since 4.202e+04s ago] ()
+2026-01-02 22:53:30 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-02 22:53:30 INFO  sqlalchemy.engine.Engine [cached since 4.202e+04s ago] (3, 2, 1)
+2026-01-02 22:53:30 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-02 22:53:30 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-02 22:53:30 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-02 22:53:30 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-02 22:53:43 INFO  backend.routers.debug_logs Received binary chunk request: X-Chunk-Id=23, X-Device-Id=android_34e04403caa24936
+2026-01-02 22:53:43 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 22:53:43 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-02 22:53:43 INFO  sqlalchemy.engine.Engine [cached since 2829s ago (insertmanyvalues) 1/2 (ordered; batch not supported)] ('2026-01-02 04:06:34.365000', 'INFO', None, None, '{}', 'Приложение запущено', '23', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-02 22:53:43 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-02 22:53:43 INFO  sqlalchemy.engine.Engine [insertmanyvalues 2/2 (ordered; batch not supported)] ('2026-01-02 01:07:26.717000', 'DEBUG', None, None, '{}', 'Загружены задачи из кэша', '23', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-02 22:53:43 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-02 22:53:43 INFO  backend.routers.debug_logs Successfully decoded and saved 2 log entries from chunk 23 (device: android_34e04403caa24936)
+2026-01-02 22:57:17 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-02 22:57:17 INFO  homeplanner.users Starting query for all users
+2026-01-02 22:57:17 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 22:57:17 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-02 22:57:17 INFO  sqlalchemy.engine.Engine [cached since 4.224e+04s ago] ()
+2026-01-02 22:57:17 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-02 22:57:17 INFO  sqlalchemy.engine.Engine [cached since 4.224e+04s ago] (3, 2, 1)
+2026-01-02 22:57:17 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-02 22:57:17 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-02 22:57:17 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-02 22:57:17 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-02 22:57:27 INFO  backend.routers.debug_logs Received binary chunk request: X-Chunk-Id=24, X-Device-Id=android_34e04403caa24936
+2026-01-02 22:57:27 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 22:57:27 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-02 22:57:27 INFO  sqlalchemy.engine.Engine [cached since 3053s ago (insertmanyvalues) 1/2 (ordered; batch not supported)] ('2026-01-02 01:43:51.678000', 'INFO', None, None, '{}', 'Приложение запущено', '24', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-02 22:57:27 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-02 22:57:27 INFO  sqlalchemy.engine.Engine [insertmanyvalues 2/2 (ordered; batch not supported)] ('2026-01-02 03:17:47.774000', 'DEBUG', None, None, '{}', 'Загружены задачи из кэша', '24', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-02 22:57:27 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-02 22:57:27 INFO  backend.routers.debug_logs Successfully decoded and saved 2 log entries from chunk 24 (device: android_34e04403caa24936)
+2026-01-02 23:03:56 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-02 23:03:56 INFO  homeplanner.users Starting query for all users
+2026-01-02 23:03:56 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 23:03:56 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-02 23:03:56 INFO  sqlalchemy.engine.Engine [cached since 4.264e+04s ago] ()
+2026-01-02 23:03:56 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-02 23:03:56 INFO  sqlalchemy.engine.Engine [cached since 4.264e+04s ago] (3, 2, 1)
+2026-01-02 23:03:56 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-02 23:03:56 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-02 23:03:56 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-02 23:03:56 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-02 23:03:59 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-02 23:03:59 INFO  homeplanner.users Starting query for all users
+2026-01-02 23:03:59 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 23:03:59 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-02 23:03:59 INFO  sqlalchemy.engine.Engine [cached since 4.264e+04s ago] ()
+2026-01-02 23:03:59 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-02 23:03:59 INFO  sqlalchemy.engine.Engine [cached since 4.264e+04s ago] (3, 2, 1)
+2026-01-02 23:03:59 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-02 23:03:59 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-02 23:03:59 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-02 23:03:59 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-02 23:04:01 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-02 23:04:01 INFO  homeplanner.users Starting query for all users
+2026-01-02 23:04:01 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 23:04:01 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-02 23:04:01 INFO  sqlalchemy.engine.Engine [cached since 4.265e+04s ago] ()
+2026-01-02 23:04:01 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-02 23:04:01 INFO  sqlalchemy.engine.Engine [cached since 4.265e+04s ago] (3, 2, 1)
+2026-01-02 23:04:01 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-02 23:04:01 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-02 23:04:01 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-02 23:04:01 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-02 23:04:03 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-02 23:04:03 INFO  homeplanner.users Starting query for all users
+2026-01-02 23:04:03 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 23:04:03 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-02 23:04:03 INFO  sqlalchemy.engine.Engine [cached since 4.265e+04s ago] ()
+2026-01-02 23:04:03 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-02 23:04:03 INFO  sqlalchemy.engine.Engine [cached since 4.265e+04s ago] (3, 2, 1)
+2026-01-02 23:04:03 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-02 23:04:03 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-02 23:04:03 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-02 23:04:03 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-02 23:07:58 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-02 23:07:58 INFO  homeplanner.users Starting query for all users
+2026-01-02 23:07:58 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 23:07:58 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-02 23:07:58 INFO  sqlalchemy.engine.Engine [cached since 4.288e+04s ago] ()
+2026-01-02 23:07:58 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-02 23:07:58 INFO  sqlalchemy.engine.Engine [cached since 4.288e+04s ago] (3, 2, 1)
+2026-01-02 23:07:58 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-02 23:07:58 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-02 23:07:58 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-02 23:07:58 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-02 23:07:58 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-02 23:07:58 INFO  homeplanner.users Starting query for all users
+2026-01-02 23:07:58 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 23:07:58 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-02 23:07:58 INFO  sqlalchemy.engine.Engine [cached since 4.288e+04s ago] ()
+2026-01-02 23:07:58 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-02 23:07:58 INFO  sqlalchemy.engine.Engine [cached since 4.288e+04s ago] (3, 2, 1)
+2026-01-02 23:07:58 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-02 23:07:58 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-02 23:07:58 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-02 23:07:58 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-02 23:08:10 INFO  backend.routers.debug_logs Received binary chunk request: X-Chunk-Id=25, X-Device-Id=android_34e04403caa24936
+2026-01-02 23:08:10 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 23:08:10 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-02 23:08:10 INFO  sqlalchemy.engine.Engine [cached since 3696s ago (insertmanyvalues) 1/2 (ordered; batch not supported)] ('2026-01-02 03:35:15.071000', 'INFO', None, None, '{}', 'Приложение запущено', '25', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-02 23:08:10 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-02 23:08:10 INFO  sqlalchemy.engine.Engine [insertmanyvalues 2/2 (ordered; batch not supported)] ('2026-01-02 00:35:01.887000', 'DEBUG', None, None, '{}', 'Загружены задачи из кэша', '25', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-02 23:08:10 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-02 23:08:10 INFO  backend.routers.debug_logs Successfully decoded and saved 2 log entries from chunk 25 (device: android_34e04403caa24936)
+2026-01-02 23:08:52 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-02 23:08:52 INFO  homeplanner.users Starting query for all users
+2026-01-02 23:08:52 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 23:08:52 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-02 23:08:52 INFO  sqlalchemy.engine.Engine [cached since 4.294e+04s ago] ()
+2026-01-02 23:08:52 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-02 23:08:52 INFO  sqlalchemy.engine.Engine [cached since 4.294e+04s ago] (3, 2, 1)
+2026-01-02 23:08:52 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-02 23:08:52 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-02 23:08:52 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-02 23:08:52 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-02 23:08:52 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-02 23:08:52 INFO  homeplanner.users Starting query for all users
+2026-01-02 23:08:52 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 23:08:52 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-02 23:08:52 INFO  sqlalchemy.engine.Engine [cached since 4.294e+04s ago] ()
+2026-01-02 23:08:52 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-02 23:08:52 INFO  sqlalchemy.engine.Engine [cached since 4.294e+04s ago] (3, 2, 1)
+2026-01-02 23:08:52 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-02 23:08:52 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-02 23:08:52 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-02 23:08:52 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-02 23:11:05 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-02 23:11:05 INFO  homeplanner.users Starting query for all users
+2026-01-02 23:11:05 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 23:11:05 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-02 23:11:05 INFO  sqlalchemy.engine.Engine [cached since 4.307e+04s ago] ()
+2026-01-02 23:11:05 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-02 23:11:05 INFO  sqlalchemy.engine.Engine [cached since 4.307e+04s ago] (3, 2, 1)
+2026-01-02 23:11:05 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-02 23:11:05 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-02 23:11:05 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-02 23:11:05 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-02 23:11:08 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-02 23:11:08 INFO  homeplanner.users Starting query for all users
+2026-01-02 23:11:08 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 23:11:08 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-02 23:11:08 INFO  sqlalchemy.engine.Engine [cached since 4.307e+04s ago] ()
+2026-01-02 23:11:08 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-02 23:11:08 INFO  sqlalchemy.engine.Engine [cached since 4.307e+04s ago] (3, 2, 1)
+2026-01-02 23:11:08 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-02 23:11:08 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-02 23:11:08 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-02 23:11:08 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-02 23:11:08 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-02 23:11:08 INFO  homeplanner.users Starting query for all users
+2026-01-02 23:11:08 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 23:11:08 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-02 23:11:08 INFO  sqlalchemy.engine.Engine [cached since 4.307e+04s ago] ()
+2026-01-02 23:11:08 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-02 23:11:08 INFO  sqlalchemy.engine.Engine [cached since 4.307e+04s ago] (3, 2, 1)
+2026-01-02 23:11:08 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-02 23:11:08 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-02 23:11:08 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-02 23:11:08 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-02 23:11:16 INFO  backend.routers.debug_logs Received binary chunk request: X-Chunk-Id=26, X-Device-Id=android_34e04403caa24936
+2026-01-02 23:11:16 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 23:11:16 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-02 23:11:16 INFO  sqlalchemy.engine.Engine [cached since 3882s ago (insertmanyvalues) 1/2 (ordered; batch not supported)] ('2026-01-02 01:56:09.983000', 'INFO', None, None, '{}', 'Приложение запущено', '26', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-02 23:11:16 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-02 23:11:16 INFO  sqlalchemy.engine.Engine [insertmanyvalues 2/2 (ordered; batch not supported)] ('2026-01-02 03:34:28.223000', 'DEBUG', None, None, '{}', 'Загружены задачи из кэша', '26', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-02 23:11:16 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-02 23:11:16 INFO  backend.routers.debug_logs Successfully decoded and saved 2 log entries from chunk 26 (device: android_34e04403caa24936)
+2026-01-02 23:17:54 INFO  backend.routers.debug_logs Received binary chunk request: X-Chunk-Id=27, X-Device-Id=android_34e04403caa24936
+2026-01-02 23:17:54 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 23:17:54 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-02 23:17:54 INFO  sqlalchemy.engine.Engine [cached since 4280s ago (insertmanyvalues) 1/2 (ordered; batch not supported)] ('2026-01-02 03:25:18.079000', 'INFO', None, None, '{}', 'Приложение запущено', '27', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-02 23:17:54 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-02 23:17:54 INFO  sqlalchemy.engine.Engine [insertmanyvalues 2/2 (ordered; batch not supported)] ('2026-01-02 00:22:53.823000', 'DEBUG', None, None, '{}', 'Загружены задачи из кэша', '27', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-02 23:17:54 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-02 23:17:54 INFO  backend.routers.debug_logs Successfully decoded and saved 2 log entries from chunk 27 (device: android_34e04403caa24936)
+2026-01-02 23:17:58 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-02 23:17:58 INFO  homeplanner.users Starting query for all users
+2026-01-02 23:17:58 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 23:17:58 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-02 23:17:58 INFO  sqlalchemy.engine.Engine [cached since 4.348e+04s ago] ()
+2026-01-02 23:17:58 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-02 23:17:58 INFO  sqlalchemy.engine.Engine [cached since 4.348e+04s ago] (3, 2, 1)
+2026-01-02 23:17:58 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-02 23:17:58 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-02 23:17:58 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-02 23:17:58 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-02 23:17:58 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-02 23:17:58 INFO  homeplanner.users Starting query for all users
+2026-01-02 23:17:58 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 23:17:58 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-02 23:17:58 INFO  sqlalchemy.engine.Engine [cached since 4.348e+04s ago] ()
+2026-01-02 23:17:58 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-02 23:17:58 INFO  sqlalchemy.engine.Engine [cached since 4.348e+04s ago] (3, 2, 1)
+2026-01-02 23:17:58 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-02 23:17:58 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-02 23:17:58 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-02 23:17:58 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-02 23:56:07 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-02 23:56:07 INFO  homeplanner.users Starting query for all users
+2026-01-02 23:56:07 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 23:56:07 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-02 23:56:07 INFO  sqlalchemy.engine.Engine [cached since 4.577e+04s ago] ()
+2026-01-02 23:56:07 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-02 23:56:07 INFO  sqlalchemy.engine.Engine [cached since 4.577e+04s ago] (3, 2, 1)
+2026-01-02 23:56:07 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-02 23:56:07 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-02 23:56:07 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-02 23:56:07 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-02 23:56:07 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-02 23:56:07 INFO  homeplanner.users Starting query for all users
+2026-01-02 23:56:07 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 23:56:07 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-02 23:56:07 INFO  sqlalchemy.engine.Engine [cached since 4.577e+04s ago] ()
+2026-01-02 23:56:07 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-02 23:56:07 INFO  sqlalchemy.engine.Engine [cached since 4.577e+04s ago] (3, 2, 1)
+2026-01-02 23:56:07 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-02 23:56:07 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-02 23:56:07 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-02 23:56:07 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-02 23:56:10 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-02 23:56:10 INFO  homeplanner.users Starting query for all users
+2026-01-02 23:56:10 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 23:56:10 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-02 23:56:10 INFO  sqlalchemy.engine.Engine [cached since 4.578e+04s ago] ()
+2026-01-02 23:56:10 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-02 23:56:10 INFO  sqlalchemy.engine.Engine [cached since 4.578e+04s ago] (3, 2, 1)
+2026-01-02 23:56:10 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-02 23:56:10 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-02 23:56:10 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-02 23:56:10 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-02 23:56:10 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-02 23:56:10 INFO  homeplanner.users Starting query for all users
+2026-01-02 23:56:10 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 23:56:10 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-02 23:56:10 INFO  sqlalchemy.engine.Engine [cached since 4.578e+04s ago] ()
+2026-01-02 23:56:10 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-02 23:56:10 INFO  sqlalchemy.engine.Engine [cached since 4.578e+04s ago] (3, 2, 1)
+2026-01-02 23:56:10 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-02 23:56:10 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-02 23:56:10 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-02 23:56:10 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-02 23:56:12 INFO  backend.routers.debug_logs Received binary chunk request: X-Chunk-Id=28, X-Device-Id=android_34e04403caa24936
+2026-01-02 23:56:12 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-02 23:56:12 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-02 23:56:12 INFO  sqlalchemy.engine.Engine [cached since 6578s ago (insertmanyvalues) 1/2 (ordered; batch not supported)] ('2026-01-02 02:19:13.667000', 'INFO', None, None, '{}', 'Приложение запущено', '28', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-02 23:56:12 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-02 23:56:12 INFO  sqlalchemy.engine.Engine [insertmanyvalues 2/2 (ordered; batch not supported)] ('2026-01-02 03:54:15.299000', 'DEBUG', None, None, '{}', 'Загружены задачи из кэша', '28', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-02 23:56:12 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-02 23:56:12 INFO  backend.routers.debug_logs Successfully decoded and saved 2 log entries from chunk 28 (device: android_34e04403caa24936)
+2026-01-03 00:00:14 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/debug_log_dictionary.py')}
+2026-01-03 00:00:14 WARNING homeplanner.system WatchFiles detected changes in 'backend/debug_log_dictionary.py'. Reloading...
+2026-01-03 00:26:17 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/debug_log_dictionary.py')}
+2026-01-03 00:26:17 WARNING homeplanner.system WatchFiles detected changes in 'backend/debug_log_dictionary.py'. Reloading...
+2026-01-03 10:27:58 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/debug_log_dictionary.py')}
+2026-01-03 10:27:58 WARNING homeplanner.system WatchFiles detected changes in 'backend/debug_log_dictionary.py'. Reloading...
+2026-01-03 11:01:44 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/schemas/user.py')}
+2026-01-03 11:01:44 WARNING homeplanner.system WatchFiles detected changes in 'backend/schemas/user.py'. Reloading...
+2026-01-03 11:01:45 DEBUG watchfiles.main 3 changes detected: {(<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/backend/schemas/__pycache__/user.cpython-312.pyc'), (<Change.deleted: 3>, '/mnt/ZFS/Dev/HomePlanner/backend/schemas/__pycache__/user.cpython-312.pyc.140118853988528'), (<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/backend/schemas/__pycache__/user.cpython-312.pyc.140118853988528')}
+2026-01-03 11:01:49 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/services/user_service.py')}
+2026-01-03 11:01:49 WARNING homeplanner.system WatchFiles detected changes in 'backend/services/user_service.py'. Reloading...
+2026-01-03 11:01:56 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/routers/users.py')}
+2026-01-03 11:01:56 WARNING homeplanner.system WatchFiles detected changes in 'backend/routers/users.py'. Reloading...
+2026-01-03 11:02:01 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/routers/users.py')}
+2026-01-03 11:02:01 WARNING homeplanner.system WatchFiles detected changes in 'backend/routers/users.py'. Reloading...
+2026-01-03 11:02:22 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/api/openapi_0_2.yaml')}
+2026-01-03 11:02:26 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/api/openapi_0_2.yaml')}
+2026-01-03 11:02:37 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/api/openapi_0_2.yaml')}
+2026-01-03 11:02:55 DEBUG watchfiles.main 1 change detected: {(<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/tests/test_users_router.py')}
+2026-01-03 11:02:55 WARNING homeplanner.system WatchFiles detected changes in 'tests/test_users_router.py'. Reloading...
+2026-01-03 11:02:56 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/tests/test_users_router.py')}
+2026-01-03 11:02:56 WARNING homeplanner.system WatchFiles detected changes in 'tests/test_users_router.py'. Reloading...
+2026-01-03 11:03:20 DEBUG watchfiles.main 3 changes detected: {(<Change.deleted: 3>, '/mnt/ZFS/Dev/HomePlanner/tests/__pycache__/test_users_router.cpython-312-pytest-9.0.1.pyc.3461083'), (<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/tests/__pycache__/test_users_router.cpython-312-pytest-9.0.1.pyc'), (<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/tests/__pycache__/test_users_router.cpython-312-pytest-9.0.1.pyc.3461083')}
+2026-01-03 11:03:39 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/tests/utils.py')}
+2026-01-03 11:03:39 WARNING homeplanner.system WatchFiles detected changes in 'tests/utils.py'. Reloading...
+2026-01-03 11:03:44 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/tests/utils.py')}
+2026-01-03 11:03:44 WARNING homeplanner.system WatchFiles detected changes in 'tests/utils.py'. Reloading...
+2026-01-03 11:04:06 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/tests/utils.py')}
+2026-01-03 11:04:06 WARNING homeplanner.system WatchFiles detected changes in 'tests/utils.py'. Reloading...
+2026-01-03 11:04:30 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/tests/test_users_router.py')}
+2026-01-03 11:04:30 WARNING homeplanner.system WatchFiles detected changes in 'tests/test_users_router.py'. Reloading...
+2026-01-03 11:05:05 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/tests/test_users_router.py')}
+2026-01-03 11:05:05 WARNING homeplanner.system WatchFiles detected changes in 'tests/test_users_router.py'. Reloading...
+2026-01-03 11:05:11 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/tests/test_users_router.py')}
+2026-01-03 11:05:11 WARNING homeplanner.system WatchFiles detected changes in 'tests/test_users_router.py'. Reloading...
+2026-01-03 11:05:27 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/main.py')}
+2026-01-03 11:05:27 WARNING homeplanner.system WatchFiles detected changes in 'backend/main.py'. Reloading...
+2026-01-03 11:05:32 DEBUG watchfiles.main 3 changes detected: {(<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/tests/__pycache__/test_users_router.cpython-312-pytest-9.0.1.pyc'), (<Change.deleted: 3>, '/mnt/ZFS/Dev/HomePlanner/tests/__pycache__/test_users_router.cpython-312-pytest-9.0.1.pyc.3470671'), (<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/tests/__pycache__/test_users_router.cpython-312-pytest-9.0.1.pyc.3470671')}
+2026-01-03 11:06:18 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/tests/test_users_router.py')}
+2026-01-03 11:06:18 WARNING homeplanner.system WatchFiles detected changes in 'tests/test_users_router.py'. Reloading...
+2026-01-03 11:06:23 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/tests/test_users_router.py')}
+2026-01-03 11:06:23 WARNING homeplanner.system WatchFiles detected changes in 'tests/test_users_router.py'. Reloading...
+2026-01-03 11:06:29 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/tests/test_users_router.py')}
+2026-01-03 11:06:29 WARNING homeplanner.system WatchFiles detected changes in 'tests/test_users_router.py'. Reloading...
+2026-01-03 11:06:43 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/tests/test_users_router.py')}
+2026-01-03 11:06:43 WARNING homeplanner.system WatchFiles detected changes in 'tests/test_users_router.py'. Reloading...
+2026-01-03 11:06:47 DEBUG watchfiles.main 3 changes detected: {(<Change.deleted: 3>, '/mnt/ZFS/Dev/HomePlanner/tests/__pycache__/test_users_router.cpython-312-pytest-9.0.1.pyc.3476191'), (<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/tests/__pycache__/test_users_router.cpython-312-pytest-9.0.1.pyc'), (<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/tests/__pycache__/test_users_router.cpython-312-pytest-9.0.1.pyc.3476191')}

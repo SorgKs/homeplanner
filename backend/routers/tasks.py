@@ -112,23 +112,29 @@ def get_tasks(
     Supported filters:
     - days_ahead: предстоящие задачи за N дней
     - active_only: только активные
-    
+
     Note: Для получения задач на сегодня используйте GET /tasks/today/ids
     """
     client_ip = request.client.host if request.client else "unknown"
     selected_user_id = _resolve_selected_user_id(request)
-    logger.info("get_tasks: [SERVER STEP 1] Request received from %s, active_only=%s, days_ahead=%s, selected_user_id=%s", 
+    logger.info("get_tasks: [SERVER STEP 1] Request received from %s, active_only=%s, days_ahead=%s, selected_user_id=%s",
                 client_ip, active_only, days_ahead, selected_user_id)
-    
-    if days_ahead:
-        tasks = TaskService.get_upcoming_tasks(db, days_ahead=days_ahead)
-    else:
-        tasks = TaskService.get_all_tasks(db, active_only=active_only)
-    
-    logger.info("get_tasks: [SERVER STEP 2] Found %d tasks in database", len(tasks))
-    result = [TaskResponse.model_validate(task) for task in tasks]
-    logger.info("get_tasks: [SERVER STEP 3] Returning %d tasks to client", len(result))
-    return result
+
+    try:
+        if days_ahead:
+            tasks = TaskService.get_upcoming_tasks(db, days_ahead=days_ahead)
+        else:
+            tasks = TaskService.get_all_tasks(db, active_only=active_only)
+
+        logger.info("get_tasks: [SERVER STEP 2] Found %d tasks in database", len(tasks))
+        result = [TaskResponse.model_validate(task) for task in tasks]
+        logger.info("get_tasks: [SERVER STEP 3] Returning %d tasks to client", len(result))
+        # Commit to avoid ROLLBACK in logs for read-only operations
+        db.commit()
+        return result
+    except Exception as e:
+        logger.error("get_tasks: [SERVER ERROR] Exception occurred: %s", e, exc_info=True)
+        raise
 
 @router.get("/today", response_model=list[TaskResponse])
 def get_today_tasks_view(

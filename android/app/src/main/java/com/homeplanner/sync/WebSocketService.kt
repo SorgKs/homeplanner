@@ -112,8 +112,9 @@ class WebSocketService(
         try {
             val baseUrl = serverApi.baseUrl ?: throw IllegalArgumentException("Server API base URL is null")
             val wsUrl = baseUrl.replace("http", "ws") + WEBSOCKET_PATH
-            
+
             Log.d(TAG, "Connecting to WebSocket: $wsUrl")
+            Log.d(TAG, "Base URL: $baseUrl, WebSocket path: $WEBSOCKET_PATH")
             
             val okHttpClient = OkHttpClient.Builder()
                 .retryOnConnectionFailure(true)

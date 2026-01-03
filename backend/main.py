@@ -120,19 +120,25 @@ def create_app() -> FastAPI:
     
     # Get API version from settings
     api_version_path = settings.api_version_path
-    
-    app.include_router(websocket_router, prefix=api_version_path, tags=["realtime-websocket"])
+
+    # Support both current and previous API versions for backward compatibility
+    supported_api_versions = ["/api/v0.2", "/api/v0.3"]
+    for version_path in supported_api_versions:
+        app.include_router(websocket_router, prefix=version_path, tags=["realtime-websocket"])
 
     # ===== HTTP routers (ONLY HTTP, separate set) =====
     # Create separate routers ONLY for HTTP routes (no WebSocket routes)
-    app.include_router(events.router, prefix=f"{api_version_path}/events", tags=["events"])
-    app.include_router(tasks.router, prefix=f"{api_version_path}/tasks", tags=["tasks"])
-    app.include_router(groups.router, prefix=f"{api_version_path}/groups", tags=["groups"])
-    app.include_router(users.router, prefix=f"{api_version_path}/users", tags=["users"])
-    app.include_router(task_history.router, prefix=api_version_path, tags=["task_history"])
+    # Register routers for all supported API versions for backward compatibility
+    for version_path in supported_api_versions:
+        app.include_router(events.router, prefix=f"{version_path}/events", tags=["events"])
+        app.include_router(tasks.router, prefix=f"{version_path}/tasks", tags=["tasks"])
+        app.include_router(groups.router, prefix=f"{version_path}/groups", tags=["groups"])
+        app.include_router(users.router, prefix=f"{version_path}/users", tags=["users"])
+        app.include_router(task_history.router, prefix=version_path, tags=["task_history"])
+        app.include_router(time_control.router, prefix=f"{version_path}/time", tags=["time"])
+        app.include_router(debug_logs.router, prefix=version_path, tags=["debug-logs"])
+
     app.include_router(download.router, prefix="/download", tags=["download"])
-    app.include_router(time_control.router, prefix=f"{api_version_path}/time", tags=["time"])
-    app.include_router(debug_logs.router, prefix=api_version_path, tags=["debug-logs"])
     
     # HTTP endpoint from realtime (separate from WebSocket route)
     http_realtime_router = APIRouter()
@@ -222,11 +228,11 @@ if __name__ == "__main__":
         # Intercept uvicorn.error logger to extract and display file names
         uvicorn_logger = logging.getLogger("uvicorn.error")
         original_warning = uvicorn_logger.warning
-        
+
         def logged_warning(msg: str, *args: Any, **kwargs: Any) -> None:
             """Wrap uvicorn warning to extract and display file names from reload messages."""
             formatted_msg = msg % args if args else msg
-            
+
             # uvicorn logs messages like:
             # "WatchFiles detected changes in 'backend/routers/download.py'. Reloading..."
             # We extract the file name and format it nicely
@@ -246,7 +252,7 @@ if __name__ == "__main__":
             else:
                 # If pattern doesn't match, use original message
                 original_warning(msg, *args, **kwargs)
-        
+
         uvicorn_logger.warning = logged_warning  # type: ignore[assignment]
     
     # Prepare SSL configuration if enabled
@@ -257,7 +263,32 @@ if __name__ == "__main__":
         system_logger.info(f"HTTPS enabled: certfile={settings.ssl_certfile}, keyfile={settings.ssl_keyfile}")
     else:
         system_logger.info("HTTP mode (SSL not configured)")
-    
+
+    # Custom log config for uvicorn to include timestamps
+    log_config = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "default": {
+                "format": "%(asctime)s %(levelname)s %(name)s %(message)s",
+                "datefmt": "%Y-%m-%d %H:%M:%S",
+            },
+        },
+        "handlers": {
+            "default": {
+                "formatter": "default",
+                "class": "logging.StreamHandler",
+                "stream": "ext://sys.stderr",
+            },
+        },
+        "loggers": {
+            "uvicorn": {"handlers": ["default"], "level": "INFO", "propagate": False},
+            "uvicorn.error": {"handlers": ["default"], "level": "INFO", "propagate": False},
+            "uvicorn.access": {"handlers": ["default"], "level": "INFO", "propagate": False},
+            "uvicorn.asgi": {"handlers": ["default"], "level": "INFO", "propagate": False},
+        },
+    }
+
     uvicorn.run(
         "backend.main:app",
         host=settings.host,
@@ -266,6 +297,7 @@ if __name__ == "__main__":
         reload_dirs=["backend", "frontend", "common", "scripts", "tests"] if settings.debug else None,
         reload_excludes=reload_excludes if settings.debug else None,
         reload_delay=0.25,  # Small delay to batch multiple changes
+        log_config=log_config,  # Use our custom log config
         **ssl_kwargs
     )
 
