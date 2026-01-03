@@ -37,9 +37,34 @@ object TaskDateCalculator {
     }
 
     private fun getNextOccurrence(task: Task, currentTime: LocalDateTime): LocalDateTime {
-        // Логика расчета следующего времени выполнения задачи на основе recurrenceType и interval
-        // Пока возвращаем текущее время, полная реализация зависит от бизнес-логики
-        return currentTime
+        return when (task.recurrenceType?.uppercase()) {
+            "DAILY" -> {
+                val interval = task.recurrenceInterval ?: 1
+                currentTime.plusDays(interval.toLong())
+            }
+            "WEEKLY" -> {
+                val interval = task.recurrenceInterval ?: 1
+                currentTime.plusWeeks(interval.toLong())
+            }
+            "MONTHLY" -> {
+                val interval = task.recurrenceInterval ?: 1
+                currentTime.plusMonths(interval.toLong())
+            }
+            "YEARLY" -> {
+                val interval = task.recurrenceInterval ?: 1
+                currentTime.plusYears(interval.toLong())
+            }
+            null -> {
+                // Для interval задач используем intervalDays
+                if (task.taskType == "interval") {
+                    val interval = task.intervalDays ?: 1
+                    currentTime.plusDays(interval.toLong())
+                } else {
+                    currentTime
+                }
+            }
+            else -> currentTime // Неизвестный тип повторения
+        }
     }
 
     private fun adjustForDayStart(time: LocalDateTime, dayStartHour: Int): LocalDateTime {

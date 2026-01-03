@@ -4,10 +4,7 @@ import com.homeplanner.model.Task
 import com.homeplanner.SelectedUser
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-
-enum class TaskFilterType {
-    TODAY, ALL, COMPLETED, PENDING
-}
+import com.homeplanner.utils.TaskFilterType
 
 object TaskFilter {
 
