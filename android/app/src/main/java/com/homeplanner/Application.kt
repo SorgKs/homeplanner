@@ -13,6 +13,7 @@ import com.homeplanner.repository.OfflineRepository
 import com.homeplanner.sync.SyncService
 import com.homeplanner.utils.TaskDateCalculator
 import com.homeplanner.viewmodel.TaskViewModel
+import com.homeplanner.viewmodel.SettingsViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -44,6 +45,7 @@ val appModule = module {
 
     // Settings
     single { NetworkSettings(androidContext()) }
+    single { UserSettings(androidContext()) }
 
     // APIs
     single { LocalApi(get(), get()) }
@@ -53,7 +55,8 @@ val appModule = module {
     single { SyncService(get(), get(), androidContext()) }
 
     // ViewModel
-    viewModel { TaskViewModel(get(), get(), get()) }
+    viewModel { TaskViewModel(get(), get(), get(), get()) }
+    viewModel { SettingsViewModel(get(), get(), get(), get()) }
 }
 
 class Application : android.app.Application() {

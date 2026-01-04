@@ -283,6 +283,9 @@ dependencies {
     // Icons for Material Design (managed by Compose BOM)
     implementation("androidx.compose.material:material-icons-extended")
     implementation("com.google.android.material:material:1.12.0")
+
+    // Navigation Compose
+    implementation("androidx.navigation:navigation-compose:2.8.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 

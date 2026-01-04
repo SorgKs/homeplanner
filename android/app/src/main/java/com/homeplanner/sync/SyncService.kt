@@ -314,12 +314,41 @@ class SyncService(
     }
     
     /**
+     * Отправка операций на сервер.
+     * Алиас для syncQueue() для соответствия спецификации.
+     */
+    suspend fun sendOperations(): Result<SyncResult> = syncQueue()
+
+    /**
+     * Добавление операций в очередь.
+     * Делегирует в OfflineRepository.
+     */
+    suspend fun addOperationToQueue(
+        operation: String,
+        entityType: String,
+        entityId: Int?,
+        payload: Any? = null
+    ): Result<Long> = repository.addToSyncQueue(operation, entityType, entityId, payload)
+
+    /**
+     * Получение ожидающих операций.
+     * Делегирует в OfflineRepository.
+     */
+    suspend fun getPendingOperations(): List<SyncQueueItem> = repository.getPendingQueueItems()
+
+    /**
+     * Очистка обработанных операций.
+     * Делегирует в OfflineRepository.
+     */
+    suspend fun clearProcessedOperations() = repository.clearAllQueue()
+
+    /**
      * Вычисляет SHA-256 хеш списка задач для сравнения версий.
-     * 
-     * Хеш вычисляется на основе ключевых полей задач: id, title, 
-     * reminderTime, completed, active. Задачи сортируются по ID для 
+     *
+     * Хеш вычисляется на основе ключевых полей задач: id, title,
+     * reminderTime, completed, active. Задачи сортируются по ID для
      * консистентного хеширования.
-     * 
+     *
      * @param tasks Список задач для хеширования
      * @return SHA-256 хеш в виде hex-строки
      */

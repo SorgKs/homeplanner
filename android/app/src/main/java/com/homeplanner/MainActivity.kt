@@ -9,14 +9,14 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.ViewModel
+import androidx.navigation.compose.rememberNavController
 import com.homeplanner.viewmodel.TaskViewModel
 import com.homeplanner.viewmodel.TaskScreenState
 import com.homeplanner.model.Task
-import com.homeplanner.ui.tasks.TaskListScreen
+import com.homeplanner.ui.tasks.MainScreen
 import org.koin.androidx.compose.koinViewModel
 
 class MainActivity : ComponentActivity() {
@@ -45,42 +45,18 @@ class MainActivity : ComponentActivity() {
         setContent {
             val viewModel: TaskViewModel = koinViewModel()
             val state by viewModel.state.collectAsState()
-            TasksScreen(state, ::handleUiEvents)
+            val navController = rememberNavController()
+            TasksScreen(state, navController)
         }
-    }
-
-    private fun handleUiEvents(event: UiEvent) {
-        when (event) {
-            is UiEvent.NavigateToTodayTab -> navigateToTodayTab()
-            is UiEvent.NavigateToAllTasksTab -> navigateToAllTasksTab()
-            is UiEvent.NavigateToSettingsTab -> navigateToSettingsTab()
-        }
-    }
-
-    private fun navigateToTodayTab() {
-        // TODO: Implement navigation to today tab
-    }
-
-    private fun navigateToAllTasksTab() {
-        // TODO: Implement navigation to all tasks tab
-    }
-
-    private fun navigateToSettingsTab() {
-        // TODO: Implement navigation to settings tab
     }
 }
 
-// UI Events
-sealed class UiEvent {
-    object NavigateToTodayTab : UiEvent()
-    object NavigateToAllTasksTab : UiEvent()
-    object NavigateToSettingsTab : UiEvent()
-}
+
 
 
 
 @Composable
-fun TasksScreen(state: TaskScreenState, onEvent: (UiEvent) -> Unit) {
+fun TasksScreen(state: TaskScreenState, navController: androidx.navigation.NavHostController) {
     val viewModel: TaskViewModel = koinViewModel()
     // Initialize viewModel with network settings if not already done
     // viewModel.initialize(networkConfig, apiBaseUrl, selectedUser) // No longer needed
@@ -89,13 +65,13 @@ fun TasksScreen(state: TaskScreenState, onEvent: (UiEvent) -> Unit) {
     val filteredState = state.copy(tasks = filteredTasks)
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        TaskListScreen(
+        MainScreen(
             state = filteredState,
-            onEvent = onEvent,
             onTaskClick = { /* TODO: Navigate to task details */ },
             onTaskComplete = { /* TODO: Handle task completion */ },
             onTaskDelete = { /* TODO: Handle task deletion */ },
-            onCreateTask = { /* TODO: Show create dialog */ }
+            onCreateTask = { /* TODO: Show create dialog */ },
+            navController = navController
         )
     }
 }

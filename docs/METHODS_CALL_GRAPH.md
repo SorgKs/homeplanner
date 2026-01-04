@@ -78,25 +78,51 @@ handleUiEvents()
     ├── navigateToAllTasksTab()
     └── navigateToSettingsTab()
 
-### TaskListScreen
+### MainScreen
+
+MainScreen()
+├── Вызывается: MainActivity.setupComposeContent()
+└── Вызывает:
+    ├── NavHost()
+    ├── NavigationBar()
+    ├── TodayScreen()
+    ├── AllTasksScreen()
+    └── SettingsScreen()
+
+### TodayScreen
+
+TodayScreen()
+├── Вызывается: NavHost composable
+└── Вызывает:
+    ├── TodayTaskFilter.filterTodayTasks()
+    └── TaskListContent()
+
+### AllTasksScreen
+
+AllTasksScreen()
+├── Вызывается: NavHost composable
+└── Вызывает: TaskListContent()
+
+### SettingsScreen
+
+SettingsScreen()
+├── Вызывается: NavHost composable
+└── Вызывает:
+    ├── NetworkSettings management
+    ├── UserSettings management
+    └── QR scanner dialogs
+
+### TaskListContent
 
 TaskListContent()
-├── Вызывается: TaskListScreen()
+├── Вызывается:
+│   ├── TodayScreen()
+│   └── AllTasksScreen()
 └── Вызывает:
     ├── TaskItem()
-    ├── TodayTasksList()
-    ├── AllTasksList()
     ├── LoadingIndicator()
     ├── ErrorMessage()
     └── EmptyState()
-
-TodayTasksList()
-├── Вызывается: TaskListContent()
-└── Вызывает: TaskFilter.filterTasks() with TaskFilterType.TODAY
-
-AllTasksList()
-├── Вызывается: TaskListContent()
-└── Вызывает: TaskFilter.filterTasks() with TaskFilterType.ALL
 
 LoadingIndicator()
 ├── Вызывается: TaskListContent()
@@ -112,12 +138,16 @@ EmptyState()
 
 // Колбеки для TaskItem
 onComplete()
-├── Вызывается: TaskItem onComplete parameter
+├── Вызывается: TaskItem onComplete parameter (from TaskListContent)
 └── Вызывает: LocalApi.completeTaskLocal()
 
 onDelete()
-├── Вызывается: TaskItem onDelete parameter
+├── Вызывается: TaskItem onDelete parameter (from TaskListContent)
 └── Вызывает: LocalApi.deleteTaskLocal()
+
+onCreateTask()
+├── Вызывается: EmptyState button click
+└── Вызывает: MainActivity.showCreateTaskDialog()
 
 ### TaskItem
 
@@ -785,4 +815,4 @@ cancelScheduledCleanup()
 *Создано: 2025-12-30 09:50 UTC*
 *Обновлено колбеки: 2025-12-30 20:08 UTC*
 *Исправлена инициализация Network Layer: 2025-12-30 20:33 UTC*
-*Перенесена инициализация слоёв в Application: 2025-12-30 20:38 UTC*
+*Обновлено для новой навигационной архитектуры: 2026-01-04 21:59 UTC*

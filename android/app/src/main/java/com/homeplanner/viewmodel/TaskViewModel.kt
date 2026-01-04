@@ -11,6 +11,7 @@ import com.homeplanner.NetworkConfig
 import com.homeplanner.SelectedUser
 import com.homeplanner.api.LocalApi
 import com.homeplanner.NetworkSettings
+import com.homeplanner.UserSettings
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.first
@@ -22,20 +23,19 @@ import org.koin.core.context.GlobalContext
 import org.koin.core.Koin
 import org.koin.core.KoinApplication
 
-enum class ViewTab { TODAY, ALL, SETTINGS }
-
 data class TaskScreenState(
     val tasks: List<Task> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
     val currentFilter: TaskFilterType = TaskFilterType.TODAY,
-    val selectedTab: ViewTab = ViewTab.TODAY
+    val selectedUser: SelectedUser? = null
 )
 
 class TaskViewModel(
     application: Application,
     private val localApi: LocalApi,
-    private val networkSettings: NetworkSettings
+    private val networkSettings: NetworkSettings,
+    private val userSettings: UserSettings
 ) : AndroidViewModel(application) {
 
     private val _state = MutableStateFlow(TaskScreenState())
@@ -43,6 +43,10 @@ class TaskViewModel(
 
     init {
         viewModelScope.launch {
+            // Load selected user
+            val selectedUser = userSettings.selectedUserFlow.first()
+            updateState(_state.value.copy(selectedUser = selectedUser))
+
             // Load network config and initialize
             try {
                 val networkConfig = networkSettings.configFlow.first()
@@ -63,9 +67,8 @@ class TaskViewModel(
     }
 
     fun getFilteredTasks(tasks: List<Task>, filter: TaskFilterType): List<Task> {
-        // TODO: Use TaskFilter to filter tasks based on current user and filter type
-        // For now return all tasks
-        return TaskFilter.filterTasks(tasks, filter, null, 4) // Default dayStartHour = 4
+        val selectedUser = _state.value.selectedUser
+        return TaskFilter.filterTasks(tasks, filter, selectedUser, 4) // Default dayStartHour = 4
     }
 
     private fun updateState(newState: TaskScreenState) {
@@ -78,9 +81,7 @@ class TaskViewModel(
         // BinaryLogger.logError(error, "TaskViewModel")
     }
 
-    fun updateSelectedTab(tab: ViewTab) {
-        updateState(_state.value.copy(selectedTab = tab))
-    }
+
 
     private suspend fun performInitialSyncIfNeeded(networkConfig: NetworkConfig?, apiBaseUrl: String?) {
         if (networkConfig == null || apiBaseUrl == null) return

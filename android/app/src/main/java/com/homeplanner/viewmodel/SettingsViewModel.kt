@@ -1,0 +1,144 @@
+package com.homeplanner.viewmodel
+
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.homeplanner.*
+import com.homeplanner.api.LocalApi
+import com.homeplanner.api.UsersServerApi
+import com.homeplanner.database.AppDatabase
+import com.homeplanner.debug.BinaryLogger
+import com.homeplanner.model.User
+import com.homeplanner.repository.OfflineRepository
+import com.homeplanner.utils.TaskDateCalculator
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+data class SettingsState(
+    val users: List<User> = emptyList(),
+    val isUsersLoading: Boolean = false,
+    val selectedUser: SelectedUser? = null,
+    val networkConfig: NetworkConfig? = null
+)
+
+class SettingsViewModel(
+    application: Application,
+    private val localApi: LocalApi,
+    private val networkSettings: NetworkSettings,
+    private val userSettings: UserSettings
+) : AndroidViewModel(application) {
+
+    private val _state = MutableStateFlow(SettingsState())
+    val state: StateFlow<SettingsState> = _state.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            // Load selected user
+            val selectedUser = userSettings.selectedUserFlow.first()
+            updateState(_state.value.copy(selectedUser = selectedUser))
+
+            // Load network config
+            val networkConfig = networkSettings.configFlow.first()
+            updateState(_state.value.copy(networkConfig = networkConfig))
+
+            loadUsersFromCache()
+        }
+
+        // Refresh from server when network config changes
+        viewModelScope.launch {
+            networkSettings.configFlow.collect { config ->
+                updateState(_state.value.copy(networkConfig = config))
+                if (config != null) {
+                    refreshUsersFromServer()
+                }
+            }
+        }
+    }
+
+    private fun updateState(newState: SettingsState) {
+        _state.value = newState
+    }
+
+    private suspend fun loadUsersFromCache() {
+        try {
+            val result = localApi.getUsersLocal()
+            updateState(_state.value.copy(users = result.getOrDefault(emptyList())))
+        } catch (e: Exception) {
+            android.util.Log.e("SettingsViewModel", "Error loading users from cache", e)
+        }
+    }
+
+    fun refreshUsersFromServer() {
+        viewModelScope.launch {
+            updateState(_state.value.copy(isUsersLoading = true))
+            try {
+                val config = _state.value.networkConfig
+                if (config != null) {
+                    refreshUsersFromServerInternal(config)
+                    loadUsersFromCache()
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("SettingsViewModel", "Error refreshing users", e)
+            } finally {
+                updateState(_state.value.copy(isUsersLoading = false))
+            }
+        }
+    }
+
+    private suspend fun refreshUsersFromServerInternal(networkConfig: NetworkConfig) {
+        val apiBaseUrl = networkConfig.toApiBaseUrl()
+        val api = UsersServerApi(baseUrl = apiBaseUrl)
+
+        BinaryLogger.getInstance()?.log(400u, emptyList())
+        val fetchedSummaries = withContext(Dispatchers.IO) {
+            api.getUsers()
+        }
+        BinaryLogger.getInstance()?.log(401u, listOf(fetchedSummaries.size))
+
+        val fetchedUsers = fetchedSummaries.map { summary ->
+            User(id = summary.id, name = summary.name)
+        }
+
+        val db = AppDatabase.getDatabase(getApplication())
+        val offlineRepository = OfflineRepository(db, getApplication())
+        withContext(Dispatchers.IO) {
+            offlineRepository.saveUsersToCache(fetchedUsers)
+        }
+        BinaryLogger.getInstance()?.log(402u, listOf(fetchedUsers.size))
+    }
+
+    fun clearSelectedUser() {
+        viewModelScope.launch {
+            userSettings.clearSelectedUser()
+            updateState(_state.value.copy(selectedUser = null))
+        }
+    }
+
+    fun saveSelectedUser(user: User) {
+        viewModelScope.launch {
+            val selected = SelectedUser(user.id, user.name)
+            userSettings.saveSelectedUser(selected)
+            updateState(_state.value.copy(selectedUser = selected))
+        }
+    }
+
+    fun saveNetworkConfig(config: NetworkConfig) {
+        viewModelScope.launch {
+            networkSettings.saveConfig(config)
+            updateState(_state.value.copy(networkConfig = config))
+        }
+    }
+
+    fun clearNetworkConfig() {
+        viewModelScope.launch {
+            networkSettings.clearConfig()
+            updateState(_state.value.copy(networkConfig = null))
+        }
+    }
+
+    suspend fun parseAndSaveFromJson(qrContent: String): Boolean {
+        return networkSettings.parseAndSaveFromJson(qrContent)
+    }
+}

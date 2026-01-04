@@ -12,6 +12,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import java.security.MessageDigest
 
 data class SyncState(
@@ -114,6 +115,12 @@ class TaskSyncManager(
         }
     }
 
+    suspend fun performFullSync(): Result<Unit> = runCatching {
+        syncTasksServer().getOrThrow()
+        syncGroupsAndUsersServer().getOrThrow()
+        Log.d("TaskSyncManager", "Full sync completed successfully")
+    }
+
     suspend fun performFullSyncExternal(): Result<Unit> = runCatching {
         syncTasksServer().getOrThrow()
         syncGroupsAndUsersServer().getOrThrow()
@@ -121,8 +128,29 @@ class TaskSyncManager(
     }
 
     fun observeSyncRequests() {
-        // TODO: Implement automatic sync observation
-        // This should observe offlineRepository.requestSync and trigger sync when needed
+        scope.launch {
+            while (true) {
+                try {
+                    // Проверяем флаг requestSync каждые 30 секунд
+                    delay(30_000L)
+
+                    if (offlineRepository.requestSync) {
+                        Log.d("TaskSyncManager", "Sync request detected, starting sync")
+                        val syncResult = performFullSync()
+
+                        if (syncResult.isSuccess) {
+                            // Сбрасываем флаг после успешной синхронизации
+                            offlineRepository.requestSync = false
+                            Log.d("TaskSyncManager", "Sync completed successfully")
+                        } else {
+                            Log.w("TaskSyncManager", "Sync failed: ${syncResult.exceptionOrNull()?.message}")
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("TaskSyncManager", "Error in sync observation", e)
+                }
+            }
+        }
     }
 
     private suspend fun sendQueueToServer(): Result<Unit> = runCatching {

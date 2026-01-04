@@ -1,0 +1,1579 @@
+2026-01-03 00:00:14 INFO  homeplanner.realtime WS disconnect: id=139967287967824, total=1
+2026-01-03 00:00:14 INFO  homeplanner.realtime WS disconnect: id=139967288513008, total=0
+2026-01-03 00:00:15 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-03 00:00:15 INFO  homeplanner.system uvicorn level: 10
+2026-01-03 00:00:15 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-03 00:00:15 INFO  homeplanner.system uvicorn handlers: []
+2026-01-03 00:00:15 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-03 00:00:15 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-03 00:00:15 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-03 00:00:15 INFO  homeplanner.database Initializing database tables...
+2026-01-03 00:00:15 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 00:00:15 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-03 00:00:15 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 00:00:15 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-03 00:00:15 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 00:00:15 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-03 00:00:15 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 00:00:15 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-03 00:00:15 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 00:00:15 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-03 00:00:15 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 00:00:15 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-03 00:00:15 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 00:00:15 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-03 00:00:15 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 00:00:15 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 00:00:15 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 00:00:15 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 00:00:15 INFO  homeplanner.database Database tables created successfully
+2026-01-03 00:00:15 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 00:00:15 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-03 00:00:15 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 00:00:15 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 00:00:15 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-03 00:00:16 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 00:00:16 INFO  homeplanner.realtime WS connect: id=139855790391808 host=192.168.1.2 port=41878 total=1
+2026-01-03 00:00:17 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 00:00:17 INFO  homeplanner.realtime WS connect: id=139855790397280 host=192.168.1.2 port=41884 total=2
+2026-01-03 00:07:47 INFO  backend.routers.debug_logs Received binary chunk request: X-Chunk-Id=29, X-Device-Id=android_34e04403caa24936
+2026-01-03 00:07:47 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 00:07:47 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 00:07:47 INFO  sqlalchemy.engine.Engine [generated in 0.00073s (insertmanyvalues) 1/2 (ordered; batch not supported)] ('2026-01-03 03:58:51.904000', 'INFO', None, None, '{}', 'Приложение запущено', '29', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 00:07:47 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 00:07:47 INFO  sqlalchemy.engine.Engine [insertmanyvalues 2/2 (ordered; batch not supported)] ('2026-01-03 00:57:33.184000', 'DEBUG', None, None, '{}', 'Загружены задачи из кэша', '29', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 00:07:47 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 00:07:47 INFO  backend.routers.debug_logs Successfully decoded and saved 2 log entries from chunk 29 (device: android_34e04403caa24936)
+2026-01-03 00:07:49 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-03 00:07:49 INFO  homeplanner.users Starting query for all users
+2026-01-03 00:07:49 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 00:07:49 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-03 00:07:49 INFO  sqlalchemy.engine.Engine [generated in 0.00033s] ()
+2026-01-03 00:07:49 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-03 00:07:49 INFO  sqlalchemy.engine.Engine [generated in 0.00043s] (3, 2, 1)
+2026-01-03 00:07:49 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-03 00:07:49 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-03 00:07:49 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-03 00:07:49 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 00:07:49 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-03 00:07:49 INFO  homeplanner.users Starting query for all users
+2026-01-03 00:07:49 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 00:07:49 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-03 00:07:49 INFO  sqlalchemy.engine.Engine [cached since 0.1247s ago] ()
+2026-01-03 00:07:49 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-03 00:07:49 INFO  sqlalchemy.engine.Engine [cached since 0.119s ago] (3, 2, 1)
+2026-01-03 00:07:49 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-03 00:07:49 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-03 00:07:49 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-03 00:07:49 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 00:11:38 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-03 00:11:38 INFO  homeplanner.users Starting query for all users
+2026-01-03 00:11:38 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 00:11:38 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-03 00:11:38 INFO  sqlalchemy.engine.Engine [cached since 228.6s ago] ()
+2026-01-03 00:11:38 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-03 00:11:38 INFO  sqlalchemy.engine.Engine [cached since 228.6s ago] (3, 2, 1)
+2026-01-03 00:11:38 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-03 00:11:38 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-03 00:11:38 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-03 00:11:38 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 00:11:38 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-03 00:11:38 INFO  homeplanner.users Starting query for all users
+2026-01-03 00:11:38 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 00:11:38 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-03 00:11:38 INFO  sqlalchemy.engine.Engine [cached since 228.7s ago] ()
+2026-01-03 00:11:38 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-03 00:11:38 INFO  sqlalchemy.engine.Engine [cached since 228.7s ago] (3, 2, 1)
+2026-01-03 00:11:38 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-03 00:11:38 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-03 00:11:38 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-03 00:11:38 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 00:11:51 INFO  backend.routers.debug_logs Received binary chunk request: X-Chunk-Id=30, X-Device-Id=android_34e04403caa24936
+2026-01-03 00:11:51 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 00:11:51 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 00:11:51 INFO  sqlalchemy.engine.Engine [cached since 244.4s ago (insertmanyvalues) 1/2 (ordered; batch not supported)] ('2026-01-03 00:24:05.889000', 'INFO', None, None, '{}', 'Приложение запущено', '30', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 00:11:51 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 00:11:51 INFO  sqlalchemy.engine.Engine [insertmanyvalues 2/2 (ordered; batch not supported)] ('2026-01-03 02:02:24.129000', 'DEBUG', None, None, '{}', 'Загружены задачи из кэша', '30', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 00:11:51 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 00:11:51 INFO  backend.routers.debug_logs Successfully decoded and saved 2 log entries from chunk 30 (device: android_34e04403caa24936)
+2026-01-03 00:22:08 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-03 00:22:08 INFO  homeplanner.users Starting query for all users
+2026-01-03 00:22:08 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 00:22:08 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-03 00:22:08 INFO  sqlalchemy.engine.Engine [cached since 858.7s ago] ()
+2026-01-03 00:22:08 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-03 00:22:08 INFO  sqlalchemy.engine.Engine [cached since 858.7s ago] (3, 2, 1)
+2026-01-03 00:22:08 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-03 00:22:08 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-03 00:22:08 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-03 00:22:08 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 00:22:08 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-03 00:22:08 INFO  homeplanner.users Starting query for all users
+2026-01-03 00:22:08 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 00:22:08 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-03 00:22:08 INFO  sqlalchemy.engine.Engine [cached since 858.8s ago] ()
+2026-01-03 00:22:08 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-03 00:22:08 INFO  sqlalchemy.engine.Engine [cached since 858.8s ago] (3, 2, 1)
+2026-01-03 00:22:08 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-03 00:22:08 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-03 00:22:08 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-03 00:22:08 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 00:22:12 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-03 00:22:12 INFO  homeplanner.users Starting query for all users
+2026-01-03 00:22:12 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 00:22:12 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-03 00:22:12 INFO  sqlalchemy.engine.Engine [cached since 863.3s ago] ()
+2026-01-03 00:22:12 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-03 00:22:12 INFO  sqlalchemy.engine.Engine [cached since 863.3s ago] (3, 2, 1)
+2026-01-03 00:22:12 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-03 00:22:12 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-03 00:22:12 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-03 00:22:12 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 00:22:13 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-03 00:22:13 INFO  homeplanner.users Starting query for all users
+2026-01-03 00:22:13 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 00:22:13 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-03 00:22:13 INFO  sqlalchemy.engine.Engine [cached since 863.4s ago] ()
+2026-01-03 00:22:13 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-03 00:22:13 INFO  sqlalchemy.engine.Engine [cached since 863.4s ago] (3, 2, 1)
+2026-01-03 00:22:13 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-03 00:22:13 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-03 00:22:13 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-03 00:22:13 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 00:23:36 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-03 00:23:36 INFO  homeplanner.users Starting query for all users
+2026-01-03 00:23:36 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 00:23:36 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-03 00:23:36 INFO  sqlalchemy.engine.Engine [cached since 947.2s ago] ()
+2026-01-03 00:23:36 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-03 00:23:36 INFO  sqlalchemy.engine.Engine [cached since 947.2s ago] (3, 2, 1)
+2026-01-03 00:23:36 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-03 00:23:36 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-03 00:23:36 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-03 00:23:36 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 00:23:37 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-03 00:23:37 INFO  homeplanner.users Starting query for all users
+2026-01-03 00:23:37 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 00:23:37 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-03 00:23:37 INFO  sqlalchemy.engine.Engine [cached since 947.3s ago] ()
+2026-01-03 00:23:37 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-03 00:23:37 INFO  sqlalchemy.engine.Engine [cached since 947.3s ago] (3, 2, 1)
+2026-01-03 00:23:37 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-03 00:23:37 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-03 00:23:37 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-03 00:23:37 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 00:23:39 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-03 00:23:39 INFO  homeplanner.users Starting query for all users
+2026-01-03 00:23:39 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 00:23:39 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-03 00:23:39 INFO  sqlalchemy.engine.Engine [cached since 949.7s ago] ()
+2026-01-03 00:23:39 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-03 00:23:39 INFO  sqlalchemy.engine.Engine [cached since 949.7s ago] (3, 2, 1)
+2026-01-03 00:23:39 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-03 00:23:39 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-03 00:23:39 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-03 00:23:39 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 00:23:39 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-03 00:23:39 INFO  homeplanner.users Starting query for all users
+2026-01-03 00:23:39 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 00:23:39 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-03 00:23:39 INFO  sqlalchemy.engine.Engine [cached since 949.8s ago] ()
+2026-01-03 00:23:39 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-03 00:23:39 INFO  sqlalchemy.engine.Engine [cached since 949.8s ago] (3, 2, 1)
+2026-01-03 00:23:39 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-03 00:23:39 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-03 00:23:39 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-03 00:23:39 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 00:23:48 INFO  backend.routers.debug_logs Received binary chunk request: X-Chunk-Id=31, X-Device-Id=android_34e04403caa24936
+2026-01-03 00:23:48 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 00:23:48 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 00:23:48 INFO  sqlalchemy.engine.Engine [cached since 961.4s ago (insertmanyvalues) 1/2 (ordered; batch not supported)] ('2026-01-03 02:52:35.970000', 'INFO', None, None, '{}', 'Приложение запущено', '31', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 00:23:48 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 00:23:48 INFO  sqlalchemy.engine.Engine [insertmanyvalues 2/2 (ordered; batch not supported)] ('2026-01-03 04:38:32.962000', 'DEBUG', None, None, '{}', 'Загружены задачи из кэша', '31', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 00:23:48 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 00:23:48 INFO  backend.routers.debug_logs Successfully decoded and saved 2 log entries from chunk 31 (device: android_34e04403caa24936)
+2026-01-03 00:24:03 INFO  backend.routers.debug_logs Received binary chunk request: X-Chunk-Id=32, X-Device-Id=android_34e04403caa24936
+2026-01-03 00:24:03 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 00:24:03 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 00:24:03 INFO  sqlalchemy.engine.Engine [cached since 976.5s ago (insertmanyvalues) 1/10 (ordered; batch not supported)] ('2026-01-03 01:59:13.666000', 'INFO', None, None, '{}', 'Приложение запущено', '32', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 00:24:03 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 00:24:03 INFO  sqlalchemy.engine.Engine [insertmanyvalues 2/10 (ordered; batch not supported)] ('2026-01-03 03:36:26.370000', 'DEBUG', None, None, '{}', 'Загружены задачи из кэша', '32', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 00:24:03 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 00:24:03 INFO  sqlalchemy.engine.Engine [insertmanyvalues 3/10 (ordered; batch not supported)] ('2026-01-03 03:04:46.082000', 'DEBUG', None, None, '{}', 'syncCacheWithServer: вызов загрузки пользователей с сервера', '32', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 00:24:03 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 00:24:03 INFO  sqlalchemy.engine.Engine [insertmanyvalues 4/10 (ordered; batch not supported)] ('2026-01-03 03:16:46.978000', 'DEBUG', None, None, '{}', 'syncCacheWithServer: вызов загрузки пользователей с сервера', '32', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 00:24:03 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 00:24:03 INFO  sqlalchemy.engine.Engine [insertmanyvalues 5/10 (ordered; batch not supported)] ('2026-01-03 03:21:09.122000', 'DEBUG', None, None, '{}', 'syncCacheWithServer: получен ответ от сервера с пользователями [users_count=0]', '32', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 00:24:03 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 00:24:03 INFO  sqlalchemy.engine.Engine [insertmanyvalues 6/10 (ordered; batch not supported)] ('2026-01-03 03:21:09.122000', 'DEBUG', None, None, '{}', 'syncCacheWithServer: пользователи сохранены в локальный кеш [saved_count=0]', '32', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 00:24:03 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 00:24:03 INFO  sqlalchemy.engine.Engine [insertmanyvalues 7/10 (ordered; batch not supported)] ('2026-01-03 02:58:13.122000', 'DEBUG', None, None, '{}', 'syncCacheWithServer: вызов загрузки пользователей с сервера', '32', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 00:24:03 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 00:24:03 INFO  sqlalchemy.engine.Engine [insertmanyvalues 8/10 (ordered; batch not supported)] ('2026-01-03 03:08:02.946000', 'DEBUG', None, None, '{}', 'syncCacheWithServer: вызов загрузки пользователей с сервера', '32', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 00:24:03 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 00:24:03 INFO  sqlalchemy.engine.Engine [insertmanyvalues 9/10 (ordered; batch not supported)] ('2026-01-03 03:12:25.090000', 'DEBUG', None, None, '{}', 'syncCacheWithServer: получен ответ от сервера с пользователями [users_count=0]', '32', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 00:24:03 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 00:24:03 INFO  sqlalchemy.engine.Engine [insertmanyvalues 10/10 (ordered; batch not supported)] ('2026-01-03 03:12:25.090000', 'DEBUG', None, None, '{}', 'syncCacheWithServer: пользователи сохранены в локальный кеш [saved_count=0]', '32', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 00:24:03 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 00:24:04 INFO  backend.routers.debug_logs Successfully decoded and saved 10 log entries from chunk 32 (device: android_34e04403caa24936)
+2026-01-03 00:26:17 INFO  homeplanner.realtime WS disconnect: id=139855790391808, total=1
+2026-01-03 00:26:17 INFO  homeplanner.realtime WS disconnect: id=139855790397280, total=0
+2026-01-03 00:26:18 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-03 00:26:18 INFO  homeplanner.system uvicorn level: 10
+2026-01-03 00:26:18 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-03 00:26:18 INFO  homeplanner.system uvicorn handlers: []
+2026-01-03 00:26:18 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-03 00:26:18 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-03 00:26:18 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-03 00:26:18 INFO  homeplanner.database Initializing database tables...
+2026-01-03 00:26:18 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 00:26:18 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-03 00:26:18 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 00:26:18 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-03 00:26:18 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 00:26:18 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-03 00:26:18 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 00:26:18 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-03 00:26:18 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 00:26:18 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-03 00:26:18 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 00:26:18 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-03 00:26:18 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 00:26:18 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-03 00:26:18 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 00:26:18 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 00:26:18 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 00:26:18 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 00:26:18 INFO  homeplanner.database Database tables created successfully
+2026-01-03 00:26:18 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 00:26:18 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-03 00:26:18 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 00:26:18 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 00:26:18 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-03 00:26:19 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 00:26:19 INFO  homeplanner.realtime WS connect: id=139679754387136 host=192.168.1.2 port=36916 total=1
+2026-01-03 00:26:19 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 00:26:19 INFO  homeplanner.realtime WS connect: id=139679752525232 host=192.168.1.2 port=36922 total=2
+2026-01-03 10:25:14 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-03 10:25:14 INFO  homeplanner.users Starting query for all users
+2026-01-03 10:25:14 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 10:25:14 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-03 10:25:14 INFO  sqlalchemy.engine.Engine [generated in 0.00028s] ()
+2026-01-03 10:25:14 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-03 10:25:14 INFO  sqlalchemy.engine.Engine [generated in 0.00040s] (3, 2, 1)
+2026-01-03 10:25:14 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-03 10:25:14 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-03 10:25:14 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-03 10:25:14 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 10:25:14 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-03 10:25:14 INFO  homeplanner.users Starting query for all users
+2026-01-03 10:25:14 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 10:25:14 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-03 10:25:14 INFO  sqlalchemy.engine.Engine [cached since 0.04302s ago] ()
+2026-01-03 10:25:14 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-03 10:25:14 INFO  sqlalchemy.engine.Engine [cached since 0.03801s ago] (3, 2, 1)
+2026-01-03 10:25:14 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-03 10:25:14 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-03 10:25:14 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-03 10:25:14 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 10:25:24 INFO  backend.routers.debug_logs Received binary chunk request: X-Chunk-Id=33, X-Device-Id=android_34e04403caa24936
+2026-01-03 10:25:24 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 10:25:24 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 10:25:24 INFO  sqlalchemy.engine.Engine [generated in 0.00068s (insertmanyvalues) 1/6 (ordered; batch not supported)] ('2026-01-03 01:04:42.041000', 'INFO', None, None, '{}', 'Приложение запущено', '33', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 10:25:24 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 10:25:24 INFO  sqlalchemy.engine.Engine [insertmanyvalues 2/6 (ordered; batch not supported)] ('2026-01-03 03:49:37.977000', 'DEBUG', None, None, '{}', 'Загружены задачи из кэша', '33', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 10:25:24 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 10:25:24 INFO  sqlalchemy.engine.Engine [insertmanyvalues 3/6 (ordered; batch not supported)] ('2026-01-03 00:46:08.441000', 'DEBUG', None, None, '{}', 'syncCacheWithServer: вызов загрузки пользователей с сервера', '33', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 10:25:24 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 10:25:24 INFO  sqlalchemy.engine.Engine [insertmanyvalues 4/6 (ordered; batch not supported)] ('2026-01-03 00:59:14.873000', 'DEBUG', None, None, '{}', 'syncCacheWithServer: вызов загрузки пользователей с сервера', '33', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 10:25:24 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 10:25:24 INFO  sqlalchemy.engine.Engine [insertmanyvalues 5/6 (ordered; batch not supported)] ('2026-01-03 01:04:42.553000', 'DEBUG', None, None, '{}', 'syncCacheWithServer: получен ответ от сервера с пользователями [users_count=0]', '33', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 10:25:24 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 10:25:24 INFO  sqlalchemy.engine.Engine [insertmanyvalues 6/6 (ordered; batch not supported)] ('2026-01-03 01:04:42.553000', 'DEBUG', None, None, '{}', 'syncCacheWithServer: пользователи сохранены в локальный кеш [saved_count=0]', '33', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 10:25:24 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 10:25:24 INFO  backend.routers.debug_logs Successfully decoded and saved 6 log entries from chunk 33 (device: android_34e04403caa24936)
+2026-01-03 10:27:58 INFO  homeplanner.realtime WS disconnect: id=139679754387136, total=1
+2026-01-03 10:27:58 INFO  homeplanner.realtime WS disconnect: id=139679752525232, total=0
+2026-01-03 10:27:59 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-03 10:27:59 INFO  homeplanner.system uvicorn level: 10
+2026-01-03 10:27:59 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-03 10:27:59 INFO  homeplanner.system uvicorn handlers: []
+2026-01-03 10:27:59 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-03 10:27:59 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-03 10:27:59 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-03 10:27:59 INFO  homeplanner.database Initializing database tables...
+2026-01-03 10:27:59 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 10:27:59 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-03 10:27:59 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 10:27:59 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-03 10:27:59 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 10:27:59 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-03 10:27:59 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 10:27:59 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-03 10:27:59 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 10:27:59 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-03 10:27:59 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 10:27:59 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-03 10:27:59 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 10:27:59 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-03 10:27:59 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 10:27:59 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 10:27:59 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 10:27:59 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 10:27:59 INFO  homeplanner.database Database tables created successfully
+2026-01-03 10:27:59 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 10:27:59 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-03 10:27:59 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 10:27:59 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 10:27:59 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-03 10:28:00 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 10:28:00 INFO  homeplanner.realtime WS connect: id=140076417217600 host=192.168.1.2 port=57586 total=1
+2026-01-03 10:28:00 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 10:28:00 INFO  homeplanner.realtime WS connect: id=140076373251264 host=192.168.1.2 port=57592 total=2
+2026-01-03 10:34:19 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-03 10:34:19 INFO  homeplanner.users Starting query for all users
+2026-01-03 10:34:19 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 10:34:19 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-03 10:34:19 INFO  sqlalchemy.engine.Engine [generated in 0.00033s] ()
+2026-01-03 10:34:19 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-03 10:34:19 INFO  sqlalchemy.engine.Engine [generated in 0.00053s] (3, 2, 1)
+2026-01-03 10:34:19 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-03 10:34:19 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-03 10:34:19 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-03 10:34:19 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 10:34:19 INFO  homeplanner.api.users GET /users endpoint called
+2026-01-03 10:34:19 INFO  homeplanner.users Starting query for all users
+2026-01-03 10:34:19 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 10:34:19 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-03 10:34:19 INFO  sqlalchemy.engine.Engine [cached since 0.05461s ago] ()
+2026-01-03 10:34:19 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.active AS tasks_active, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)
+2026-01-03 10:34:19 INFO  sqlalchemy.engine.Engine [cached since 0.04941s ago] (3, 2, 1)
+2026-01-03 10:34:19 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-03 10:34:19 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Test User', 'email': 'test@example.com', 'is_active': True}, {'id': 2, 'name': 'Алёна', 'email': 'lyosyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-03 10:34:19 INFO  homeplanner.api.users Returning 3 users via API
+2026-01-03 10:34:19 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 10:34:29 INFO  backend.routers.debug_logs Received binary chunk request: X-Chunk-Id=34, X-Device-Id=android_34e04403caa24936
+2026-01-03 10:34:29 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 10:34:29 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 10:34:29 INFO  sqlalchemy.engine.Engine [generated in 0.00073s (insertmanyvalues) 1/12 (ordered; batch not supported)] ('2026-01-03 01:46:01.402000', 'INFO', None, None, '{}', 'Приложение запущено', '34', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 10:34:29 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 10:34:29 INFO  sqlalchemy.engine.Engine [insertmanyvalues 2/12 (ordered; batch not supported)] ('2026-01-03 03:27:36.250000', 'DEBUG', None, None, '{}', 'Загружены задачи из кэша', '34', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 10:34:29 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 10:34:29 INFO  sqlalchemy.engine.Engine [insertmanyvalues 3/12 (ordered; batch not supported)] ('2026-01-03 01:40:34.234000', 'DEBUG', None, None, '{}', 'syncCacheWithServer: вызов загрузки пользователей с сервера', '34', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 10:34:29 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 10:34:29 INFO  sqlalchemy.engine.Engine [insertmanyvalues 4/12 (ordered; batch not supported)] ('2026-01-03 01:40:34.234000', 'DEBUG', None, None, '{}', 'UsersServerApi: HTTP запрос к серверу [url=http://192.168.1.2:8000/api/v0.3/users/]', '34', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 10:34:29 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 10:34:29 INFO  sqlalchemy.engine.Engine [insertmanyvalues 5/12 (ordered; batch not supported)] ('2026-01-03 01:52:35.130000', 'DEBUG', None, None, '{}', 'syncCacheWithServer: вызов загрузки пользователей с сервера', '34', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 10:34:29 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 10:34:29 INFO  sqlalchemy.engine.Engine [insertmanyvalues 6/12 (ordered; batch not supported)] ('2026-01-03 01:52:35.130000', 'DEBUG', None, None, '{}', 'UsersServerApi: HTTP запрос к серверу [url=http://192.168.1.2:8000/api/v0.3/users/]', '34', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 10:34:29 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 10:34:29 INFO  sqlalchemy.engine.Engine [insertmanyvalues 7/12 (ordered; batch not supported)] ('2026-01-03 01:54:46.202000', 'DEBUG', None, None, '{}', 'UsersServerApi: получен HTTP ответ [code=200, message=OK]', '34', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 10:34:29 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 10:34:29 INFO  sqlalchemy.engine.Engine [insertmanyvalues 8/12 (ordered; batch not supported)] ('2026-01-03 01:55:51.738000', 'DEBUG', None, None, '{}', 'UsersServerApi: длина body ответа [body_length=511]', '34', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 10:34:29 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 10:34:29 INFO  sqlalchemy.engine.Engine [insertmanyvalues 9/12 (ordered; batch not supported)] ('2026-01-03 01:55:51.738000', 'DEBUG', None, None, '{}', 'UsersServerApi: длина JSONArray [array_length=3]', '34', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 10:34:29 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 10:34:29 INFO  sqlalchemy.engine.Engine [insertmanyvalues 10/12 (ordered; batch not supported)] ('2026-01-03 01:56:57.274000', 'DEBUG', None, None, '{}', 'syncCacheWithServer: получен ответ от сервера с пользователями [users_count=0]', '34', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 10:34:29 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 10:34:29 INFO  sqlalchemy.engine.Engine [insertmanyvalues 11/12 (ordered; batch not supported)] ('2026-01-03 01:56:57.274000', 'DEBUG', None, None, '{}', 'saveUsersToCache: пользователи сохранены в SharedPreferences [saved_count=0]', '34', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 10:34:29 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 10:34:29 INFO  sqlalchemy.engine.Engine [insertmanyvalues 12/12 (ordered; batch not supported)] ('2026-01-03 01:58:02.810000', 'DEBUG', None, None, '{}', 'syncCacheWithServer: пользователи сохранены в локальный кеш [saved_count=0]', '34', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 10:34:29 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 10:34:29 INFO  backend.routers.debug_logs Successfully decoded and saved 12 log entries from chunk 34 (device: android_34e04403caa24936)
+2026-01-03 11:01:44 INFO  homeplanner.realtime WS disconnect: id=140076417217600, total=1
+2026-01-03 11:01:44 INFO  homeplanner.realtime WS disconnect: id=140076373251264, total=0
+2026-01-03 11:01:45 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-03 11:01:45 INFO  homeplanner.system uvicorn level: 10
+2026-01-03 11:01:45 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-03 11:01:45 INFO  homeplanner.system uvicorn handlers: []
+2026-01-03 11:01:45 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-03 11:01:45 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-03 11:01:45 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-03 11:01:45 INFO  homeplanner.database Initializing database tables...
+2026-01-03 11:01:45 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:01:45 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-03 11:01:45 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:01:45 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-03 11:01:45 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:01:45 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-03 11:01:45 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:01:45 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-03 11:01:45 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:01:45 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-03 11:01:45 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:01:45 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-03 11:01:45 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:01:45 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-03 11:01:45 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:01:45 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 11:01:45 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:01:45 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 11:01:45 INFO  homeplanner.database Database tables created successfully
+2026-01-03 11:01:45 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:01:45 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-03 11:01:45 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:01:45 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 11:01:45 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-03 11:01:46 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 11:01:46 INFO  homeplanner.realtime WS connect: id=140118847667712 host=192.168.1.2 port=47984 total=1
+2026-01-03 11:01:46 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 11:01:46 INFO  homeplanner.realtime WS connect: id=140118847886384 host=192.168.1.2 port=47990 total=2
+2026-01-03 11:01:49 INFO  homeplanner.realtime WS disconnect: id=140118847886384, total=1
+2026-01-03 11:01:49 INFO  homeplanner.realtime WS disconnect: id=140118847667712, total=0
+2026-01-03 11:01:51 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-03 11:01:51 INFO  homeplanner.system uvicorn level: 10
+2026-01-03 11:01:51 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-03 11:01:51 INFO  homeplanner.system uvicorn handlers: []
+2026-01-03 11:01:51 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-03 11:01:51 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-03 11:01:51 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-03 11:01:51 INFO  homeplanner.database Initializing database tables...
+2026-01-03 11:01:51 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:01:51 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-03 11:01:51 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:01:51 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-03 11:01:51 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:01:51 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-03 11:01:51 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:01:51 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-03 11:01:51 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:01:51 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-03 11:01:51 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:01:51 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-03 11:01:51 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:01:51 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-03 11:01:51 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:01:51 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 11:01:51 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:01:51 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 11:01:51 INFO  homeplanner.database Database tables created successfully
+2026-01-03 11:01:51 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:01:51 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-03 11:01:51 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:01:51 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 11:01:51 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-03 11:01:52 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 11:01:52 INFO  homeplanner.realtime WS connect: id=140346293649680 host=192.168.1.2 port=44732 total=1
+2026-01-03 11:01:52 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 11:01:52 INFO  homeplanner.realtime WS connect: id=140346293655056 host=192.168.1.2 port=44738 total=2
+2026-01-03 11:01:56 INFO  homeplanner.realtime WS disconnect: id=140346293649680, total=1
+2026-01-03 11:01:56 INFO  homeplanner.realtime WS disconnect: id=140346293655056, total=0
+2026-01-03 11:01:57 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-03 11:01:57 INFO  homeplanner.system uvicorn level: 10
+2026-01-03 11:01:57 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-03 11:01:57 INFO  homeplanner.system uvicorn handlers: []
+2026-01-03 11:01:57 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-03 11:01:57 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-03 11:01:57 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-03 11:01:57 INFO  homeplanner.database Initializing database tables...
+2026-01-03 11:01:57 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:01:57 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-03 11:01:57 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:01:57 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-03 11:01:57 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:01:57 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-03 11:01:57 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:01:57 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-03 11:01:57 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:01:57 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-03 11:01:57 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:01:57 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-03 11:01:57 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:01:57 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-03 11:01:57 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:01:57 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 11:01:57 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:01:57 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 11:01:57 INFO  homeplanner.database Database tables created successfully
+2026-01-03 11:01:57 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:01:57 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-03 11:01:57 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:01:57 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 11:01:57 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-03 11:01:58 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 11:01:58 INFO  homeplanner.realtime WS connect: id=140192502643792 host=192.168.1.2 port=42050 total=1
+2026-01-03 11:01:58 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 11:01:58 INFO  homeplanner.realtime WS connect: id=140192502862272 host=192.168.1.2 port=42062 total=2
+2026-01-03 11:02:01 INFO  homeplanner.realtime WS disconnect: id=140192502643792, total=1
+2026-01-03 11:02:01 INFO  homeplanner.realtime WS disconnect: id=140192502862272, total=0
+2026-01-03 11:02:02 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-03 11:02:02 INFO  homeplanner.system uvicorn level: 10
+2026-01-03 11:02:02 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-03 11:02:02 INFO  homeplanner.system uvicorn handlers: []
+2026-01-03 11:02:02 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-03 11:02:02 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-03 11:02:02 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-03 11:02:03 INFO  homeplanner.database Initializing database tables...
+2026-01-03 11:02:03 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:02:03 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-03 11:02:03 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:02:03 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-03 11:02:03 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:02:03 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-03 11:02:03 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:02:03 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-03 11:02:03 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:02:03 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-03 11:02:03 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:02:03 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-03 11:02:03 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:02:03 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-03 11:02:03 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:02:03 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 11:02:03 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:02:03 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 11:02:03 INFO  homeplanner.database Database tables created successfully
+2026-01-03 11:02:03 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:02:03 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-03 11:02:03 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:02:03 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 11:02:03 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-03 11:02:04 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 11:02:04 INFO  homeplanner.realtime WS connect: id=139962737868928 host=192.168.1.2 port=42072 total=1
+2026-01-03 11:02:04 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 11:02:04 INFO  homeplanner.realtime WS connect: id=139962737874688 host=192.168.1.2 port=42078 total=2
+2026-01-03 11:02:55 INFO  homeplanner.realtime WS disconnect: id=139962737874688, total=1
+2026-01-03 11:02:55 INFO  homeplanner.realtime WS disconnect: id=139962737868928, total=0
+2026-01-03 11:02:57 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-03 11:02:57 INFO  homeplanner.system uvicorn level: 10
+2026-01-03 11:02:57 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-03 11:02:57 INFO  homeplanner.system uvicorn handlers: []
+2026-01-03 11:02:57 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-03 11:02:57 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-03 11:02:58 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-03 11:02:58 INFO  homeplanner.database Initializing database tables...
+2026-01-03 11:02:58 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:02:58 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-03 11:02:58 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:02:58 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-03 11:02:58 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:02:58 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-03 11:02:58 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:02:58 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-03 11:02:58 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:02:58 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-03 11:02:58 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:02:58 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-03 11:02:58 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:02:58 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-03 11:02:58 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:02:58 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 11:02:58 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:02:58 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 11:02:58 INFO  homeplanner.database Database tables created successfully
+2026-01-03 11:02:58 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:02:58 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-03 11:02:58 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:02:58 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 11:02:58 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-03 11:02:58 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 11:02:58 INFO  homeplanner.realtime WS connect: id=139909643420880 host=192.168.1.2 port=50790 total=1
+2026-01-03 11:02:58 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 11:02:58 INFO  homeplanner.realtime WS connect: id=139909643426544 host=192.168.1.2 port=50796 total=2
+2026-01-03 11:03:21 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-03 11:03:21 INFO  homeplanner.system uvicorn level: 10
+2026-01-03 11:03:21 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-03 11:03:21 INFO  homeplanner.system uvicorn handlers: []
+2026-01-03 11:03:21 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-03 11:03:21 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-03 11:03:21 DEBUG asyncio Using selector: EpollSelector
+2026-01-03 11:03:21 INFO  homeplanner.database Initializing database tables...
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 11:03:21 INFO  homeplanner.database Database tables created successfully
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 11:03:21 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-03 11:03:21 INFO  httpx HTTP Request: POST http://testserver/api/v0.2/users/ "HTTP/1.1 405 Method Not Allowed"
+2026-01-03 11:03:21 INFO  httpx HTTP Request: POST http://testserver/api/v0.2/users/ "HTTP/1.1 405 Method Not Allowed"
+2026-01-03 11:03:21 INFO  httpx HTTP Request: POST http://testserver/api/v0.2/users/ "HTTP/1.1 405 Method Not Allowed"
+2026-01-03 11:03:21 INFO  httpx HTTP Request: GET http://testserver/api/v0.2/users/ "HTTP/1.1 404 Not Found"
+2026-01-03 11:03:21 DEBUG asyncio Using selector: EpollSelector
+2026-01-03 11:03:21 INFO  homeplanner.database Initializing database tables...
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 11:03:21 INFO  homeplanner.database Database tables created successfully
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 11:03:21 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-03 11:03:21 INFO  httpx HTTP Request: POST http://testserver/api/v0.2/users/ "HTTP/1.1 405 Method Not Allowed"
+2026-01-03 11:03:21 INFO  httpx HTTP Request: POST http://testserver/api/v0.2/users/ "HTTP/1.1 405 Method Not Allowed"
+2026-01-03 11:03:21 INFO  httpx HTTP Request: POST http://testserver/api/v0.2/users/ "HTTP/1.1 405 Method Not Allowed"
+2026-01-03 11:03:21 INFO  httpx HTTP Request: GET http://testserver/api/v0.2/users/?simple=true "HTTP/1.1 404 Not Found"
+2026-01-03 11:03:21 DEBUG asyncio Using selector: EpollSelector
+2026-01-03 11:03:21 INFO  homeplanner.database Initializing database tables...
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 11:03:21 INFO  homeplanner.database Database tables created successfully
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:21 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 11:03:21 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-03 11:03:21 INFO  httpx HTTP Request: POST http://testserver/api/v0.2/users/ "HTTP/1.1 405 Method Not Allowed"
+2026-01-03 11:03:21 INFO  httpx HTTP Request: POST http://testserver/api/v0.2/users/ "HTTP/1.1 405 Method Not Allowed"
+2026-01-03 11:03:21 INFO  httpx HTTP Request: GET http://testserver/api/v0.2/users/?simple=false "HTTP/1.1 404 Not Found"
+2026-01-03 11:03:39 INFO  homeplanner.realtime WS disconnect: id=139909643426544, total=1
+2026-01-03 11:03:39 INFO  homeplanner.realtime WS disconnect: id=139909643420880, total=0
+2026-01-03 11:03:40 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-03 11:03:40 INFO  homeplanner.system uvicorn level: 10
+2026-01-03 11:03:40 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-03 11:03:40 INFO  homeplanner.system uvicorn handlers: []
+2026-01-03 11:03:40 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-03 11:03:40 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-03 11:03:40 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-03 11:03:40 INFO  homeplanner.database Initializing database tables...
+2026-01-03 11:03:40 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:03:40 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-03 11:03:40 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:40 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-03 11:03:40 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:40 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-03 11:03:40 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:40 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-03 11:03:40 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:40 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-03 11:03:40 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:40 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-03 11:03:40 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:40 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-03 11:03:40 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:40 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 11:03:40 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:40 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 11:03:40 INFO  homeplanner.database Database tables created successfully
+2026-01-03 11:03:40 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:03:40 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-03 11:03:40 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:40 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 11:03:40 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-03 11:03:41 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 11:03:41 INFO  homeplanner.realtime WS connect: id=140583928971536 host=192.168.1.2 port=59236 total=1
+2026-01-03 11:03:41 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 11:03:41 INFO  homeplanner.realtime WS connect: id=140583928977344 host=192.168.1.2 port=59242 total=2
+2026-01-03 11:03:44 INFO  homeplanner.realtime WS disconnect: id=140583928971536, total=1
+2026-01-03 11:03:44 INFO  homeplanner.realtime WS disconnect: id=140583928977344, total=0
+2026-01-03 11:03:45 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-03 11:03:45 INFO  homeplanner.system uvicorn level: 10
+2026-01-03 11:03:45 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-03 11:03:45 INFO  homeplanner.system uvicorn handlers: []
+2026-01-03 11:03:45 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-03 11:03:45 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-03 11:03:46 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-03 11:03:46 INFO  homeplanner.database Initializing database tables...
+2026-01-03 11:03:46 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:03:46 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-03 11:03:46 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:46 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-03 11:03:46 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:46 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-03 11:03:46 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:46 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-03 11:03:46 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:46 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-03 11:03:46 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:46 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-03 11:03:46 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:46 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-03 11:03:46 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:46 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 11:03:46 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:46 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 11:03:46 INFO  homeplanner.database Database tables created successfully
+2026-01-03 11:03:46 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:03:46 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-03 11:03:46 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:46 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 11:03:46 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-03 11:03:47 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 11:03:47 INFO  homeplanner.realtime WS connect: id=140464361177648 host=192.168.1.2 port=59256 total=1
+2026-01-03 11:03:47 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 11:03:47 INFO  homeplanner.realtime WS connect: id=140464361183312 host=192.168.1.2 port=59268 total=2
+2026-01-03 11:03:55 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-03 11:03:55 INFO  homeplanner.system uvicorn level: 10
+2026-01-03 11:03:55 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-03 11:03:55 INFO  homeplanner.system uvicorn handlers: []
+2026-01-03 11:03:55 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-03 11:03:55 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-03 11:03:55 DEBUG asyncio Using selector: EpollSelector
+2026-01-03 11:03:55 INFO  homeplanner.database Initializing database tables...
+2026-01-03 11:03:55 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:03:55 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-03 11:03:55 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:55 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-03 11:03:55 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:55 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-03 11:03:55 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:55 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-03 11:03:55 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:55 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-03 11:03:55 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:55 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-03 11:03:55 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:55 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-03 11:03:55 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:55 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 11:03:55 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:55 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 11:03:55 INFO  homeplanner.database Database tables created successfully
+2026-01-03 11:03:55 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:03:55 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-03 11:03:55 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:03:55 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 11:03:55 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-03 11:03:55 INFO  httpx HTTP Request: POST http://testserver/api/v0.2/users/ "HTTP/1.1 405 Method Not Allowed"
+2026-01-03 11:03:55 INFO  httpx HTTP Request: POST http://testserver/api/v0.2/users/ "HTTP/1.1 405 Method Not Allowed"
+2026-01-03 11:03:55 INFO  httpx HTTP Request: POST http://testserver/api/v0.2/users/ "HTTP/1.1 405 Method Not Allowed"
+2026-01-03 11:03:55 INFO  httpx HTTP Request: GET http://testserver/api/v0.2/users/ "HTTP/1.1 404 Not Found"
+2026-01-03 11:04:06 INFO  homeplanner.realtime WS disconnect: id=140464361177648, total=1
+2026-01-03 11:04:06 INFO  homeplanner.realtime WS disconnect: id=140464361183312, total=0
+2026-01-03 11:04:07 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-03 11:04:07 INFO  homeplanner.system uvicorn level: 10
+2026-01-03 11:04:07 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-03 11:04:07 INFO  homeplanner.system uvicorn handlers: []
+2026-01-03 11:04:07 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-03 11:04:07 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-03 11:04:07 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-03 11:04:07 INFO  homeplanner.database Initializing database tables...
+2026-01-03 11:04:07 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:04:07 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-03 11:04:07 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:04:07 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-03 11:04:07 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:04:07 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-03 11:04:07 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:04:07 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-03 11:04:07 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:04:07 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-03 11:04:07 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:04:07 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-03 11:04:07 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:04:07 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-03 11:04:07 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:04:07 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 11:04:07 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:04:07 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 11:04:07 INFO  homeplanner.database Database tables created successfully
+2026-01-03 11:04:07 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:04:07 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-03 11:04:07 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:04:07 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 11:04:07 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-03 11:04:08 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 11:04:08 INFO  homeplanner.realtime WS connect: id=139771987296336 host=192.168.1.2 port=54006 total=1
+2026-01-03 11:04:08 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 11:04:08 INFO  homeplanner.realtime WS connect: id=139771987302048 host=192.168.1.2 port=54020 total=2
+2026-01-03 11:04:14 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-03 11:04:14 INFO  homeplanner.system uvicorn level: 10
+2026-01-03 11:04:14 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-03 11:04:14 INFO  homeplanner.system uvicorn handlers: []
+2026-01-03 11:04:14 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-03 11:04:14 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-03 11:04:14 DEBUG asyncio Using selector: EpollSelector
+2026-01-03 11:04:14 INFO  homeplanner.database Initializing database tables...
+2026-01-03 11:04:14 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:04:14 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-03 11:04:14 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:04:14 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-03 11:04:14 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:04:14 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-03 11:04:14 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:04:14 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-03 11:04:14 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:04:14 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-03 11:04:14 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:04:14 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-03 11:04:14 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:04:14 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-03 11:04:14 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:04:14 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 11:04:14 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:04:14 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 11:04:14 INFO  homeplanner.database Database tables created successfully
+2026-01-03 11:04:14 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:04:14 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-03 11:04:14 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:04:14 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 11:04:14 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-03 11:04:14 INFO  httpx HTTP Request: POST http://testserver/api/v0.2/users/ "HTTP/1.1 405 Method Not Allowed"
+2026-01-03 11:04:14 INFO  httpx HTTP Request: POST http://testserver/api/v0.2/users/ "HTTP/1.1 405 Method Not Allowed"
+2026-01-03 11:04:14 INFO  httpx HTTP Request: POST http://testserver/api/v0.2/users/ "HTTP/1.1 405 Method Not Allowed"
+2026-01-03 11:04:14 INFO  httpx HTTP Request: GET http://testserver/api/v0.2/users/ "HTTP/1.1 404 Not Found"
+2026-01-03 11:04:30 INFO  homeplanner.realtime WS disconnect: id=139771987296336, total=1
+2026-01-03 11:04:30 INFO  homeplanner.realtime WS disconnect: id=139771987302048, total=0
+2026-01-03 11:04:31 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-03 11:04:31 INFO  homeplanner.system uvicorn level: 10
+2026-01-03 11:04:31 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-03 11:04:31 INFO  homeplanner.system uvicorn handlers: []
+2026-01-03 11:04:31 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-03 11:04:31 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-03 11:04:31 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-03 11:04:31 INFO  homeplanner.database Initializing database tables...
+2026-01-03 11:04:31 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:04:31 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-03 11:04:31 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:04:31 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-03 11:04:31 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:04:31 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-03 11:04:31 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:04:31 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-03 11:04:31 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:04:31 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-03 11:04:31 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:04:31 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-03 11:04:31 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:04:31 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-03 11:04:31 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:04:31 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 11:04:31 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:04:31 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 11:04:31 INFO  homeplanner.database Database tables created successfully
+2026-01-03 11:04:31 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:04:31 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-03 11:04:31 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:04:31 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 11:04:31 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-03 11:04:32 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 11:04:32 INFO  homeplanner.realtime WS connect: id=140487973961856 host=192.168.1.2 port=43308 total=1
+2026-01-03 11:04:32 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 11:04:32 INFO  homeplanner.realtime WS connect: id=140487973967808 host=192.168.1.2 port=43310 total=2
+2026-01-03 11:05:05 INFO  homeplanner.realtime WS disconnect: id=140487973961856, total=1
+2026-01-03 11:05:05 INFO  homeplanner.realtime WS disconnect: id=140487973967808, total=0
+2026-01-03 11:05:06 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-03 11:05:06 INFO  homeplanner.system uvicorn level: 10
+2026-01-03 11:05:06 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-03 11:05:06 INFO  homeplanner.system uvicorn handlers: []
+2026-01-03 11:05:06 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-03 11:05:06 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-03 11:05:06 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-03 11:05:06 INFO  homeplanner.database Initializing database tables...
+2026-01-03 11:05:06 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:05:06 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-03 11:05:06 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:06 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-03 11:05:06 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:06 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-03 11:05:06 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:06 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-03 11:05:06 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:06 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-03 11:05:06 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:06 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-03 11:05:06 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:06 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-03 11:05:06 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:06 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 11:05:06 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:06 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 11:05:06 INFO  homeplanner.database Database tables created successfully
+2026-01-03 11:05:06 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:05:06 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-03 11:05:06 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:06 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 11:05:06 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-03 11:05:08 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 11:05:08 INFO  homeplanner.realtime WS connect: id=140186326729648 host=192.168.1.2 port=38212 total=1
+2026-01-03 11:05:08 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 11:05:08 INFO  homeplanner.realtime WS connect: id=140186326735216 host=192.168.1.2 port=38224 total=2
+2026-01-03 11:05:11 INFO  homeplanner.realtime WS disconnect: id=140186326729648, total=1
+2026-01-03 11:05:11 INFO  homeplanner.realtime WS disconnect: id=140186326735216, total=0
+2026-01-03 11:05:12 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-03 11:05:12 INFO  homeplanner.system uvicorn level: 10
+2026-01-03 11:05:12 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-03 11:05:12 INFO  homeplanner.system uvicorn handlers: []
+2026-01-03 11:05:12 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-03 11:05:12 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-03 11:05:13 INFO  homeplanner.system Registering users router at /api/v0.3/users
+2026-01-03 11:05:13 INFO  homeplanner.database Initializing database tables...
+2026-01-03 11:05:13 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:05:13 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-03 11:05:13 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:13 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-03 11:05:13 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:13 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-03 11:05:13 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:13 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-03 11:05:13 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:13 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-03 11:05:13 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:13 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-03 11:05:13 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:13 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-03 11:05:13 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:13 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 11:05:13 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:13 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 11:05:13 INFO  homeplanner.database Database tables created successfully
+2026-01-03 11:05:13 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:05:13 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-03 11:05:13 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:13 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 11:05:13 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-03 11:05:14 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 11:05:14 INFO  homeplanner.realtime WS connect: id=140022416835216 host=192.168.1.2 port=38226 total=1
+2026-01-03 11:05:14 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 11:05:14 INFO  homeplanner.realtime WS connect: id=140022416840592 host=192.168.1.2 port=38236 total=2
+2026-01-03 11:05:27 INFO  homeplanner.realtime WS disconnect: id=140022416840592, total=1
+2026-01-03 11:05:27 INFO  homeplanner.realtime WS disconnect: id=140022416835216, total=0
+2026-01-03 11:05:28 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-03 11:05:28 INFO  homeplanner.system uvicorn level: 10
+2026-01-03 11:05:28 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-03 11:05:28 INFO  homeplanner.system uvicorn handlers: []
+2026-01-03 11:05:28 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-03 11:05:28 INFO  homeplanner.database Initializing database tables...
+2026-01-03 11:05:28 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:05:28 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-03 11:05:28 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:28 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-03 11:05:28 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:28 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-03 11:05:28 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:28 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-03 11:05:28 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:28 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-03 11:05:28 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:28 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-03 11:05:28 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:28 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-03 11:05:28 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:28 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 11:05:28 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:28 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 11:05:28 INFO  homeplanner.database Database tables created successfully
+2026-01-03 11:05:28 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:05:28 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-03 11:05:28 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:28 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 11:05:28 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-03 11:05:29 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 11:05:29 INFO  homeplanner.realtime WS connect: id=140378294791216 host=192.168.1.2 port=41302 total=1
+2026-01-03 11:05:29 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 11:05:29 INFO  homeplanner.realtime WS connect: id=140378294795392 host=192.168.1.2 port=41312 total=2
+2026-01-03 11:05:33 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-03 11:05:33 INFO  homeplanner.system uvicorn level: 10
+2026-01-03 11:05:33 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-03 11:05:33 INFO  homeplanner.system uvicorn handlers: []
+2026-01-03 11:05:33 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-03 11:05:33 DEBUG asyncio Using selector: EpollSelector
+2026-01-03 11:05:33 INFO  homeplanner.database Initializing database tables...
+2026-01-03 11:05:33 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:05:33 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-03 11:05:33 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:33 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-03 11:05:33 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:33 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-03 11:05:33 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:33 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-03 11:05:33 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:33 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-03 11:05:33 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:33 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-03 11:05:33 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:33 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-03 11:05:33 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:33 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 11:05:33 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:33 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 11:05:33 INFO  homeplanner.database Database tables created successfully
+2026-01-03 11:05:33 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:05:33 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-03 11:05:33 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:33 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 11:05:33 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-03 11:05:33 INFO  homeplanner.api.users GET /users endpoint called with simple=False
+2026-01-03 11:05:33 INFO  homeplanner.users Starting query for all users
+2026-01-03 11:05:33 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-03 11:05:33 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Inactive User', 'email': 'inactive@example.com', 'is_active': False}, {'id': 1, 'name': 'User 1', 'email': 'user1@example.com', 'is_active': True}, {'id': 2, 'name': 'User 2', 'email': 'user2@example.com', 'is_active': True}]
+2026-01-03 11:05:33 INFO  homeplanner.api.users Returning 3 users (full mode) via API
+2026-01-03 11:05:33 INFO  httpx HTTP Request: GET http://testserver/api/v0.2/users/ "HTTP/1.1 200 OK"
+2026-01-03 11:05:38 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-03 11:05:38 INFO  homeplanner.system uvicorn level: 10
+2026-01-03 11:05:38 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-03 11:05:38 INFO  homeplanner.system uvicorn handlers: []
+2026-01-03 11:05:38 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-03 11:05:38 DEBUG asyncio Using selector: EpollSelector
+2026-01-03 11:05:38 INFO  homeplanner.database Initializing database tables...
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 11:05:38 INFO  homeplanner.database Database tables created successfully
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 11:05:38 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-03 11:05:38 INFO  homeplanner.api.users GET /users endpoint called with simple=False
+2026-01-03 11:05:38 INFO  homeplanner.users Starting query for all users
+2026-01-03 11:05:38 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-03 11:05:38 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Inactive User', 'email': 'inactive@example.com', 'is_active': False}, {'id': 1, 'name': 'User 1', 'email': 'user1@example.com', 'is_active': True}, {'id': 2, 'name': 'User 2', 'email': 'user2@example.com', 'is_active': True}]
+2026-01-03 11:05:38 INFO  homeplanner.api.users Returning 3 users (full mode) via API
+2026-01-03 11:05:38 INFO  httpx HTTP Request: GET http://testserver/api/v0.2/users/ "HTTP/1.1 200 OK"
+2026-01-03 11:05:38 DEBUG asyncio Using selector: EpollSelector
+2026-01-03 11:05:38 INFO  homeplanner.database Initializing database tables...
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 11:05:38 INFO  homeplanner.database Database tables created successfully
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 11:05:38 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-03 11:05:38 INFO  homeplanner.api.users GET /users endpoint called with simple=True
+2026-01-03 11:05:38 INFO  homeplanner.users Starting query for simple users
+2026-01-03 11:05:38 INFO  homeplanner.users Query executed successfully, found 2 active users
+2026-01-03 11:05:38 INFO  homeplanner.api.users Returning 2 active users (simple mode) via API
+2026-01-03 11:05:38 INFO  httpx HTTP Request: GET http://testserver/api/v0.2/users/?simple=true "HTTP/1.1 200 OK"
+2026-01-03 11:05:38 DEBUG asyncio Using selector: EpollSelector
+2026-01-03 11:05:38 INFO  homeplanner.database Initializing database tables...
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 11:05:38 INFO  homeplanner.database Database tables created successfully
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:05:38 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 11:05:38 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-03 11:05:38 INFO  homeplanner.api.users GET /users endpoint called with simple=False
+2026-01-03 11:05:38 INFO  homeplanner.users Starting query for all users
+2026-01-03 11:05:38 INFO  homeplanner.users Query executed successfully, found 2 users
+2026-01-03 11:05:38 DEBUG homeplanner.users Users: [{'id': 1, 'name': 'User 1', 'email': 'user1@example.com', 'is_active': True}, {'id': 2, 'name': 'User 2', 'email': 'user2@example.com', 'is_active': True}]
+2026-01-03 11:05:38 INFO  homeplanner.api.users Returning 2 users (full mode) via API
+2026-01-03 11:05:38 INFO  httpx HTTP Request: GET http://testserver/api/v0.2/users/?simple=false "HTTP/1.1 200 OK"
+2026-01-03 11:06:18 INFO  homeplanner.realtime WS disconnect: id=140378294791216, total=1
+2026-01-03 11:06:18 INFO  homeplanner.realtime WS disconnect: id=140378294795392, total=0
+2026-01-03 11:06:19 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-03 11:06:19 INFO  homeplanner.system uvicorn level: 10
+2026-01-03 11:06:19 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-03 11:06:19 INFO  homeplanner.system uvicorn handlers: []
+2026-01-03 11:06:19 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-03 11:06:19 INFO  homeplanner.database Initializing database tables...
+2026-01-03 11:06:19 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:06:19 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-03 11:06:19 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:19 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-03 11:06:19 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:19 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-03 11:06:19 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:19 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-03 11:06:19 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:19 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-03 11:06:19 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:19 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-03 11:06:19 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:19 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-03 11:06:19 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:19 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 11:06:19 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:19 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 11:06:19 INFO  homeplanner.database Database tables created successfully
+2026-01-03 11:06:19 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:06:19 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-03 11:06:19 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:19 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 11:06:19 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-03 11:06:20 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 11:06:20 INFO  homeplanner.realtime WS connect: id=140179861155200 host=192.168.1.2 port=58602 total=1
+2026-01-03 11:06:20 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 11:06:20 INFO  homeplanner.realtime WS connect: id=140179861159808 host=192.168.1.2 port=58610 total=2
+2026-01-03 11:06:24 INFO  homeplanner.realtime WS disconnect: id=140179861159808, total=1
+2026-01-03 11:06:24 INFO  homeplanner.realtime WS disconnect: id=140179861155200, total=0
+2026-01-03 11:06:25 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-03 11:06:25 INFO  homeplanner.system uvicorn level: 10
+2026-01-03 11:06:25 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-03 11:06:25 INFO  homeplanner.system uvicorn handlers: []
+2026-01-03 11:06:25 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-03 11:06:25 INFO  homeplanner.database Initializing database tables...
+2026-01-03 11:06:25 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:06:25 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-03 11:06:25 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:25 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-03 11:06:25 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:25 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-03 11:06:25 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:25 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-03 11:06:25 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:25 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-03 11:06:25 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:25 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-03 11:06:25 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:25 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-03 11:06:25 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:25 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 11:06:25 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:25 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 11:06:25 INFO  homeplanner.database Database tables created successfully
+2026-01-03 11:06:25 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:06:25 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-03 11:06:25 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:25 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 11:06:25 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-03 11:06:26 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 11:06:26 INFO  homeplanner.realtime WS connect: id=140686052550816 host=192.168.1.2 port=58616 total=1
+2026-01-03 11:06:26 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 11:06:26 INFO  homeplanner.realtime WS connect: id=140686052555520 host=192.168.1.2 port=58618 total=2
+2026-01-03 11:06:29 INFO  homeplanner.realtime WS disconnect: id=140686052555520, total=1
+2026-01-03 11:06:29 INFO  homeplanner.realtime WS disconnect: id=140686052550816, total=0
+2026-01-03 11:06:30 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-03 11:06:30 INFO  homeplanner.system uvicorn level: 10
+2026-01-03 11:06:30 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-03 11:06:30 INFO  homeplanner.system uvicorn handlers: []
+2026-01-03 11:06:30 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-03 11:06:31 INFO  homeplanner.database Initializing database tables...
+2026-01-03 11:06:31 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:06:31 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-03 11:06:31 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:31 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-03 11:06:31 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:31 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-03 11:06:31 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:31 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-03 11:06:31 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:31 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-03 11:06:31 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:31 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-03 11:06:31 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:31 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-03 11:06:31 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:31 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 11:06:31 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:31 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 11:06:31 INFO  homeplanner.database Database tables created successfully
+2026-01-03 11:06:31 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:06:31 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-03 11:06:31 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:31 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 11:06:31 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-03 11:06:31 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 11:06:31 INFO  homeplanner.realtime WS connect: id=140112621055264 host=192.168.1.2 port=54220 total=1
+2026-01-03 11:06:32 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 11:06:32 INFO  homeplanner.realtime WS connect: id=140112621059488 host=192.168.1.2 port=54224 total=2
+2026-01-03 11:06:43 INFO  homeplanner.realtime WS disconnect: id=140112621059488, total=1
+2026-01-03 11:06:43 INFO  homeplanner.realtime WS disconnect: id=140112621055264, total=0
+2026-01-03 11:06:44 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-03 11:06:44 INFO  homeplanner.system uvicorn level: 10
+2026-01-03 11:06:44 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-03 11:06:44 INFO  homeplanner.system uvicorn handlers: []
+2026-01-03 11:06:44 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-03 11:06:45 INFO  homeplanner.database Initializing database tables...
+2026-01-03 11:06:45 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:06:45 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-03 11:06:45 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:45 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-03 11:06:45 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:45 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-03 11:06:45 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:45 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-03 11:06:45 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:45 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-03 11:06:45 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:45 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-03 11:06:45 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:45 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-03 11:06:45 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:45 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 11:06:45 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:45 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 11:06:45 INFO  homeplanner.database Database tables created successfully
+2026-01-03 11:06:45 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:06:45 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-03 11:06:45 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:45 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 11:06:45 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-03 11:06:45 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 11:06:45 INFO  homeplanner.realtime WS connect: id=140573759515792 host=192.168.1.2 port=38700 total=1
+2026-01-03 11:06:45 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-03 11:06:45 INFO  homeplanner.realtime WS connect: id=140573759520112 host=192.168.1.2 port=38704 total=2
+2026-01-03 11:06:48 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-03 11:06:48 INFO  homeplanner.system uvicorn level: 10
+2026-01-03 11:06:48 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-03 11:06:48 INFO  homeplanner.system uvicorn handlers: []
+2026-01-03 11:06:48 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-03 11:06:49 DEBUG asyncio Using selector: EpollSelector
+2026-01-03 11:06:49 INFO  homeplanner.database Initializing database tables...
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 11:06:49 INFO  homeplanner.database Database tables created successfully
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 11:06:49 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-03 11:06:49 INFO  homeplanner.api.users GET /users endpoint called with simple=False
+2026-01-03 11:06:49 INFO  homeplanner.users Starting query for all users
+2026-01-03 11:06:49 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-03 11:06:49 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Inactive User', 'email': 'inactive@example.com', 'is_active': False}, {'id': 1, 'name': 'User 1', 'email': 'user1@example.com', 'is_active': True}, {'id': 2, 'name': 'User 2', 'email': 'user2@example.com', 'is_active': True}]
+2026-01-03 11:06:49 INFO  homeplanner.api.users Returning 3 users (full mode) via API
+2026-01-03 11:06:49 INFO  httpx HTTP Request: GET http://testserver/api/v0.2/users/ "HTTP/1.1 200 OK"
+2026-01-03 11:06:49 DEBUG asyncio Using selector: EpollSelector
+2026-01-03 11:06:49 INFO  homeplanner.database Initializing database tables...
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 11:06:49 INFO  homeplanner.database Database tables created successfully
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 11:06:49 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-03 11:06:49 INFO  homeplanner.api.users GET /users endpoint called with simple=False
+2026-01-03 11:06:49 INFO  homeplanner.users Starting query for all users
+2026-01-03 11:06:49 INFO  homeplanner.users Query executed successfully, found 3 users
+2026-01-03 11:06:49 DEBUG homeplanner.users Users: [{'id': 3, 'name': 'Inactive User', 'email': 'inactive@example.com', 'is_active': False}, {'id': 1, 'name': 'User 1', 'email': 'user1@example.com', 'is_active': True}, {'id': 2, 'name': 'User 2', 'email': 'user2@example.com', 'is_active': True}]
+2026-01-03 11:06:49 INFO  homeplanner.api.users Returning 3 users (full mode) via API
+2026-01-03 11:06:49 INFO  httpx HTTP Request: GET http://testserver/api/v0.3/users/ "HTTP/1.1 200 OK"
+2026-01-03 11:06:49 DEBUG asyncio Using selector: EpollSelector
+2026-01-03 11:06:49 INFO  homeplanner.database Initializing database tables...
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 11:06:49 INFO  homeplanner.database Database tables created successfully
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 11:06:49 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-03 11:06:49 INFO  homeplanner.api.users GET /users endpoint called with simple=True
+2026-01-03 11:06:49 INFO  homeplanner.users Starting query for simple users
+2026-01-03 11:06:49 INFO  homeplanner.users Query executed successfully, found 2 active users
+2026-01-03 11:06:49 INFO  homeplanner.api.users Returning 2 active users (simple mode) via API
+2026-01-03 11:06:49 INFO  httpx HTTP Request: GET http://testserver/api/v0.2/users/?simple=true "HTTP/1.1 200 OK"
+2026-01-03 11:06:49 DEBUG asyncio Using selector: EpollSelector
+2026-01-03 11:06:49 INFO  homeplanner.database Initializing database tables...
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 11:06:49 INFO  homeplanner.database Database tables created successfully
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 11:06:49 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-03 11:06:49 INFO  homeplanner.api.users GET /users endpoint called with simple=True
+2026-01-03 11:06:49 INFO  homeplanner.users Starting query for simple users
+2026-01-03 11:06:49 INFO  homeplanner.users Query executed successfully, found 2 active users
+2026-01-03 11:06:49 INFO  homeplanner.api.users Returning 2 active users (simple mode) via API
+2026-01-03 11:06:49 INFO  httpx HTTP Request: GET http://testserver/api/v0.3/users/?simple=true "HTTP/1.1 200 OK"
+2026-01-03 11:06:49 DEBUG asyncio Using selector: EpollSelector
+2026-01-03 11:06:49 INFO  homeplanner.database Initializing database tables...
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 11:06:49 INFO  homeplanner.database Database tables created successfully
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 11:06:49 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-03 11:06:49 INFO  homeplanner.api.users GET /users endpoint called with simple=False
+2026-01-03 11:06:49 INFO  homeplanner.users Starting query for all users
+2026-01-03 11:06:49 INFO  homeplanner.users Query executed successfully, found 2 users
+2026-01-03 11:06:49 DEBUG homeplanner.users Users: [{'id': 1, 'name': 'User 1', 'email': 'user1@example.com', 'is_active': True}, {'id': 2, 'name': 'User 2', 'email': 'user2@example.com', 'is_active': True}]
+2026-01-03 11:06:49 INFO  homeplanner.api.users Returning 2 users (full mode) via API
+2026-01-03 11:06:49 INFO  httpx HTTP Request: GET http://testserver/api/v0.2/users/?simple=false "HTTP/1.1 200 OK"
+2026-01-03 11:06:49 DEBUG asyncio Using selector: EpollSelector
+2026-01-03 11:06:49 INFO  homeplanner.database Initializing database tables...
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("debug_logs")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 11:06:49 INFO  homeplanner.database Database tables created successfully
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-03 11:06:49 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 11:06:49 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_notifications', 'task_recurrence', 'task_users', 'tasks', 'users']
+2026-01-03 11:06:49 INFO  homeplanner.api.users GET /users endpoint called with simple=False
+2026-01-03 11:06:49 INFO  homeplanner.users Starting query for all users
+2026-01-03 11:06:49 INFO  homeplanner.users Query executed successfully, found 2 users
+2026-01-03 11:06:49 DEBUG homeplanner.users Users: [{'id': 1, 'name': 'User 1', 'email': 'user1@example.com', 'is_active': True}, {'id': 2, 'name': 'User 2', 'email': 'user2@example.com', 'is_active': True}]
+2026-01-03 11:06:49 INFO  homeplanner.api.users Returning 2 users (full mode) via API
+2026-01-03 11:06:49 INFO  httpx HTTP Request: GET http://testserver/api/v0.3/users/?simple=false "HTTP/1.1 200 OK"
+2026-01-03 11:09:26 INFO  homeplanner.api.users GET /users endpoint called with simple=True
+2026-01-03 11:09:26 INFO  homeplanner.users Starting query for simple users
+2026-01-03 11:09:26 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:09:27 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name 
+FROM users 
+WHERE users.is_active = 1 ORDER BY users.name
+2026-01-03 11:09:27 INFO  sqlalchemy.engine.Engine [generated in 0.00058s] ()
+2026-01-03 11:09:27 INFO  homeplanner.users Query executed successfully, found 3 active users
+2026-01-03 11:09:27 INFO  homeplanner.api.users Returning 3 active users (simple mode) via API
+2026-01-03 11:09:27 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 11:09:27 INFO  homeplanner.api.users GET /users endpoint called with simple=True
+2026-01-03 11:09:27 INFO  homeplanner.users Starting query for simple users
+2026-01-03 11:09:27 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:09:27 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name 
+FROM users 
+WHERE users.is_active = 1 ORDER BY users.name
+2026-01-03 11:09:27 INFO  sqlalchemy.engine.Engine [cached since 0.0166s ago] ()
+2026-01-03 11:09:27 INFO  homeplanner.users Query executed successfully, found 3 active users
+2026-01-03 11:09:27 INFO  homeplanner.api.users Returning 3 active users (simple mode) via API
+2026-01-03 11:09:27 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-03 11:09:34 INFO  backend.routers.debug_logs Received binary chunk request: X-Chunk-Id=35, X-Device-Id=android_34e04403caa24936
+2026-01-03 11:09:34 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-03 11:09:34 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 11:09:34 INFO  sqlalchemy.engine.Engine [generated in 0.00060s (insertmanyvalues) 1/13 (ordered; batch not supported)] ('2026-01-03 03:08:10.429000', 'INFO', None, None, '{}', 'Приложение запущено', '35', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 11:09:34 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 11:09:34 INFO  sqlalchemy.engine.Engine [insertmanyvalues 2/13 (ordered; batch not supported)] ('2026-01-03 00:06:51.709000', 'DEBUG', None, None, '{}', 'Загружены задачи из кэша', '35', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 11:09:34 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 11:09:34 INFO  sqlalchemy.engine.Engine [insertmanyvalues 3/13 (ordered; batch not supported)] ('2026-01-03 02:04:50.109000', 'DEBUG', None, None, '{}', 'syncCacheWithServer: вызов загрузки пользователей с сервера', '35', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 11:09:34 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 11:09:34 INFO  sqlalchemy.engine.Engine [insertmanyvalues 4/13 (ordered; batch not supported)] ('2026-01-03 02:04:50.109000', 'DEBUG', None, None, '{}', 'UsersServerApi: HTTP запрос к серверу [url=http://192.168.1.2:8000/api/v0.3/users/?simple=true]', '35', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 11:09:34 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 11:09:34 INFO  sqlalchemy.engine.Engine [insertmanyvalues 5/13 (ordered; batch not supported)] ('2026-01-03 02:16:51.005000', 'DEBUG', None, None, '{}', 'syncCacheWithServer: вызов загрузки пользователей с сервера', '35', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 11:09:34 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 11:09:34 INFO  sqlalchemy.engine.Engine [insertmanyvalues 6/13 (ordered; batch not supported)] ('2026-01-03 02:16:51.005000', 'DEBUG', None, None, '{}', 'UsersServerApi: HTTP запрос к серверу [url=http://192.168.1.2:8000/api/v0.3/users/?simple=true]', '35', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 11:09:34 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 11:09:34 INFO  sqlalchemy.engine.Engine [insertmanyvalues 7/13 (ordered; batch not supported)] ('2026-01-03 02:19:02.077000', 'DEBUG', None, None, '{}', 'UsersServerApi: получен HTTP ответ [code=200, message=OK]', '35', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 11:09:34 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 11:09:34 INFO  sqlalchemy.engine.Engine [insertmanyvalues 8/13 (ordered; batch not supported)] ('2026-01-03 02:19:02.077000', 'DEBUG', None, None, '{}', 'UsersServerApi: длина body ответа [body_length=78]', '35', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 11:09:34 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 11:09:34 INFO  sqlalchemy.engine.Engine [insertmanyvalues 9/13 (ordered; batch not supported)] ('2026-01-03 02:19:02.077000', 'DEBUG', None, None, '{}', 'UsersServerApi: длина JSONArray [array_length=3]', '35', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 11:09:34 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 11:09:34 INFO  sqlalchemy.engine.Engine [insertmanyvalues 10/13 (ordered; batch not supported)] ('2026-01-03 02:19:02.077000', 'DEBUG', None, None, '{}', 'UsersServerApi: распарсено пользователей [parsed_count=3]', '35', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 11:09:34 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 11:09:34 INFO  sqlalchemy.engine.Engine [insertmanyvalues 11/13 (ordered; batch not supported)] ('2026-01-03 02:21:13.149000', 'DEBUG', None, None, '{}', 'saveUsersToCache: пользователи сохранены в SharedPreferences [saved_count=3]', '35', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 11:09:34 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 11:09:34 INFO  sqlalchemy.engine.Engine [insertmanyvalues 12/13 (ordered; batch not supported)] ('2026-01-03 02:21:13.149000', 'DEBUG', None, None, '{}', 'syncCacheWithServer: получен ответ от сервера с пользователями [users_count=3]', '35', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 11:09:34 INFO  sqlalchemy.engine.Engine INSERT INTO debug_logs (timestamp, level, tag, message_code, context, text, chunk_id, device_id, device_info, app_version, dictionary_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+2026-01-03 11:09:34 INFO  sqlalchemy.engine.Engine [insertmanyvalues 13/13 (ordered; batch not supported)] ('2026-01-03 02:22:18.685000', 'DEBUG', None, None, '{}', 'syncCacheWithServer: пользователи сохранены в локальный кеш [saved_count=3]', '35', 'android_34e04403caa24936', None, None, '1.0')
+2026-01-03 11:09:34 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-03 11:09:34 INFO  backend.routers.debug_logs Successfully decoded and saved 13 log entries from chunk 35 (device: android_34e04403caa24936)
+2026-01-03 22:38:04 INFO  homeplanner.realtime WS disconnect: id=140573759520112, total=1
+2026-01-03 22:38:12 INFO  homeplanner.realtime WS disconnect: id=140573759515792, total=0
