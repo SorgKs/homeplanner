@@ -249,8 +249,8 @@ class WebSocketService(
     private suspend fun handleTaskStatusUpdate(task: Task) {
         try {
             val offlineRepository = OfflineRepository(AppDatabase.getDatabase(context), context)
-            val cachedTask = offlineRepository.getTaskFromCacheLocal(task.id)
-            
+            val cachedTask = offlineRepository.getTaskFromCache(task.id)
+
             if (cachedTask != null) {
                 val updatedTask = cachedTask.copy(
                     completed = task.completed,
@@ -258,11 +258,11 @@ class WebSocketService(
                     reminderTime = task.reminderTime,
                     title = task.title
                 )
-                offlineRepository.saveTasksToCacheLocal(listOf(updatedTask))
+                offlineRepository.saveTasksToCache(listOf(updatedTask))
                 Log.d(TAG, "Task status updated in cache: id=${task.id}, completed=${task.completed}")
             } else {
                 // Задача не найдена в кэше - сохраняем как новую
-                offlineRepository.saveTasksToCacheLocal(listOf(task))
+                offlineRepository.saveTasksToCache(listOf(task))
                 Log.d(TAG, "Task not found in cache, saved as new: id=${task.id}")
             }
         } catch (e: Exception) {
@@ -277,7 +277,7 @@ class WebSocketService(
     private suspend fun handleTaskDelete(taskId: Int) {
         try {
             val offlineRepository = OfflineRepository(AppDatabase.getDatabase(context), context)
-            offlineRepository.deleteTaskFromCacheLocal(taskId)
+            offlineRepository.deleteTaskFromCache(taskId)
             Log.d(TAG, "Task deleted from cache: id=$taskId")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to delete task from cache", e)
@@ -291,16 +291,16 @@ class WebSocketService(
     private suspend fun handleHashCheck(serverHash: String) {
         try {
             val offlineRepository = OfflineRepository(AppDatabase.getDatabase(context), context)
-            val cachedTasks = offlineRepository.loadTasksFromCacheLocal()
+            val cachedTasks = offlineRepository.loadTasksFromCache()
             val localHash = calculateTasksHash(cachedTasks)
-            
+
             if (localHash != serverHash) {
                 Log.w(TAG, "Hash mismatch detected. Local: ${localHash.take(16)}..., Server: ${serverHash.take(16)}...")
-                
+
                 // Загружаем задачи с сервера для синхронизации
-                val serverTasks = serverApi.getTasksServer(activeOnly = false).getOrThrow()
-                offlineRepository.saveTasksToCacheLocal(serverTasks)
-                
+                val serverTasks = serverApi.getTasksServer().getOrThrow()
+                offlineRepository.saveTasksToCache(serverTasks)
+
                 Log.d(TAG, "Tasks synchronized from server: ${serverTasks.size} tasks")
             } else {
                 Log.d(TAG, "Hash check passed")

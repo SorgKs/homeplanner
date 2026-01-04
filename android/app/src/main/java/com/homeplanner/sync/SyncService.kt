@@ -52,8 +52,8 @@ class SyncService(
 
             // syncStateBeforeRecalculation: загрузка задач с сервера
             BinaryLogger.getInstance()?.log(302u, emptyList())
-            val serverTasks = serverApi.getTasksServer(activeOnly = false).getOrThrow()
-            repository.saveTasksToCacheLocal(serverTasks)
+            val serverTasks = serverApi.getTasksServer().getOrThrow()
+            repository.saveTasksToCache(serverTasks)
             val queueSize = repository.getPendingOperationsCount()
             // Кэш обновлен после синхронизации: %tasks_count% задач из %source%, очередь: %queue_items%
             BinaryLogger.getInstance()?.log(
@@ -120,7 +120,7 @@ class SyncService(
             repository.clearAllQueue()
             if (allTasks.isNotEmpty()) {
                 // Обновляем кэш актуальными данными с сервера (сервер сам решил, какие операции применить)
-                repository.saveTasksToCacheLocal(allTasks)
+                repository.saveTasksToCache(allTasks)
                 // Кэш обновлен после синхронизации: %tasks_count% задач из %source%, очередь: %queue_items%
                 BinaryLogger.getInstance()?.log(
                     41u,
@@ -214,13 +214,13 @@ class SyncService(
                 } else {
                     // Очередь была пуста - загружаем задачи с сервера для полной синхронизации
                     try {
-                        val serverTasks = serverApi.getTasksServer(activeOnly = false).getOrThrow()
-                        val cachedTasks = repository.loadTasksFromCacheLocal()
+                        val serverTasks = serverApi.getTasksServer().getOrThrow()
+                        val cachedTasks = repository.loadTasksFromCache()
                         val cachedHash = calculateTasksHash(cachedTasks)
                         val serverHash = calculateTasksHash(serverTasks)
-                        
+
                         if (cachedHash != serverHash) {
-                            repository.saveTasksToCacheLocal(serverTasks)
+                            repository.saveTasksToCache(serverTasks)
                             true
                         } else {
                             false

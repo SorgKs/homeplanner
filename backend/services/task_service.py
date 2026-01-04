@@ -13,95 +13,15 @@ from backend.services.time_manager import get_current_time
 if TYPE_CHECKING:
     from backend.schemas.task import TaskCreate, TaskUpdate
 
+from backend.utils.date_utils import get_day_start, get_last_update, set_last_update, is_new_day, format_datetime_short, format_datetime_for_history, LAST_UPDATE_KEY
+from backend.utils.recurrence_utils import find_nth_weekday_in_month, determine_weekday_occurrence, calculate_next_due_date
+from backend.utils.format_utils import format_task_settings
+
 
 class TaskService:
     """Service for managing recurring tasks."""
-    
-    # Key for storing last task update timestamp in AppMetadata
-    LAST_UPDATE_KEY = "last_task_update"
 
-    @staticmethod
-    def _get_day_start(dt: datetime) -> datetime:
-        """Get the start of day for given datetime using day_start_hour from config.
-        
-        Args:
-            dt: Datetime to get day start for.
-            
-        Returns:
-            Datetime representing start of current day (at day_start_hour).
-        """
-        settings = get_settings()
-        day_start_hour = settings.day_start_hour
-        
-        # If current hour >= day_start_hour, day started today at day_start_hour
-        # If current hour < day_start_hour, day started yesterday at day_start_hour
-        if dt.hour >= day_start_hour:
-            return dt.replace(hour=day_start_hour, minute=0, second=0, microsecond=0)
-        else:
-            # Day started yesterday at day_start_hour
-            yesterday = dt - timedelta(days=1)
-            return yesterday.replace(hour=day_start_hour, minute=0, second=0, microsecond=0)
 
-    @staticmethod
-    def _get_last_update(db: Session) -> datetime | None:
-        """Get last task update timestamp from metadata.
-        
-        Args:
-            db: Database session.
-            
-        Returns:
-            Last update timestamp or None if not set.
-        """
-        from backend.models.app_metadata import AppMetadata
-        
-        metadata = db.query(AppMetadata).filter(AppMetadata.key == TaskService.LAST_UPDATE_KEY).first()
-        if metadata:
-            return metadata.value
-        return None
-    
-    @staticmethod
-    def _set_last_update(db: Session, timestamp: datetime, commit: bool = False) -> None:
-        """Set last task update timestamp in metadata.
-        
-        Args:
-            db: Database session.
-            timestamp: Timestamp to set.
-            commit: If True, commit the transaction. If False, caller should commit.
-        """
-        from backend.models.app_metadata import AppMetadata
-        
-        metadata = db.query(AppMetadata).filter(AppMetadata.key == TaskService.LAST_UPDATE_KEY).first()
-        if metadata:
-            metadata.value = timestamp
-        else:
-            metadata = AppMetadata(key=TaskService.LAST_UPDATE_KEY, value=timestamp)
-            db.add(metadata)
-        
-        if commit:
-            db.commit()
-    
-    @staticmethod
-    def _is_new_day(db: Session) -> bool:
-        """Check if a new day has started since last update.
-        
-        Uses day_start_hour from config to determine day boundaries.
-        
-        Args:
-            db: Database session.
-            
-        Returns:
-            True if new day has started, False otherwise.
-        """
-        last_update = TaskService._get_last_update(db)
-        if last_update is None:
-            # First time - consider it a new day
-            return True
-        
-        now = get_current_time()
-        last_update_day_start = TaskService._get_day_start(last_update)
-        current_day_start = TaskService._get_day_start(now)
-        
-        return last_update_day_start < current_day_start
 
     @staticmethod
     def _get_users_by_ids(db: Session, user_ids: list[int]) -> list[User]:
@@ -166,12 +86,12 @@ class TaskService:
         metadata = json.dumps(task_data.model_dump(), default=json_default)
         
         # Generate comment with task settings
-        task_settings = TaskService._format_task_settings(task.task_type, task)
+        task_settings = format_task_settings(task.task_type, task)
         comment = task_settings
-        
+
         from backend.models.task_history import TaskHistoryAction
         TaskHistoryService.log_action(db, task.id, TaskHistoryAction.CREATED, metadata=metadata, comment=comment)
-        
+
         return task
 
     @staticmethod
@@ -194,11 +114,11 @@ class TaskService:
         from backend.models.task import TaskType
 
         # Check if new day has started using last_update metadata
-        if TaskService._is_new_day(db):
+        if is_new_day(db):
             # New day - update tasks that need updating
             # All operations happen in a single transaction to ensure atomicity
             now = get_current_time()
-            today_start = TaskService._get_day_start(now)
+            today_start = get_day_start(now)
 
             # Find tasks that need date update:
             # - Are completed (completed = True)
@@ -209,7 +129,7 @@ class TaskService:
                 .filter(Task.completed == True)
                 .all()
             )
-            tasks_to_update = [t for t in all_completed_tasks if TaskService._get_day_start(t.reminder_time) < today_start]
+            tasks_to_update = [t for t in all_completed_tasks if get_day_start(t.reminder_time) < today_start]
 
             # Update all tasks in memory (no commit yet)
             for task in tasks_to_update:
@@ -239,7 +159,7 @@ class TaskService:
                     # ensuring the result is strictly in the future
                     current_time = now
                     interval = task.recurrence_interval or 1
-                    candidate = TaskService._calculate_next_due_date(
+                    candidate = calculate_next_due_date(
                         current_time,
                         task.recurrence_type,
                         interval,
@@ -251,7 +171,7 @@ class TaskService:
                     while candidate <= current_time and safety_counter < 12:
                         # Move the base forward slightly and recalculate
                         current_time = candidate + timedelta(seconds=1)
-                        candidate = TaskService._calculate_next_due_date(
+                        candidate = calculate_next_due_date(
                             current_time,
                             task.recurrence_type,
                             interval,
@@ -264,7 +184,7 @@ class TaskService:
 
             # Update last_update timestamp to current time (in same transaction)
             # This happens even if no tasks were updated, to mark that we checked
-            TaskService._set_last_update(db, now, commit=False)
+            set_last_update(db, now, commit=False)
 
             # Commit all changes atomically: tasks updates + last_update
             db.commit()
@@ -465,7 +385,7 @@ class TaskService:
                 
                 # Handle datetime - format in human-readable way (local time)
                 if isinstance(val, datetime):
-                    return TaskService._format_datetime_for_history(val)
+                    return format_datetime_for_history(val)
                 
                 return str(val)
             
@@ -490,9 +410,9 @@ class TaskService:
                 new_task_type = changes.get("task_type", task.task_type)
                 
                 # Format old and new settings
-                old_settings = TaskService._format_task_settings(old_task_type, old_task_state)
-                new_settings = TaskService._format_task_settings(new_task_type, task)
-                
+                old_settings = format_task_settings(old_task_type, old_task_state)
+                new_settings = format_task_settings(new_task_type, task)
+
                 comment = f"вместо '{old_settings}' теперь будет '{new_settings}'"
             
             else:
@@ -534,12 +454,12 @@ class TaskService:
                 # Get task types from state dicts and convert TaskType enum to string value
                 old_task_type_from_state = old_state_for_formatting.get("task_type", old_task_state.get("task_type", task.task_type))
                 old_task_type_str = old_task_type_from_state.value if isinstance(old_task_type_from_state, TaskType) else str(old_task_type_from_state)
-                
+
                 new_task_type_from_state = new_state_for_formatting.get("task_type", task.task_type)
                 new_task_type_str = new_task_type_from_state.value if isinstance(new_task_type_from_state, TaskType) else str(new_task_type_from_state)
-                
-                old_settings = TaskService._format_task_settings(old_task_type_str, old_state_for_formatting)
-                new_settings = TaskService._format_task_settings(new_task_type_str, new_state_for_formatting)
+
+                old_settings = format_task_settings(old_task_type_str, old_state_for_formatting)
+                new_settings = format_task_settings(new_task_type_str, new_state_for_formatting)
                 
                 comment = f"вместо '{old_settings}' теперь будет '{new_settings}'"
             
@@ -578,9 +498,9 @@ class TaskService:
         import json
         
         # Generate comment with task settings
-        task_settings = TaskService._format_task_settings(task.task_type, task)
+        task_settings = format_task_settings(task.task_type, task)
         comment = task_settings
-        
+
         # Create metadata with task info (including title) to preserve it after deletion
         metadata = {
             "task_id": saved_task_id,
@@ -1370,7 +1290,7 @@ class TaskService:
         TaskService._recalculate_completed_tasks_on_new_day(db)
 
         now = get_current_time()
-        today_start = TaskService._get_day_start(now)
+        today_start = get_day_start(now)
 
         tasks = (
             db.query(Task)
@@ -1384,7 +1304,7 @@ class TaskService:
             if task.reminder_time is None:
                 continue
 
-            task_day_start = TaskService._get_day_start(task.reminder_time)
+            task_day_start = get_day_start(task.reminder_time)
 
             # Положение reminder_time относительно текущего логического дня
             if task_day_start < today_start:

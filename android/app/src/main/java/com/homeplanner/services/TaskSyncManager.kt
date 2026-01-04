@@ -36,7 +36,7 @@ class TaskSyncManager(
     suspend fun syncTasksServer(): Result<Unit> = runCatching {
         sendQueueToServer().getOrThrow()
 
-        val serverTasks = serverApi.getTasksServer(activeOnly = true).getOrThrow()
+        val serverTasks = serverApi.getTasksServer().getOrThrow()
         updateLocalCache(serverTasks).getOrThrow()
     }
 
@@ -64,7 +64,7 @@ class TaskSyncManager(
 
     private suspend fun performServerSync() {
         try {
-            val serverTasks = serverApi.getTasksServer(activeOnly = false).getOrThrow()
+            val serverTasks = serverApi.getTasksServer().getOrThrow()
             updateLocalCache(serverTasks).getOrThrow()
 
             // Также синхронизируем пользователей и группы
