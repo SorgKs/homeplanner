@@ -1,5 +1,6 @@
 package com.homeplanner.api
 
+import com.homeplanner.BuildConfig
 import com.homeplanner.model.User
 import com.homeplanner.debug.BinaryLogger
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -19,13 +20,15 @@ import java.util.concurrent.TimeUnit
 
 /**
  * API для работы с пользователями на сервере.
- * 
+ *
  * Все методы выполняют HTTP запросы к серверу и не работают с локальным хранилищем.
  * Не используется в UI коде - только для синхронизации через SyncService.
+ *
+ * ВАЖНО: baseUrl изменять запрещено - он фиксирован и наследуется от единого источника (BuildConfig.API_BASE_URL).
  */
 class UsersServerApi(
     private val httpClient: OkHttpClient = createHttpClientWithTimeouts(),
-    private val baseUrl: String,
+    private val baseUrl: String = BuildConfig.API_BASE_URL,
 ) {
     
     companion object {
@@ -78,18 +81,18 @@ class UsersServerApi(
     suspend fun getUsersServer(): Result<List<User>> = runCatching {
         val url = "$baseUrl/users/?simple=true"
         android.util.Log.i("UsersServerApi", "Making GET request to: $url")
-        BinaryLogger.getInstance()?.log(403u, listOf(url))
+        BinaryLogger.getInstance()?.log(403u, listOf<Any>(url, 78), 78)
         val request = Request.Builder().url(url).build()
 
         executeAsync(request).use { response ->
             android.util.Log.i("UsersServerApi", "Response received: code=${response.code}, message=${response.message}")
-            BinaryLogger.getInstance()?.log(404u, listOf(response.code, response.message))
+            BinaryLogger.getInstance()?.log(404u, listOf<Any>(response.code,response.message, 78), 78)
             if (response.code == 500) throw IllegalStateException("HTTP ${response.code}")
             val body = response.body?.string() ?: "[]"
             android.util.Log.i("UsersServerApi", "Response body: $body")
-            BinaryLogger.getInstance()?.log(406u, listOf(body.length))
+            BinaryLogger.getInstance()?.log(406u, listOf<Any>(body.length, 78), 78)
             val usersJson = JSONArray(body)
-            BinaryLogger.getInstance()?.log(407u, listOf(usersJson.length()))
+            BinaryLogger.getInstance()?.log(407u, listOf<Any>(usersJson.length()), 78)
             val result = ArrayList<User>(usersJson.length())
             for (i in 0 until usersJson.length()) {
                 val obj = usersJson.getJSONObject(i)
@@ -100,7 +103,7 @@ class UsersServerApi(
                 result.add(user)
             }
             android.util.Log.i("UsersServerApi", "Parsed ${result.size} users from server")
-            BinaryLogger.getInstance()?.log(405u, listOf(result.size))
+            BinaryLogger.getInstance()?.log(405u, listOf<Any>(result.size, 78), 78)
             result
         }
     }

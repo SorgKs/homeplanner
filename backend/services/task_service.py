@@ -138,7 +138,7 @@ class TaskService:
                 if task.task_type == TaskType.ONE_TIME:
                     # One-time tasks: date never changes, но завершённые задачи
                     # должны стать неактивными при наступлении нового дня
-                    task.active = False
+                    task.enabled = False
                 elif task.task_type == TaskType.INTERVAL:
                     # Interval tasks: always shift from confirmation day start
                     interval_days = task.interval_days or 1
@@ -190,8 +190,8 @@ class TaskService:
             db.commit()
 
     @staticmethod
-    def get_all_tasks(db: Session, active_only: bool = False) -> list[Task]:
-        """Get all tasks, optionally filtering by active status.
+    def get_all_tasks(db: Session, enabled_only: bool = False) -> list[Task]:
+        """Get all tasks, optionally filtering by enabled status.
 
         Also updates dates for completed tasks if a new day has started
         since last update. Uses last_update metadata to determine if it's a new day.
@@ -201,8 +201,8 @@ class TaskService:
 
         # Now get all tasks (with updated dates)
         query = db.query(Task).options(selectinload(Task.assignees))
-        if active_only:
-            query = query.filter(Task.active == True)
+        if enabled_only:
+            query = query.filter(Task.enabled == True)
         return query.order_by(Task.reminder_time).all()
 
     @staticmethod
@@ -574,7 +574,7 @@ class TaskService:
         # Centralized recalculation will occur at day boundaries inside get_all_tasks().
         if task.task_type == TaskType.ONE_TIME:
             # One-time tasks are simply marked inactive upon completion.
-            task.active = False
+            task.enabled = False
         
         # Если передан timestamp от клиента (для sync операций), используем его для updated_at
         # Иначе будет использовано дефолтное значение из модели (get_current_time)
@@ -642,7 +642,7 @@ class TaskService:
 
         if task.task_type == TaskType.ONE_TIME:
             # Make one-time task active again
-            task.active = True
+            task.enabled = True
         
         # Если передан timestamp от клиента (для sync операций), используем его для updated_at
         # Иначе будет использовано дефолтное значение из модели (get_current_time)
@@ -1267,7 +1267,7 @@ class TaskService:
         return (
             db.query(Task)
             .options(selectinload(Task.assignees))
-            .filter(Task.active == True)
+            .filter(Task.enabled == True)
             .filter(Task.reminder_time <= cutoff_date)
             .order_by(Task.reminder_time)
             .all()
@@ -1321,7 +1321,7 @@ class TaskService:
             # For non-completed tasks: only show if due today or past
             elif pos in ("PAST", "TODAY"):
                 # For PAST/TODAY tasks: include if active OR if one-time (always visible)
-                if task.active or task.task_type == TaskType.ONE_TIME:
+                if task.enabled or task.task_type == TaskType.ONE_TIME:
                     include = True
 
             if not include:

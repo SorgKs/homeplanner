@@ -113,16 +113,16 @@ function applyTaskEventFromWs(action, taskJson, taskId) {
     }
     // Преобразуем TaskResponse -> внутреннюю структуру
     const t = taskJson;
-    const activeFlag = t.active ?? true;
+    const enabledFlag = t.enabled ?? true;
     const completedFlag = Boolean(t.completed);
     const reminderTime = t.reminder_time ?? null;
     
     // Определяем статус выполнения: задача выполнена если:
-    // 1. Для разовых задач: неактивна (active = false)
+    // 1. Для разовых задач: не включена (enabled = false)
     // 2. Для повторяющихся и интервальных: completed = true
     let isCompleted = false;
     if (t.task_type === 'one_time') {
-        isCompleted = !activeFlag;
+        isCompleted = !enabledFlag;
     } else {
         isCompleted = completedFlag;
     }
@@ -134,7 +134,7 @@ function applyTaskEventFromWs(action, taskJson, taskId) {
         task_type: t.task_type || 'one_time',
         due_date: t.reminder_time,  // reminder_time теперь хранит дату выполнения
         is_completed: isCompleted,
-        is_active: activeFlag,  // active заменяет is_active
+        is_enabled: enabledFlag,  // enabled заменяет is_enabled
         assigned_user_ids: Array.isArray(t.assigned_user_ids) ? t.assigned_user_ids.map(Number) : [],
         assignees: Array.isArray(t.assignees) ? t.assignees : [],
         reminder_time: reminderTime,
@@ -702,7 +702,7 @@ function mapTaskResponse(task) {
         is_recurring: task.task_type === 'recurring',
         task_type: task.task_type || 'one_time',
         reminder_time: reminderTime,
-        active: activeFlag,
+        enabled: enabledFlag,
         completed: completedFlag,
     };
 }
@@ -752,14 +752,14 @@ async function loadData() {
         const tasksMap = new Map();
         tasks.forEach(t => {
             // Определяем статус выполнения: задача выполнена если:
-            // 1. Для разовых задач: неактивна (active = false)
+            // 1. Для разовых задач: не включена (enabled = false)
             // 2. Для повторяющихся и интервальных: completed = true
             // Галка подтверждения НЕ зависит от reminder_time
             let isCompleted = false;
-            
-            // Для разовых задач: выполнена если неактивна
+
+            // Для разовых задач: выполнена если не включена
             if (t.task_type === 'one_time') {
-                isCompleted = !t.active;
+                isCompleted = !t.enabled;
             } else {
                 // Для повторяющихся и интервальных задач: выполнена если completed = true
                 isCompleted = t.completed === true;
@@ -772,7 +772,7 @@ async function loadData() {
                 task_type: t.task_type || 'one_time',
                 due_date: t.reminder_time,  // reminder_time теперь хранит дату выполнения
                 is_completed: isCompleted,
-                is_active: t.active,  // active заменяет is_active
+                is_enabled: t.enabled,  // enabled заменяет is_enabled
                 assigned_user_ids: Array.isArray(t.assigned_user_ids) ? t.assigned_user_ids.map(Number) : [],
                 assignees: Array.isArray(t.assignees) ? t.assignees : []
             };
@@ -1280,9 +1280,9 @@ function filterAndRenderTasks() {
             task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             (task.description && task.description.toLowerCase().includes(searchQuery.toLowerCase()));
         
-        const matchesFilter = filterState === null || 
-            (filterState === 'completed' && (task.is_completed || !task.is_active)) ||
-            (filterState === 'active' && !task.is_completed && task.is_active);
+        const matchesFilter = filterState === null ||
+            (filterState === 'completed' && (task.is_completed || !task.is_enabled)) ||
+            (filterState === 'active' && !task.is_completed && task.is_enabled);
 
         // Для "Сегодня" используем selectedUserId (из cookie), для "Все задачи" - allTasksUserFilterId (из UI, опционально)
         let userIdToFilter = null;
@@ -1562,9 +1562,9 @@ function renderTodayTaskItem(task, group, category) {
 function renderAllTasksView() {
     const container = document.getElementById('tasks-list');
 
-    // Разделяем активные и неактивные, далее группируем каждый набор по группам
-    const activeTasks = filteredTasks.filter(t => t.is_active);
-    const inactiveTasks = filteredTasks.filter(t => !t.is_active);
+    // Разделяем включенные и отключенные, далее группируем каждый набор по группам
+    const activeTasks = filteredTasks.filter(t => t.is_enabled);
+    const inactiveTasks = filteredTasks.filter(t => !t.is_enabled);
     const headerRow = renderAllTasksHeader();
 
     const activeByGroup = {};
@@ -1641,7 +1641,7 @@ function renderAllTasksView() {
             <div class="task-group">
                 <div class="task-group-bar">
                     <div class="task-group-caption">
-                        <span class="task-group-title-text">Неактивные</span>
+                        <span class="task-group-title-text">Отключенные</span>
                     </div>
                 </div>
                 <div class="task-group-items task-table">
@@ -1700,7 +1700,7 @@ function renderAllTasksHeader() {
  */
 function renderAllTasksCard(task, now) {
     const isCompleted = Boolean(task.is_completed);
-    const isActive = Boolean(task.is_active);
+    const isEnabled = Boolean(task.is_enabled);
     // Категоризация по тем же правилам, что и в Today view:
     // - overdue: reminder_time в предыдущий день (учитывая начало дня)
     // - current: сегодня (до текущего момента — current; после — planned, но по полосе — текущий день)
@@ -1715,9 +1715,9 @@ function renderAllTasksCard(task, now) {
     yesterdayStart.setDate(yesterdayStart.getDate() - 1);
     const category = getTaskTimeCategory(task, referenceDate, todayStart, yesterdayStart);
 
-    const statusText = isActive
-        ? (isCompleted ? 'Выполнена' : 'Активна')
-        : 'Выключена';
+    const statusText = isEnabled
+        ? (isCompleted ? 'Выполнена' : 'Включена')
+        : 'Отключена';
 
     const configText = task.readable_config || 'Не указано';
     const dueDateText = task.due_date ? formatDateTime(task.due_date) : '—';
@@ -1730,8 +1730,8 @@ function renderAllTasksCard(task, now) {
         isCompleted ? 'completed' : '',
         !isCompleted && isActive && category === 'overdue' ? 'overdue' : '',
         !isCompleted && isActive && category === 'current' ? 'current' : '',
-        !isCompleted && isActive && category === 'planned' ? 'planned' : '',
-        !isActive ? 'inactive' : '',
+        !isCompleted && isEnabled && category === 'planned' ? 'planned' : '',
+        !isEnabled ? 'inactive' : '',
     ].filter(Boolean).join(' ');
 
     return `
@@ -1748,7 +1748,7 @@ function renderAllTasksCard(task, now) {
             <div class="task-row-cell task-row-users">${assigneesHtml}</div>
             <div class="task-row-cell task-row-date">${dueDateText}</div>
             <div class="task-row-cell task-row-status">
-                <span class="status-indicator ${isCompleted ? 'status-completed' : isActive ? 'status-active' : 'status-inactive'}"></span>
+                <span class="status-indicator ${isCompleted ? 'status-completed' : isEnabled ? 'status-active' : 'status-inactive'}"></span>
                 <span>${statusText}</span>
             </div>
             <div class="task-row-cell task-row-actions">
@@ -2489,7 +2489,7 @@ function toggleTaskFilter() {
     }
     
     const btn = document.getElementById('tasks-filter-btn');
-    const labels = { null: 'Фильтры', active: 'Только активные', completed: 'Только выполненные' };
+    const labels = { null: 'Фильтры', active: 'Только включенные', completed: 'Только выполненные' };
     btn.textContent = labels[filterState];
     
     filterAndRenderTasks();

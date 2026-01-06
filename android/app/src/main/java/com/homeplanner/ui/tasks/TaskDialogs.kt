@@ -72,7 +72,7 @@ fun CreateTaskDialog(
                             intervalDays = null,
                             reminderTime = reminderTime,
                             groupId = null,
-                            active = true,
+                            enabled = true,
                             completed = false,
                             assignedUserIds = emptyList(),
                             updatedAt = System.currentTimeMillis(),

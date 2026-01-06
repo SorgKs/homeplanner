@@ -34,8 +34,7 @@ object BinaryLogEncoder {
         writeUnsignedShortLE(output, entry.messageCode.toInt())
 
         // 2. timestamp (3 байта, unsigned 24-bit, little-endian)
-        val relativeMillis: Long = (entry.timestamp - dayStartMillis).coerceAtLeast(0L)
-        val intervals: Long = (relativeMillis / 10L)
+        val intervals: Long = entry.timestamp
             .coerceAtMost(MAX_INTERVALS_PER_DAY - 1)
             .coerceAtMost(0xFFFFFFL)
         writeUnsigned24BitLE(output, intervals.toInt())
@@ -67,6 +66,7 @@ object BinaryLogEncoder {
         when (value) {
             is Int -> writeIntLE(output, value)
             is Long -> writeLongLE(output, value)
+            is Short -> writeUnsignedShortLE(output, value.toInt())  // file codes
             is Float -> writeIntLE(output, java.lang.Float.floatToIntBits(value))
             is Double -> writeLongLE(output, java.lang.Double.doubleToLongBits(value))
             is Boolean -> output.write(if (value) 1 else 0)

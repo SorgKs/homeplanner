@@ -23,7 +23,7 @@ object TaskUtils {
             put("interval_days", task.intervalDays)
             put("reminder_time", task.reminderTime)
             put("group_id", task.groupId)
-            put("active", task.active)
+            put("enabled", task.enabled)
             put("completed", task.completed)
             put("assigned_user_ids", org.json.JSONArray(task.assignedUserIds))
         }.toString()

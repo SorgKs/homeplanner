@@ -33,7 +33,7 @@ data class TaskCache(
     val intervalDays: Int?,
     val reminderTime: String,
     val groupId: Int?,
-    val active: Boolean,
+    val enabled: Boolean,
     val completed: Boolean,
     val assignedUserIds: String, // JSON array как строка
     
@@ -69,7 +69,7 @@ data class TaskCache(
             intervalDays = intervalDays,
             reminderTime = reminderTime,
             groupId = groupId,
-            active = active,
+            enabled = enabled,
             completed = completed,
             assignedUserIds = assignedIds,
             updatedAt = updatedAt,
@@ -93,7 +93,7 @@ data class TaskCache(
                 intervalDays = task.intervalDays,
                 reminderTime = task.reminderTime,
                 groupId = task.groupId,
-                active = task.active,
+                enabled = task.enabled,
                 completed = task.completed,
                 assignedUserIds = assignedIdsJson,
                 hasConflict = hasConflict,

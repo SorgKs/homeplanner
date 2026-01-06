@@ -254,7 +254,7 @@ class WebSocketService(
             if (cachedTask != null) {
                 val updatedTask = cachedTask.copy(
                     completed = task.completed,
-                    active = task.active,
+                    enabled = task.enabled,
                     reminderTime = task.reminderTime,
                     title = task.title
                 )
@@ -331,7 +331,7 @@ class WebSocketService(
     private fun parseTaskFromJson(json: JSONObject): Task {
         val reminderValue = json.optString("reminder_time", null)?.takeIf { it.isNotBlank() }
             ?: throw IllegalStateException("Отсутствует reminder_time в ответе сервера: $json")
-        val activeValue = if (json.isNull("active")) true else json.getBoolean("active")
+        val enabledValue = if (json.isNull("enabled")) true else json.getBoolean("enabled")
         val completedValue = if (json.isNull("completed")) false else json.getBoolean("completed")
         
         val assignedUserIds = mutableListOf<Int>()
@@ -352,7 +352,7 @@ class WebSocketService(
             intervalDays = if (json.isNull("interval_days")) null else json.getInt("interval_days"),
             reminderTime = reminderValue,
             groupId = if (json.isNull("group_id")) null else json.getInt("group_id"),
-            active = activeValue,
+            enabled = enabledValue,
             completed = completedValue,
             assignedUserIds = assignedUserIds,
             updatedAt = if (json.isNull("updated_at")) System.currentTimeMillis() else json.getLong("updated_at"),
@@ -369,7 +369,7 @@ class WebSocketService(
         val digest = MessageDigest.getInstance("SHA-256")
         val sortedTasks = tasks.sortedBy { it.id }
         val data = sortedTasks.joinToString("|") { task ->
-            "${task.id}:${task.title}:${task.reminderTime}:${task.completed}:${task.active}"
+            "${task.id}:${task.title}:${task.reminderTime}:${task.completed}:${task.enabled}"
         }
         val hashBytes = digest.digest(data.toByteArray(Charsets.UTF_8))
         return hashBytes.joinToString("") { "%02x".format(it) }

@@ -5,6 +5,11 @@ import com.homeplanner.BuildConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.time.Duration
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZoneId
 
 /**
  * Утилита для бинарного логирования согласно спецификации LOGGING_FORMAT.md.
@@ -60,22 +65,39 @@ class BinaryLogger private constructor(
 
     /**
      * Записать лог.
-     * 
+     *
+     * Автоматически добавляет file (byte) и line (int) поля в конец контекста.
+     *
      * @param code Числовой код сообщения (UShort, 2 байта)
      * @param context Список значений контекста в порядке схемы (без ключей)
+     * @param fileCode Код файла (Byte, 1 байт)
      */
     fun log(
         code: UShort,
-        context: List<Any> = emptyList()
+        context: List<Any> = emptyList(),
+        fileCode: Byte
     ) {
         if (!BuildConfig.DEBUG) return
 
+        // Получить line из стека вызовов
+        val stackTrace = Thread.currentThread().stackTrace
+        val caller = stackTrace.getOrNull(4) // 4-й элемент - вызывающий метод (после log() -> getInstance() -> вызывающий)
+
+        val lineNumber = caller?.lineNumber ?: -1
+
+        // Добавить file и line в конец контекста
+        val fullContext = context + fileCode + lineNumber
+
+        val now = LocalDateTime.now()
+        val startOfDay = LocalDate.now().atStartOfDay()
+        val duration = Duration.between(startOfDay, now)
+        val intervals = duration.toMillis() / 10
         val entry = BinaryLogEntry(
-            timestamp = System.currentTimeMillis(),
+            timestamp = intervals,
             level = LogLevel.INFO,
             tag = "",
             messageCode = code,
-            context = context
+            context = fullContext
         )
 
         // Пишем запись в компактный бинарный файл (чанк текущего дня).
@@ -83,6 +105,8 @@ class BinaryLogger private constructor(
             binaryStorage.append(entry)
         }
     }
+
+
 
     /**
      * Внутреннее завершение работы логгера:

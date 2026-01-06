@@ -79,7 +79,7 @@ class TaskSyncManager(
         val digest = MessageDigest.getInstance("SHA-256")
         val sortedTasks = tasks.sortedBy { it.id }
         val data = sortedTasks.joinToString("|") { task ->
-            "${task.id}:${task.title}:${task.reminderTime}:${task.completed}:${task.active}"
+            "${task.id}:${task.title}:${task.reminderTime}:${task.completed}:${task.enabled}"
         }
         val hashBytes = digest.digest(data.toByteArray(Charsets.UTF_8))
         return hashBytes.joinToString("") { "%02x".format(it) }
@@ -88,7 +88,7 @@ class TaskSyncManager(
     suspend fun syncGroupsAndUsersServer(): Result<Unit> = runCatching {
         // Синхронизация пользователей с сервера
         try {
-            val usersServerApi = UsersServerApi(baseUrl = serverApi.baseUrl)
+            val usersServerApi = UsersServerApi()
             val serverUsers = usersServerApi.getUsers()
             val userModels = serverUsers.map { summary ->
                 com.homeplanner.model.User(
@@ -105,7 +105,7 @@ class TaskSyncManager(
 
         // Синхронизация групп с сервера
         try {
-            val groupsServerApi = GroupsServerApi(baseUrl = serverApi.baseUrl)
+            val groupsServerApi = GroupsServerApi()
             val serverGroups = groupsServerApi.getGroupsServer().getOrThrow()
 
             offlineRepository.saveGroupsToCache(serverGroups)

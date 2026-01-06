@@ -147,19 +147,23 @@ class ChunkSender private constructor(
             try {
                 // Ожидание интервала отправки
                 delay(SEND_INTERVAL_MS)
-                
+
                 // Завершаем текущий активный чанк, если в нем есть записи
                 if (storage.hasEntriesInCurrentChunk()) {
                     storage.closeCurrentChunk()
                 }
-                
+
                 // Обновить список завершённых чанков
                 updatePendingChunks()
-                
+
+                // Лог статуса перед отправкой
+                android.util.Log.d("ChunkSender", "sendChunksLoop: pendingChunks.size = ${pendingChunks.size}, currentChunkId = ${storage.getCurrentChunkId()}")
+
                 // Отправить следующий чанк
                 sendNextChunk()
             } catch (e: Exception) {
                 // Не логируем ошибки, чтобы не зациклиться
+                android.util.Log.e("ChunkSender", "sendChunksLoop: exception = $e")
             }
         }
     }
@@ -208,10 +212,13 @@ class ChunkSender private constructor(
     private suspend fun sendNextChunk() {
         // Обновляем время последней попытки отправки
         lastSendAttemptTime = System.currentTimeMillis()
-        
+
+        android.util.Log.d("ChunkSender", "sendNextChunk: attempt at $lastSendAttemptTime")
+
         if (pendingChunks.isEmpty()) {
             lastSendResult = "NO_CHUNKS"
             lastSendChunkId = null
+            android.util.Log.d("ChunkSender", "sendNextChunk: no pending chunks")
             return
         }
 
@@ -219,9 +226,13 @@ class ChunkSender private constructor(
         val (file, chunkId) = pendingChunks.first()
         lastSendChunkId = chunkId
 
+        android.util.Log.d("ChunkSender", "sendNextChunk: sending chunk $chunkId, file exists = ${file.exists()}, file size = ${file.length()}")
+
         try {
             val result = sendChunkToServer(file, chunkId)
-            
+
+            android.util.Log.d("ChunkSender", "sendNextChunk: result = $result for chunk $chunkId")
+
             when (result) {
                 ChunkSendResult.ACK -> {
                     // Успешно отправлено - удаляем файл и чанк из очереди
@@ -248,7 +259,7 @@ class ChunkSender private constructor(
             }
         } catch (e: Exception) {
             lastSendResult = "ERROR"
-            // Не логируем ошибки, чтобы не зациклиться
+            android.util.Log.e("ChunkSender", "sendNextChunk: exception = $e")
         }
     }
 

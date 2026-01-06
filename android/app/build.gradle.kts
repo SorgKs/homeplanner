@@ -203,8 +203,13 @@ android {
         buildConfigField("String", "VERSION_NAME", "\"$versionNameStr\"")
     }
 
+    signingConfigs {
+        // Use debug signing for release to allow installation on devices
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.getByName("debug")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

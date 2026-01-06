@@ -61,14 +61,14 @@ class BinaryLogStorage(
      */
     @Synchronized
     fun append(entry: BinaryLogEntry) {
-        val entryInstant = Instant.ofEpochMilli(entry.timestamp)
-        val entryDate = entryInstant.atZone(zoneId).toLocalDate()
+        // Используем текущую дату для упрощения
+        val entryDate = LocalDate.now(zoneId)
 
         if (currentDate != entryDate || currentStream == null) {
             openChunkForDate(entryDate)
         }
 
-        val dayStartMillis = entryDate.atStartOfDay(zoneId).toInstant().toEpochMilli()
+        val dayStartMillis = entryDate.atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()
         val encoded = BinaryLogEncoder.encodeEntry(entry, dayStartMillis)
 
         try {

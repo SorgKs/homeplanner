@@ -118,7 +118,7 @@ class RecurringTaskUpdater(
                         // Завершённые one_time становятся неактивными, дата не меняется
                         updatedTasks.add(
                             task.copy(
-                                active = false,
+                                enabled = false,
                                 // completed остаётся true — как и на сервере перед "уходом" задачи
                             )
                         )

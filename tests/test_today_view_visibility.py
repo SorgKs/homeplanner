@@ -30,18 +30,18 @@ def should_be_visible_in_today_view(task: dict, current_date: datetime) -> bool:
     is_due_today_or_overdue = reminder_day <= today
 
     task_type = task.get("task_type", "one_time")
-    is_active = task.get("active", True)
+    is_enabled = task.get("enabled", True)
     is_completed = task.get("completed", False)
 
     if task_type == "one_time":
-        if not is_active:
+        if not is_enabled:
             return is_due_today
         return is_due_today_or_overdue
 
     if is_completed:
         return True
 
-    return is_active and is_due_today_or_overdue
+    return is_enabled and is_due_today_or_overdue
 
 
 def create_task(
@@ -49,7 +49,7 @@ def create_task(
     reminder_time: datetime,
     *,
     completed: bool = False,
-    active: bool = True,
+    enabled: bool = True,
 ) -> dict:
     """Create task payload matching frontend filter expectations."""
 
@@ -59,7 +59,7 @@ def create_task(
         "task_type": task_type,
         "reminder_time": reminder_time,
         "completed": completed,
-        "active": active,
+        "enabled": enabled,
     }
 
 
@@ -77,7 +77,7 @@ class TestTodayViewVisibility:
         overdue_task = create_task("one_time", overdue)
         today_task = create_task("one_time", today)
         tomorrow_task = create_task("one_time", tomorrow)
-        completed_today = create_task("one_time", today, completed=True, active=False)
+        completed_today = create_task("one_time", today, completed=True, enabled=False)
 
         assert should_be_visible_in_today_view(overdue_task, current_date)
         assert should_be_visible_in_today_view(today_task, current_date)
@@ -95,12 +95,12 @@ class TestTodayViewVisibility:
         overdue_task = create_task("recurring", overdue)
         today_task = create_task("recurring", today)
         tomorrow_task = create_task("recurring", tomorrow)
-        inactive_task = create_task("recurring", today, active=False)
+        disabled_task = create_task("recurring", today, enabled=False)
 
         assert should_be_visible_in_today_view(overdue_task, current_date)
         assert should_be_visible_in_today_view(today_task, current_date)
         assert not should_be_visible_in_today_view(tomorrow_task, current_date)
-        assert not should_be_visible_in_today_view(inactive_task, current_date)
+        assert not should_be_visible_in_today_view(disabled_task, current_date)
 
     def test_completed_recurring_task_visible(self) -> None:
         """Выполненная повторяющаяся задача остаётся видимой для подтверждения."""
@@ -112,7 +112,7 @@ class TestTodayViewVisibility:
             "interval",
             next_iteration,
             completed=True,
-            active=True,
+            enabled=True,
         )
 
         assert should_be_visible_in_today_view(completed_task, current_date)

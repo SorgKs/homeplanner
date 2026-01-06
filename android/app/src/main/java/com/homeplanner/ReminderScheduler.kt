@@ -47,7 +47,7 @@ object ReminderScheduler {
     }
 
     private fun shouldScheduleNotification(task: Task): Boolean {
-        return task.active && !task.completed
+        return task.enabled && !task.completed
     }
 }
 

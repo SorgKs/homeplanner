@@ -6,7 +6,7 @@ package com.homeplanner.debug
  * Соответствует спецификации из LOGGING_FORMAT.md.
  */
 data class BinaryLogEntry(
-    val timestamp: Long,           // Время записи лога (Unix timestamp в миллисекундах)
+    val timestamp: Long,           // Время записи лога (число 10мс интервалов от начала дня)
     val level: LogLevel,           // Уровень логирования
     val tag: String,               // Тег компонента (например, "SyncService", "LocalApi")
     val messageCode: UShort,       // Числовой код сообщения (2 байта)

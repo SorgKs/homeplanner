@@ -139,7 +139,8 @@ class LogCleanupManager private constructor(
                 // Очистка старых логов
                 logger?.log(
                     60u,
-                    emptyList()
+                    emptyList(),
+                    0
                 )
             }
         } catch (e: Exception) {

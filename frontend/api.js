@@ -121,9 +121,9 @@ const eventsAPI = {
  * Tasks API
  */
 const tasksAPI = {
-    async getAll(activeOnly = false, daysAhead = null) {
+    async getAll(enabledOnly = false, daysAhead = null) {
         const params = new URLSearchParams();
-        if (activeOnly) params.append('active_only', 'true');
+        if (enabledOnly) params.append('enabled_only', 'true');
         if (daysAhead) params.append('days_ahead', daysAhead);
         const queryString = params.toString();
         const url = `${API_BASE_URL}/tasks/${queryString ? '?' + queryString : ''}`;

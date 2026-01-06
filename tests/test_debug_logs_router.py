@@ -401,11 +401,15 @@ def test_binary_chunk_decoder() -> None:
     stream.write(struct.pack("<Q", 12345))  # Chunk ID (uint64)
 
     # Write a log entry (message code 1 = SYNC_START)
-    # Write context: queueSize as int (4 bytes)
-    context_value = 5  # Примерное значение queueSize
+    # Write context: cache_size as int (4 bytes), then file (1 byte), line (4 bytes)
+    context_value = 5  # cache_size
+    file_code = 1
+    line_number = 123
     stream.write(struct.pack("<H", 1))  # Message code
     stream.write(struct.pack("<I", 0)[:3])  # Timestamp
-    stream.write(struct.pack("<i", context_value))  # Контекст для SYNC_START
+    stream.write(struct.pack("<i", context_value))  # cache_size
+    stream.write(struct.pack("<B", file_code))  # file_code
+    stream.write(struct.pack("<i", line_number))  # line_number
 
     # Get binary data
     binary_data = stream.getvalue()

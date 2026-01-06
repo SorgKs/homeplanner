@@ -41,7 +41,7 @@ class TaskUpdate(BaseModel):
     recurrence_interval: int | None = Field(None, description="Recurrence interval (for recurring tasks only)")
     interval_days: int | None = Field(None, description="Interval in days (for interval tasks only)")
     reminder_time: datetime | None = None
-    active: bool | None = None  # Task is active (replaces is_active)
+    enabled: bool | None = None  # Task is enabled (replaces active)
     completed: bool | None = None  # Task is completed (replaces last_completed_at)
     last_shown_at: datetime | None = None
     group_id: int | None = None
@@ -92,7 +92,7 @@ class TaskResponse(TaskBase):
     """Schema for task response."""
 
     id: int
-    active: bool  # Task is active (replaces is_active)
+    enabled: bool  # Task is enabled (replaces active)
     completed: bool  # Task is completed (replaces last_completed_at)
     task_type: TaskType
     group_id: int | None

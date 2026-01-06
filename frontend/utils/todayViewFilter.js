@@ -6,7 +6,7 @@
  * @param {Date|string|null} task.reminder_time - Task reminder datetime
  * @param {boolean} task.completed - Whether task is completed for current day
  * @param {string} task.task_type - Task type ('one_time', 'recurring', 'interval')
- * @param {boolean} task.active - Whether task is active
+ * @param {boolean} task.enabled - Whether task is enabled
  * @param {Date} currentDate - Current date for comparison
  * @returns {boolean} True if task should be visible in 'today' view
  */
@@ -39,7 +39,7 @@ function shouldBeVisibleInTodayView(task, currentDate) {
     const isDueTodayOrOverdue = taskDateLocal.getTime() <= today.getTime();
 
     if (taskType === 'one_time') {
-        if (task.active === false) {
+        if (task.enabled === false) {
             return isDueToday;
         }
         return isDueTodayOrOverdue;
@@ -49,7 +49,7 @@ function shouldBeVisibleInTodayView(task, currentDate) {
         return true;
     }
 
-    return task.active !== false && isDueTodayOrOverdue;
+    return task.enabled !== false && isDueTodayOrOverdue;
 }
 
 // Export for use in Node.js tests

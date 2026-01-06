@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, Header
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Header, Response
 from sqlalchemy.orm import Session
 
 from backend.binary_chunk_decoder import BinaryChunkDecoder
@@ -226,6 +226,61 @@ def get_debug_logs(
     return result
 
 
+@router.get("/debug-logs/text")
+def get_debug_logs_text(
+    level: Optional[str] = Query(None, description="Filter by log level"),
+    tag: Optional[str] = Query(None, description="Filter by tag"),
+    device_id: Optional[str] = Query(None, description="Filter by device ID"),
+    query_text: Optional[str] = Query(None, alias="query", description="Search in text field (v2 format)"),
+    limit: int = Query(100, ge=1, le=1000, description="Maximum number of logs to return"),
+    hours: Optional[int] = Query(24, ge=1, le=168, description="Hours back to search"),
+    db: Session = Depends(get_db),
+) -> Response:
+    """Get debug logs as plain text (one message per line).
+
+    Returns logs in format: timestamp level device_id text
+    Ordered by timestamp (newest first).
+    """
+    query = db.query(DebugLog)
+
+    # Filter by level
+    if level:
+        query = query.filter(DebugLog.level == level.upper())
+
+    # Filter by tag
+    if tag:
+        query = query.filter(DebugLog.tag == tag)
+
+    # Filter by device_id
+    if device_id:
+        query = query.filter(DebugLog.device_id == device_id)
+
+    # Search in text field
+    if query_text:
+        query = query.filter(DebugLog.text.ilike(f"%{query_text}%"))
+
+    # Filter by time range
+    if hours:
+        cutoff_time = datetime.now() - timedelta(hours=hours)
+        query = query.filter(DebugLog.timestamp >= cutoff_time)
+
+    # Order by timestamp (newest first) and limit
+    logs = query.order_by(DebugLog.timestamp.desc()).limit(limit).all()
+
+    # Format as plain text
+    lines = []
+    for log in logs:
+        timestamp_str = log.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+        device = log.device_id or "unknown"
+        text = log.text or ""
+        line = f"{timestamp_str} {log.level} {device} {text}"
+        lines.append(line)
+
+    text_content = "\n".join(lines) + "\n"
+
+    return Response(content=text_content, media_type="text/plain")
+
+
 @router.get("/debug-logs/devices")
 def get_devices(
     db: Session = Depends(get_db),
@@ -321,8 +376,12 @@ async def receive_binary_chunk(
         decoder = BinaryChunkDecoder()
 
         # Try to decode chunk
+        header = None
+        entries = []
         try:
+            logger.debug("Starting decode_chunk for binary_data of length %d", len(binary_data))
             header, entries = decoder.decode_chunk(binary_data)
+            logger.debug("Decoded chunk successfully: header=%s, entries_count=%d", header, len(entries))
 
             # Extract device_id from header or use header value
             device_id = header.device_id or x_device_id
@@ -341,18 +400,35 @@ async def receive_binary_chunk(
             retry_count = _chunk_retry_tracker.get(retry_key, 0)
 
             # Save decoded logs to database
-            for entry in entries:
-                log_record = DebugLog(
-                    timestamp=entry.timestamp,
-                    level=entry.level,
-                    text=entry.text,
-                    chunk_id=chunk_id_str,
-                    device_id=device_id,
-                    dictionary_revision=f"{header.dictionary_revision_major}.{header.dictionary_revision_minor}",
-                )
-                db.add(log_record)
+            logger.debug("Starting to save %d entries to database", len(entries))
+            for i, entry in enumerate(entries):
+                try:
+                    timestamp_utc = entry.timestamp.replace(tzinfo=timezone.utc)
+                    logger.debug(
+                        "Saving log entry: original_timestamp=%s, timestamp_utc=%s, level=%s, text=%s",
+                        entry.timestamp,
+                        timestamp_utc,
+                        entry.level,
+                        entry.text[:100],  # Truncate text for logging
+                    )
+                    log_record = DebugLog(
+                        timestamp=timestamp_utc,
+                        level=entry.level,
+                        text=entry.text,
+                        chunk_id=chunk_id_str,
+                        device_id=device_id,
+                        dictionary_revision=f"{header.dictionary_revision_major}.{header.dictionary_revision_minor}",
+                    )
+                    db.add(log_record)
+                    if i % 10 == 0:  # Log every 10 entries
+                        logger.debug("Added entry %d/%d to session", i+1, len(entries))
+                except Exception as entry_error:
+                    logger.error("Failed to add entry %d to database: %s", i, entry_error, exc_info=True)
+                    raise
 
+            logger.debug("Committing %d entries to database", len(entries))
             db.commit()
+            logger.debug("Successfully committed entries to database")
 
             # Clear retry tracker for this chunk
             if retry_key in _chunk_retry_tracker:
@@ -367,9 +443,46 @@ async def receive_binary_chunk(
             return {"result": "ACK", "chunk_id": chunk_id_str}
 
         except ValueError as e:
-            # Любая ошибка декодирования = чанк считаем битым.
+            logger.error("ValueError during chunk decoding: %s", e, exc_info=True)
+
+            # If we have partially decoded entries, save them and continue
+            if entries:
+                logger.warning("Partially decoded chunk with %d entries, saving them", len(entries))
+                try:
+                    # Extract device_id from header or use header value
+                    device_id = header.device_id or x_device_id or "unknown"
+                    chunk_id_str = str(header.chunk_id) if header and header.chunk_id else x_chunk_id or "unknown"
+
+                    # Save decoded logs to database
+                    for entry in entries:
+                        log_record = DebugLog(
+                            timestamp=entry.timestamp.replace(tzinfo=timezone.utc),
+                            level=entry.level,
+                            text=entry.text,
+                            chunk_id=chunk_id_str,
+                            device_id=device_id,
+                            dictionary_revision=f"{header.dictionary_revision_major}.{header.dictionary_revision_minor}" if header else "1.0",
+                        )
+                        db.add(log_record)
+
+                    db.commit()
+                    logger.info("Saved %d partially decoded entries from chunk %s (device: %s)", len(entries), chunk_id_str, device_id)
+
+                    # Clear retry tracker
+                    retry_key = (device_id, chunk_id_str)
+                    if retry_key in _chunk_retry_tracker:
+                        del _chunk_retry_tracker[retry_key]
+
+                    return {"result": "ACK", "chunk_id": chunk_id_str, "partial": True}
+
+                except Exception as save_error:
+                    logger.error("Failed to save partial entries: %s", save_error, exc_info=True)
+                    db.rollback()
+                    # Fall through to bad chunk handling
+
+            # No partial entries or failed to save - treat as bad chunk
             chunk_id_for_error = x_chunk_id or "unknown"
-            device_id_for_error = x_device_id or header.device_id or "unknown"
+            device_id_for_error = x_device_id or (header.device_id if header else None) or "unknown"
             retry_key = (device_id_for_error, chunk_id_for_error)
 
             # Сохраняем чанк и пишем детальный лог с результатом расшифровки.
@@ -400,6 +513,7 @@ async def receive_binary_chunk(
             }
 
     except Exception as e:  # noqa: BLE001
+        logger.error("Unexpected error in receive_binary_chunk: %s", e, exc_info=True)
         db.rollback()
 
         # Любая неожиданная ошибка также считается признаком битого чанка.

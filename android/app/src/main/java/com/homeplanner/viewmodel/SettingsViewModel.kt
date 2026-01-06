@@ -10,6 +10,7 @@ import com.homeplanner.database.AppDatabase
 import com.homeplanner.debug.BinaryLogger
 import com.homeplanner.model.User
 import com.homeplanner.repository.OfflineRepository
+import com.homeplanner.repository.TaskCacheRepository
 import com.homeplanner.utils.TaskDateCalculator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
@@ -20,7 +21,9 @@ data class SettingsState(
     val users: List<User> = emptyList(),
     val isUsersLoading: Boolean = false,
     val selectedUser: SelectedUser? = null,
-    val networkConfig: NetworkConfig? = null
+    val networkConfig: NetworkConfig? = null,
+    val tasksCount: Int = 0,
+    val debugMessagesCount: Int = 0
 )
 
 class SettingsViewModel(
@@ -29,6 +32,9 @@ class SettingsViewModel(
     private val networkSettings: NetworkSettings,
     private val userSettings: UserSettings
 ) : AndroidViewModel(application) {
+
+    private val db = AppDatabase.getDatabase(application)
+    private val taskCacheRepository = TaskCacheRepository(db)
 
     private val _state = MutableStateFlow(SettingsState())
     val state: StateFlow<SettingsState> = _state.asStateFlow()
@@ -44,6 +50,7 @@ class SettingsViewModel(
             updateState(_state.value.copy(networkConfig = networkConfig))
 
             loadUsersFromCache()
+            loadDebugStats()
         }
 
         // Refresh from server when network config changes
@@ -70,6 +77,18 @@ class SettingsViewModel(
         }
     }
 
+    private suspend fun loadDebugStats() {
+        try {
+            val tasksCount = withContext(Dispatchers.IO) {
+                taskCacheRepository.getCachedTasksCount()
+            }
+            val debugCount = BinaryLogger.getStorage()?.getChunksStats()?.first ?: 0
+            updateState(_state.value.copy(tasksCount = tasksCount, debugMessagesCount = debugCount))
+        } catch (e: Exception) {
+            android.util.Log.e("SettingsViewModel", "Error loading debug stats", e)
+        }
+    }
+
     fun refreshUsersFromServer() {
         viewModelScope.launch {
             updateState(_state.value.copy(isUsersLoading = true))
@@ -91,11 +110,13 @@ class SettingsViewModel(
         val apiBaseUrl = networkConfig.toApiBaseUrl()
         val api = UsersServerApi(baseUrl = apiBaseUrl)
 
-        BinaryLogger.getInstance()?.log(400u, emptyList())
+        // syncCacheWithServer: вызов загрузки пользователей с сервера
+        BinaryLogger.getInstance()?.log(400u, emptyList<Any>(), 47)
         val fetchedSummaries = withContext(Dispatchers.IO) {
             api.getUsers()
         }
-        BinaryLogger.getInstance()?.log(401u, listOf(fetchedSummaries.size))
+        // syncCacheWithServer: получен ответ от сервера с пользователями
+        BinaryLogger.getInstance()?.log(401u, listOf<Any>(fetchedSummaries.size), 47)
 
         val fetchedUsers = fetchedSummaries.map { summary ->
             User(id = summary.id, name = summary.name)
@@ -106,7 +127,8 @@ class SettingsViewModel(
         withContext(Dispatchers.IO) {
             offlineRepository.saveUsersToCache(fetchedUsers)
         }
-        BinaryLogger.getInstance()?.log(402u, listOf(fetchedUsers.size))
+        // syncCacheWithServer: пользователи сохранены в локальный кеш
+        BinaryLogger.getInstance()?.log(402u, listOf<Any>(fetchedUsers.size), 47)
     }
 
     fun clearSelectedUser() {

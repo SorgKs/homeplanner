@@ -25,30 +25,29 @@ class TaskCacheRepository(
     suspend fun saveTasksToCache(tasks: List<Task>): Result<Unit> {
         return try {
             // saveTasksToCache: [STEP 1] Начало сохранения задач в кэш
-            BinaryLogger.getInstance()?.log(314u, listOf(tasks.size))
+            BinaryLogger.getInstance()?.log(314u, listOf<Any>(tasks.size, 59), 59)
             val cacheTasks = tasks.map { TaskCache.fromTask(it) }
             // saveTasksToCache: [STEP 2] Задачи преобразованы в TaskCache
-            BinaryLogger.getInstance()?.log(315u, listOf(cacheTasks.size))
+            BinaryLogger.getInstance()?.log(315u, listOf<Any>(cacheTasks.size, 59), 59)
             taskCacheDao.insertTasks(cacheTasks)
             // saveTasksToCache: [STEP 3] Задачи вставлены в базу данных
-            BinaryLogger.getInstance()?.log(316u, listOf(cacheTasks.size))
+            BinaryLogger.getInstance()?.log(316u, listOf<Any>(cacheTasks.size, 59), 59)
 
             // Обновление lastAccessed для сохраненных задач
             tasks.forEach { task ->
                 taskCacheDao.updateLastAccessed(task.id)
             }
             // saveTasksToCache: [STEP 4] Обновлен lastAccessed для всех задач
-            BinaryLogger.getInstance()?.log(317u, listOf(tasks.size))
+            BinaryLogger.getInstance()?.log(317u, listOf<Any>(tasks.size, 59), 59)
 
             cleanupOldCache()
             // saveTasksToCache: [STEP 5] Успешно сохранено задач в кэш
-            BinaryLogger.getInstance()?.log(318u, listOf(tasks.size))
+            BinaryLogger.getInstance()?.log(318u, listOf<Any>(tasks.size, 59), 59)
             Result.success(Unit)
         } catch (e: Exception) {
             // saveTasksToCache: [ERROR] Ошибка сохранения задач в кэш: %wait%, %fact%
             BinaryLogger.getInstance()?.log(
-                91u,
-                listOf(e.message ?: "Unknown error", e::class.simpleName ?: "Unknown")
+                91u, listOf<Any>(e.message ?: "Unknown error",e::class.simpleName ?: "Unknown", 59), 59
             )
             Result.failure(e)
         }
@@ -60,6 +59,9 @@ class TaskCacheRepository(
             // Используем Flow.first() для получения первого значения
             val allCacheTasks = taskCacheDao.getAllTasks().first()
             Log.d(TAG, "loadTasksFromCache: loaded ${allCacheTasks.size} tasks from database")
+            // DEBUG: Проверяем количество задач в базе
+            val taskCount = taskCacheDao.getTaskCount()
+            Log.d(TAG, "loadTasksFromCache: total task count in DB: $taskCount")
 
             // Обновление lastAccessed для загруженных задач
             allCacheTasks.forEach { taskCache ->

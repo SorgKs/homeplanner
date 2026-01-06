@@ -54,7 +54,7 @@ class GroupsAndUsersCacheRepository(
                 jsonArray.put(obj)
             }
             prefs.edit().putString("cached_users", jsonArray.toString()).apply()
-            // BinaryLogger.getInstance()?.log(408u, listOf(users.size)) // Можно добавить если нужно
+            // BinaryLogger.getInstance()?.log(408u, listOf<Any>(users.size, 20), 20) // Можно добавить если нужно
         } catch (e: Exception) {
             Log.e(TAG, "Error saving users to cache", e)
         }

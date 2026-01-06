@@ -10,7 +10,7 @@ data class Task(
     val intervalDays: Int?,
     val reminderTime: String,
     val groupId: Int?,
-    val active: Boolean,
+    val enabled: Boolean,
     val completed: Boolean,
     val assignedUserIds: List<Int>,
     val updatedAt: Long,

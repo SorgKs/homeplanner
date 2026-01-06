@@ -103,7 +103,7 @@ def create_task(
 @router.get("/", response_model=list[TaskResponse])
 def get_tasks(
     request: Request,
-    active_only: bool = Query(False, description="Filter only active tasks"),
+    enabled_only: bool = Query(False, description="Filter only enabled tasks"),
     days_ahead: int | None = Query(None, ge=1, description="Get tasks due in next N days"),
     db: Session = Depends(get_db),
 ) -> list[TaskResponse]:
@@ -111,23 +111,34 @@ def get_tasks(
 
     Supported filters:
     - days_ahead: предстоящие задачи за N дней
-    - active_only: только активные
+    - enabled_only: только включенные
 
     Note: Для получения задач на сегодня используйте GET /tasks/today/ids
     """
     client_ip = request.client.host if request.client else "unknown"
     selected_user_id = _resolve_selected_user_id(request)
-    logger.info("get_tasks: [SERVER STEP 1] Request received from %s, active_only=%s, days_ahead=%s, selected_user_id=%s",
-                client_ip, active_only, days_ahead, selected_user_id)
+    logger.info("HTTP REQUEST: get_tasks called from %s, enabled_only=%s, days_ahead=%s, selected_user_id=%s",
+                client_ip, enabled_only, days_ahead, selected_user_id)
+    logger.info("get_tasks: [SERVER STEP 1] Request received from %s, enabled_only=%s, days_ahead=%s, selected_user_id=%s",
+                client_ip, enabled_only, days_ahead, selected_user_id)
 
     try:
         if days_ahead:
             tasks = TaskService.get_upcoming_tasks(db, days_ahead=days_ahead)
         else:
-            tasks = TaskService.get_all_tasks(db, active_only=active_only)
+            tasks = TaskService.get_all_tasks(db, enabled_only=enabled_only)
 
         logger.info("get_tasks: [SERVER STEP 2] Found %d tasks in database", len(tasks))
-        result = [TaskResponse.model_validate(task) for task in tasks]
+        for i, task in enumerate(tasks[:3]):  # Log first 3 tasks
+            logger.info("get_tasks: [TASK %d] id=%s, title='%s', enabled=%s, task_type=%s", i+1, task.id, task.title, task.enabled, task.task_type)
+        result = []
+        for task in tasks:
+            try:
+                task_response = TaskResponse.model_validate(task)
+                result.append(task_response)
+            except Exception as e:
+                logger.error("get_tasks: [VALIDATION ERROR] Failed to validate task id=%s: %s", task.id, e)
+                raise
         logger.info("get_tasks: [SERVER STEP 3] Returning %d tasks to client", len(result))
         # Commit to avoid ROLLBACK in logs for read-only operations
         db.commit()
@@ -142,11 +153,15 @@ def get_today_tasks_view(
     db: Session = Depends(get_db),
 ) -> list[TaskResponse]:
     """Return tasks for the 'today' list filtered by selected user from cookie."""
+    client_ip = request.client.host if request.client else "unknown"
     selected_user_id = _resolve_selected_user_id(request)
+    logger.info("HTTP REQUEST: get_today_tasks_view called from %s, selected_user_id=%s", client_ip, selected_user_id)
     if selected_user_id is None:
+        logger.info("HTTP REQUEST: get_today_tasks_view returning [] because selected_user_id is None")
         return []
-    
+
     tasks = TaskService.get_today_tasks(db, user_id=selected_user_id)
+    logger.info("HTTP REQUEST: get_today_tasks_view returning %d tasks for user %s", len(tasks), selected_user_id)
     return [TaskResponse.model_validate(task) for task in tasks]
 
 
@@ -156,17 +171,22 @@ def get_today_task_ids(
     db: Session = Depends(get_db),
 ) -> list[int]:
     """Get identifiers of tasks visible in 'today' view.
-    
+
     Returns only array of task IDs (not full objects).
     Cookie 'hp.selectedUserId' with current user ID is required.
     Returns only tasks assigned to the specified user.
     If cookie is missing or invalid, returns empty array [].
     """
+    client_ip = request.client.host if request.client else "unknown"
     selected_user_id = _resolve_selected_user_id(request)
+    logger.info("HTTP REQUEST: get_today_task_ids called from %s, selected_user_id=%s", client_ip, selected_user_id)
     if selected_user_id is None:
+        logger.info("HTTP REQUEST: get_today_task_ids returning [] because selected_user_id is None")
         return []
-    
-    return TaskService.get_today_task_ids(db, user_id=selected_user_id)
+
+    task_ids = TaskService.get_today_task_ids(db, user_id=selected_user_id)
+    logger.info("HTTP REQUEST: get_today_task_ids returning %d task IDs for user %s", len(task_ids), selected_user_id)
+    return task_ids
 
 
 @router.post("/sync-queue", response_model=list[TaskResponse])
@@ -179,13 +199,14 @@ def sync_task_queue(
     Ожидает массив операций (create/update/delete/complete/uncomplete) с timestamp.
     Операции сортируются по времени и применяются последовательно.
     Перед началом обработки выполняется возможный пересчёт задач по новому дню.
-    
+
     Конфликты разрешаются на сервере по времени обновления (updated_at):
     - Если серверная версия задачи новее, чем timestamp операции → операция пропускается
     - Сервер сам решает, какие операции применить, а какие пропустить
     - После обработки всех операций возвращается актуальное состояние всех задач
     - Сервер является источником истины для всех данных
     """
+    logger.info("HTTP REQUEST: sync-queue called with %s operations", len(payload.operations))
     logger.info("HTTP sync-queue: %s operations", len(payload.operations))
 
     # Возможный пересчёт по новому дню единым местом

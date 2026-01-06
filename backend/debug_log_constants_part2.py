@@ -1,6 +1,6 @@
-"""Dictionary of log message codes for decoding binary logs.
+"""Dictionary of log message codes for decoding binary logs - Part 2.
 
-This dictionary maps message codes to their text descriptions.
+This module contains the second part of log message constants.
 Used for decoding logs received from Android clients.
 
 Version: 1.0 (matches DictionaryRevision(1, 0) in Android app)
@@ -8,178 +8,10 @@ Version: 1.0 (matches DictionaryRevision(1, 0) in Android app)
 
 from typing import Dict
 
-# Dictionary of message codes to descriptions
+# Dictionary of message codes to descriptions - Part 2 (codes 200-408)
 # Format: numeric_code -> {"template": str, "level": str, "context_schema": list}
 # Version 1.0 of the dictionary
-LOG_MESSAGE_DICTIONARY: Dict[int, Dict[str, any]] = {
-    # Синхронизация (коды 1-9)
-    1: {
-        "template": "Синхронизация начата",
-        "level": "INFO",
-        "context_schema": [
-            {"name": "cache_size", "type": "int"}
-        ]
-    },
-    2: {
-        "template": "Синхронизация успешно завершена",
-        "level": "INFO",
-        "context_schema": [
-            {"name": "server_tasks", "type": "int"},
-            {"name": "groups", "type": "int"},
-            {"name": "users", "type": "int"}
-        ]
-    },
-    3: {
-        "template": "Ошибка синхронизации: проблемы с сетью",
-        "level": "ERROR",
-        "context_schema": [
-            {"name": "error", "type": "string"}
-        ]
-    },
-    4: {
-        "template": "Ошибка синхронизации: ошибка сервера 500",
-        "level": "ERROR",
-        "context_schema": []
-    },
-    5: {
-        "template": "Ошибка синхронизации: сервис недоступен 503",
-        "level": "ERROR",
-        "context_schema": []
-    },
-    6: {
-        "template": "Ошибка синхронизации: конфликт 409",
-        "level": "ERROR",
-        "context_schema": []
-    },
-    7: {
-        "template": "Ошибка синхронизации: ошибка валидации 400",
-        "level": "ERROR",
-        "context_schema": []
-    },
-    8: {
-        "template": "Ошибка синхронизации: ошибка авторизации 401",
-        "level": "ERROR",
-        "context_schema": []
-    },
-    9: {
-        "template": "Ошибка синхронизации: доступ запрещен 403",
-        "level": "ERROR",
-        "context_schema": []
-    },
-    
-    # Подключение (коды 10-12)
-    10: {
-        "template": "Соединение установлено",
-        "level": "INFO",
-        "context_schema": []
-    },
-    11: {
-        "template": "Соединение потеряно",
-        "level": "WARN",
-        "context_schema": [
-            {"name": "failures", "type": "int"}
-        ]
-    },
-    12: {
-        "template": "Соединение деградировало",
-        "level": "WARN",
-        "context_schema": [
-            {"name": "failures", "type": "int"}
-        ]
-    },
-    
-    # Задачи (коды 20-25)
-    20: {
-        "template": "Создана задача",
-        "level": "INFO",
-        "context_schema": [
-            {"name": "task_id", "type": "int"},
-            {"name": "title", "type": "string"}
-        ]
-    },
-    21: {
-        "template": "Задача обновлена",
-        "level": "INFO",
-        "context_schema": [
-            {"name": "task_id", "type": "int"},
-            {"name": "title", "type": "string"}
-        ]
-    },
-    22: {
-        "template": "Задача выполнена",
-        "level": "INFO",
-        "context_schema": [
-            {"name": "task_id", "type": "int"},
-            {"name": "title", "type": "string"}
-        ]
-    },
-    23: {
-        "template": "Задача удалена",
-        "level": "INFO",
-        "context_schema": [
-            {"name": "task_id", "type": "int"}
-        ]
-    },
-    24: {
-        "template": "Выполнение задачи отменено",
-        "level": "INFO",
-        "context_schema": [
-            {"name": "task_id", "type": "int"}
-        ]
-    },
-    
-    # Очередь (коды 30-32)
-    30: {
-        "template": "Операция добавлена в очередь",
-        "level": "DEBUG",
-        "context_schema": []
-    },
-    31: {
-        "template": "Очередь очищена",
-        "level": "INFO",
-        "context_schema": []
-    },
-    32: {
-        "template": "Размер очереди",
-        "level": "DEBUG",
-        "context_schema": []
-    },
-    
-    # Состояние (коды 40-42)
-    40: {
-        "template": "Очередь синхронизации пуста",
-        "level": "DEBUG",
-        "context_schema": []
-    },
-    41: {
-        "template": "Кэш обновлен после синхронизации",
-        "level": "INFO",
-        "context_schema": [
-            {"name": "tasks_count", "type": "int"},
-            {"name": "source", "type": "string"},
-            {"name": "queue_items", "type": "int"}
-        ]
-    },
-    
-    # Инциденты (коды 50-51)
-    50: {
-        "template": "Инциденты отправлены на сервер",
-        "level": "INFO",
-        "context_schema": []
-    },
-    51: {
-        "template": "Ошибка отправки инцидентов на сервер",
-        "level": "ERROR",
-        "context_schema": []
-    },
-    
-    # Очистка (коды 60-61)
-    60: {
-        "template": "Очистка старых логов",
-        "level": "INFO",
-        "context_schema": []
-    },
-    
+LOG_MESSAGE_DICTIONARY_PART2: Dict[int, Dict[str, any]] = {
     # API операции (коды 200-299)
     200: {
         "template": "Загружены задачи из кэша",
@@ -262,7 +94,7 @@ LOG_MESSAGE_DICTIONARY: Dict[int, Dict[str, any]] = {
             {"name": "task_id", "type": "int"}
         ]
     },
-    
+
     # Синхронизация детальная (коды 300-399)
     300: {
         "template": "syncStateBeforeRecalculation: синхронизация ожидающих операций",
@@ -369,39 +201,17 @@ LOG_MESSAGE_DICTIONARY: Dict[int, Dict[str, any]] = {
             {"name": "saved_count", "type": "int"}
         ]
     },
-    
-    # Общие ошибки (коды 90-91)
-    90: {
-        "template": "Неизвестная ошибка",
-        "level": "ERROR",
-        "context_schema": []
-    },
-    91: {
-        "template": "Исключение: ожидалось %wait%, фактически %fact%",
-        "level": "ERROR",
-        "context_schema": [
-            {"name": "wait", "type": "string"},
-            {"name": "fact", "type": "string"}
-        ]
-    },
-    
-    # Общие события (коды 100-102)
-    100: {
-        "template": "Приложение запущено",
-        "level": "INFO",
-        "context_schema": []
-    },
-    101: {
-        "template": "Приложение остановлено",
-        "level": "INFO",
-        "context_schema": []
-    },
-    102: {
-        "template": "Обновление интерфейса",
+    319: {
+        "template": "syncCacheWithServer: загрузка задач с сервера для полной синхронизации",
         "level": "DEBUG",
         "context_schema": []
     },
-    
+    320: {
+        "template": "syncCacheWithServer: хеши совпадают, кэш не обновлен",
+        "level": "DEBUG",
+        "context_schema": []
+    },
+
     # Пользователи (коды 400-408)
     400: {
         "template": "syncCacheWithServer: вызов загрузки пользователей с сервера",
@@ -465,53 +275,4 @@ LOG_MESSAGE_DICTIONARY: Dict[int, Dict[str, any]] = {
             {"name": "saved_count", "type": "int"}
         ]
     },
-
-    # Fallback (код 0)
-    0: {
-        "template": "Неизвестное сообщение",
-        "level": "DEBUG",
-        "context_schema": []
-    },
 }
-
-
-def get_message_description(code: int, dictionary_revision: str = "1.0") -> str:
-    """Get description for a message code.
-    
-    Args:
-        code: Numeric message code from log entry
-        dictionary_revision: Dictionary revision (e.g., "1.0")
-    
-    Returns:
-        Description text or code itself if not found
-    """
-    # For now, we only support version 1.0
-    # In the future, this could check revision and use appropriate dictionary
-    if dictionary_revision.startswith("1."):
-        # Get message info from dictionary
-        message_info = LOG_MESSAGE_DICTIONARY.get(code)
-        if message_info:
-            return message_info["template"]
-        
-        return f"Unknown message code: {code}"
-    
-    # Fallback: return code itself
-    return str(code)
-
-
-def get_message_level(code: int, dictionary_revision: str = "1.0") -> str:
-    """Get log level for a message code.
-    
-    Args:
-        code: Numeric message code
-        dictionary_revision: Dictionary revision (e.g., "1.0")
-    
-    Returns:
-        Log level string (DEBUG, INFO, WARN, ERROR)
-    """
-    if dictionary_revision.startswith("1."):
-        message_info = LOG_MESSAGE_DICTIONARY.get(code)
-        if message_info:
-            return message_info["level"]
-    
-    return "INFO"  # Default level

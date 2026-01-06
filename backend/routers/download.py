@@ -52,25 +52,27 @@ def _get_apk_build_path() -> Path:
 
 def _find_apk_file() -> Path | None:
     """Find APK file in build directory.
-    
+
+    First tries debug directory, then release directory.
     First tries to find the versioned APK file, then falls back to any APK file.
     Returns None if no APK found.
     """
-    apk_dir = REPO_ROOT / "android/app/build/outputs/apk/debug"
-    if not apk_dir.exists():
-        return None
-    
-    # First, try the versioned filename (read dynamically)
-    apk_build_path = _get_apk_build_path()
-    if apk_build_path.exists():
-        return apk_build_path
-    
-    # Fallback: find any APK file in the directory
-    apk_files = list(apk_dir.glob("*.apk"))
-    if apk_files:
-        # Return the most recent one
-        return max(apk_files, key=lambda p: p.stat().st_mtime)
-    
+    for build_type in ["debug", "release"]:
+        apk_dir = REPO_ROOT / "android/app/build/outputs/apk" / build_type
+        if not apk_dir.exists():
+            continue
+
+        # First, try the versioned filename (read dynamically)
+        apk_build_path = _get_apk_build_path().parent.parent / build_type / _get_apk_filename()
+        if apk_build_path.exists():
+            return apk_build_path
+
+        # Fallback: find any APK file in the directory
+        apk_files = list(apk_dir.glob("*.apk"))
+        if apk_files:
+            # Return the most recent one
+            return max(apk_files, key=lambda p: p.stat().st_mtime)
+
     return None
 
 

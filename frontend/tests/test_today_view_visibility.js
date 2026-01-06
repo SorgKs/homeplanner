@@ -11,17 +11,17 @@ const { shouldBeVisibleInTodayView } = require('../utils/todayViewFilter.js');
  * @param {string} taskType - Type of task ('one_time', 'recurring', 'interval')
  * @param {Date} reminderTime - Task reminder datetime
  * @param {boolean} completed - Whether task is completed for current day
- * @param {boolean} active - Whether task is active
+ * @param {boolean} enabled - Whether task is enabled
  * @returns {Object} Task object
  */
-function createTask(taskType, reminderTime, completed = false, active = true) {
+function createTask(taskType, reminderTime, completed = false, enabled = true) {
     return {
         id: 1,
         title: `Test ${taskType} task`,
         task_type: taskType,
         reminder_time: reminderTime instanceof Date ? reminderTime : new Date(reminderTime),
         completed,
-        active,
+        enabled,
     };
 }
 
@@ -68,12 +68,12 @@ function testRecurringTasksVisibility() {
     const overdueTask = createTask('recurring', overdue);
     const todayTask = createTask('recurring', today);
     const tomorrowTask = createTask('recurring', tomorrow);
-    const inactiveTask = createTask('recurring', today, false, false);
+    const disabledTask = createTask('recurring', today, false, false);
 
     assert(shouldBeVisibleInTodayView(overdueTask, currentDate), 'Overdue recurring task should be visible');
     assert(shouldBeVisibleInTodayView(todayTask, currentDate), 'Today recurring task should be visible');
     assert(!shouldBeVisibleInTodayView(tomorrowTask, currentDate), 'Tomorrow recurring task should not be visible if not completed');
-    assert(!shouldBeVisibleInTodayView(inactiveTask, currentDate), 'Inactive recurring task should not be visible');
+    assert(!shouldBeVisibleInTodayView(disabledTask, currentDate), 'Disabled recurring task should not be visible');
 }
 
 function testCompletedRecurringTaskStaysVisible() {

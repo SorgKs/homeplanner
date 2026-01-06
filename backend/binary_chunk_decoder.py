@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 from io import BytesIO
 from typing import Any
 
-from backend.debug_log_dictionary import LOG_MESSAGE_DICTIONARY, get_message_level
+from backend.debug_log_functions import LOG_MESSAGE_DICTIONARY, get_message_level, get_file_name
 
 logger = logging.getLogger(__name__)
 
@@ -97,9 +97,25 @@ class BinaryChunkDecoder:
         entries: list[DecodedLogEntry] = []
         while stream.tell() < len(data):
             entry_offset = stream.tell()
+            # Check if we have at least 2 bytes for message_code
+            if stream.tell() + 2 > len(data):
+                logger.warning(
+                    f"Incomplete entry at offset {entry_offset}: need at least 2 bytes for message_code, "
+                    f"but only {len(data) - stream.tell()} bytes remaining. "
+                    f"Decoded {len(entries)} entries successfully."
+                )
+                break
             try:
                 entry = self._decode_entry(stream, base_date, dict_revision)
                 entries.append(entry)
+            except ValueError as exc:
+                # If entry is corrupted (e.g., unknown message code), log warning and skip this entry
+                logger.warning(
+                    f"Corrupted entry at offset {entry_offset}: {exc}. "
+                    f"Skipping this entry, continuing decode."
+                )
+                # Skip this entry by continuing to next iteration
+                continue
             except struct.error as exc:
                 raise ValueError(
                     f"Failed to decode log entry at byte offset {entry_offset}; "
@@ -182,6 +198,8 @@ class BinaryChunkDecoder:
             struct.error: If entry is incomplete or corrupted.
         """
         # Read message code (2 bytes, unsigned short, little-endian)
+        if stream.tell() + 2 > len(stream.getvalue()):
+            raise struct.error(f"Not enough bytes for message_code (need 2, remaining {len(stream.getvalue()) - stream.tell()})")
         message_code = struct.unpack("<H", stream.read(2))[0]
 
         # Read timestamp (3 bytes, unsigned 24-bit, BIG-ENDIAN)
@@ -198,25 +216,46 @@ class BinaryChunkDecoder:
             )
             ts_bytes += b'\x00' * padding_length
         
-        # Big-endian unpack (3 bytes -> uint32)
-        timestamp_int = int.from_bytes(ts_bytes, byteorder='big')
-        timestamp = base_date + timedelta(milliseconds=timestamp_int)
+        # Little-endian unpack (3 bytes -> uint32)
+        timestamp_int = int.from_bytes(ts_bytes, byteorder='little')
+        milliseconds_to_add = timestamp_int * 10
+        timestamp = base_date + timedelta(milliseconds=milliseconds_to_add)
+        logger.debug(
+            "Decoded timestamp: base_date=%s, timestamp_int=%d (intervals), milliseconds_to_add=%d, final_timestamp=%s",
+            base_date,
+            timestamp_int,
+            milliseconds_to_add,
+            timestamp,
+        )
 
         message_info = LOG_MESSAGE_DICTIONARY.get(message_code)
         if message_info:
-            text = message_info["template"]
+            template = message_info["template"]
+            # Удаляем старый суффикс если есть
+            template = template.replace(" (файл %file%, строка %line%)", "")
             level = message_info["level"]
         else:
-            text = f"Unknown message code: {message_code}"
-            level = "INFO"
+            # Unknown message codes are considered corrupted entries (ошибка)
+            raise ValueError(f"Corrupted log entry: unknown message code {message_code}")
 
         # Decode context values
         context_values = self._decode_context(stream, message_code, dict_revision)
 
+        # Create text in format "file,line message"
+        if context_values and "file" in context_values and "line" in context_values:
+            file_name = context_values["file"]
+            line_number = context_values["line"]
+            text = f"{file_name},{line_number} {template}"
+        else:
+            text = template
+
         # Replace placeholders in text with context values
         if context_values:
-            context_str = ", ".join(f"{k}={v}" for k, v in context_values.items())
-            text = f"{text} [{context_str}]"
+            # Replace %placeholders% in template
+            for key, value in context_values.items():
+                placeholder = f"%{key}%"
+                if placeholder in text:
+                    text = text.replace(placeholder, str(value))
 
         return DecodedLogEntry(timestamp=timestamp, level=level, text=text)
 
@@ -225,22 +264,19 @@ class BinaryChunkDecoder:
     ) -> dict[str, Any]:
         """Decode context data for a log entry.
 
+        Все логи автоматически включают file (short) и line (int) поля в конце.
+
         Args:
             stream: Binary stream positioned at context start.
             message_code: Message code to determine context schema.
             dict_revision: Dictionary revision string.
 
         Returns:
-            Dictionary of context values.
+            Dictionary of context values including automatic file/line fields.
         """
         # Get context schema from dictionary
         message_info = LOG_MESSAGE_DICTIONARY.get(message_code)
-        if not message_info:
-            return {}
-
-        context_schema = message_info.get("context_schema", [])
-        if not context_schema:
-            return {}
+        context_schema = message_info.get("context_schema", []) if message_info else []
 
         # Decode values according to schema (all little-endian)
         context: dict[str, Any] = {}
@@ -262,10 +298,21 @@ class BinaryChunkDecoder:
             elif field_type == "string":
                 length = struct.unpack("<B", stream.read(1))[0]
                 value = stream.read(length).decode("utf-8")
+            elif field_type == "short":
+                value = struct.unpack("<H", stream.read(2))[0]  # uint16 for file codes
             else:
                 raise ValueError(f"Unknown field type: {field_type}")
 
             context[field_name] = value
+
+        # Автоматически добавить file и line поля (всегда в конце контекста)
+        file_code = struct.unpack("<B", stream.read(1))[0]  # byte = uint8
+        line_number = struct.unpack("<i", stream.read(4))[0]  # int = int32
+
+        # Преобразовать file_code в имя файла
+        file_name = get_file_name(file_code)
+        context["file"] = file_name
+        context["line"] = line_number
 
         return context
 
@@ -309,6 +356,18 @@ class BinaryChunkDecoder:
             try:
                 entry = self._decode_entry(stream, base_date, dict_revision)
                 entries.append(entry)
+            except ValueError as exc:
+                # For diagnostics, treat unknown message codes as warnings and skip, but errors as fatal
+                if "unknown message code" in str(exc):
+                    logger.warning(f"Unknown message code at offset {entry_offset}: {exc}")
+                    # Skip this entry and continue
+                    continue
+                else:
+                    error_description = (
+                        f"Failed to decode entry at byte offset {entry_offset}: {exc}"
+                    )
+                    logger.error(error_description, exc_info=True)
+                    break
             except Exception as exc:  # noqa: BLE001
                 error_description = (
                     f"Failed to decode entry at byte offset {entry_offset}: {exc}"

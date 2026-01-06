@@ -19,13 +19,15 @@ import org.json.JSONObject
 /**
  * Базовый класс для API работы с сервером.
  * Содержит общие настройки HTTP клиента и методы выполнения запросов.
+ *
+ * ВАЖНО: baseUrl изменять запрещено - он фиксирован и наследуется от единого источника (BuildConfig.API_BASE_URL).
  */
 open class ServerApiBase(
     protected val httpClient: OkHttpClient = createHttpClientWithTimeouts(),
     val baseUrl: String = BuildConfig.API_BASE_URL,
     protected val selectedUserId: Int? = null,
 ) {
-    
+
     companion object {
         /**
          * Создает OkHttpClient с настроенными таймаутами для предотвращения зависаний.
@@ -45,6 +47,7 @@ open class ServerApiBase(
     }
 
     protected fun Request.Builder.applyUserCookie(): Request.Builder {
+        android.util.Log.i("ServerApiBase", "applyUserCookie: selectedUserId=$selectedUserId")
         if (selectedUserId != null) {
             header("Cookie", "hp.selectedUserId=$selectedUserId")
         }
@@ -95,19 +98,19 @@ internal fun JSONObject.toTask(): Task {
     // Проверяем reminder_time: может быть строкой или null в JSON
     val reminderValue = if (isNull("reminder_time")) {
         // Задача имеет null reminder_time
-        BinaryLogger.getInstance()?.log(213u, listOf(taskId))
+        BinaryLogger.getInstance()?.log(213u, listOf<Any>(taskId, 43), 43)
         throw IllegalStateException("Missing reminder_time in task payload: $this")
     } else {
         val reminderStr = optString("reminder_time", null)
         if (reminderStr.isNullOrEmpty()) {
             // Задача имеет пустой reminder_time
-            BinaryLogger.getInstance()?.log(214u, listOf(taskId))
+            BinaryLogger.getInstance()?.log(214u, listOf<Any>(taskId, 43), 43)
             throw IllegalStateException("Empty reminder_time in task payload: $this")
         } else {
             reminderStr
         }
     }
-    val activeValue = if (isNull("active")) true else getBoolean("active")
+    val enabledValue = if (isNull("enabled")) true else getBoolean("enabled")
     val completedValue = if (isNull("completed")) false else getBoolean("completed")
 
     // Extract assigned_user_ids from JSON array
@@ -129,7 +132,7 @@ internal fun JSONObject.toTask(): Task {
         intervalDays = if (isNull("interval_days")) null else getInt("interval_days"),
         reminderTime = reminderValue,
         groupId = if (isNull("group_id")) null else getInt("group_id"),
-        active = activeValue,
+        enabled = enabledValue,
         completed = completedValue,
         assignedUserIds = assignedUserIds,
         updatedAt = if (isNull("updated_at")) System.currentTimeMillis() else getLong("updated_at"),

@@ -39,7 +39,7 @@ class LocalApi(
     suspend fun getTasksLocal(activeOnly: Boolean = true): Result<List<Task>> = runCatching {
         val cachedTasks = offlineRepository.loadTasksFromCache()
         // Загружены задачи из кэша
-        BinaryLogger.getInstance()?.log(200u, emptyList())
+        BinaryLogger.getInstance()?.log(200u, listOf<Any>(cachedTasks.size, 23), 23)
         cachedTasks
     }
     
@@ -58,8 +58,7 @@ class LocalApi(
         offlineRepository.saveTasksToCache(listOf(task))
         // Создана задача
         BinaryLogger.getInstance()?.log(
-            20u,
-            listOf(task.id, task.title)
+            20u, listOf<Any>(task.id,task.title, 23), 23
         )
 
         // 2. Добавляем в очередь синхронизации
@@ -85,8 +84,7 @@ class LocalApi(
         offlineRepository.saveTasksToCache(listOf(task))
         // Задача обновлена
         BinaryLogger.getInstance()?.log(
-            21u,
-            listOf(taskId, task.title)
+            21u, listOf<Any>(taskId,task.title, 23), 23
         )
 
         // 2. Добавляем в очередь синхронизации
@@ -114,8 +112,7 @@ class LocalApi(
         offlineRepository.saveTasksToCache(listOf(updatedTask))
         // Задача выполнена
         BinaryLogger.getInstance()?.log(
-            22u,
-            listOf(taskId, updatedTask.title)
+            22u, listOf<Any>(taskId,updatedTask.title, 23), 23
         )
 
         // 2. Добавляем в очередь синхронизации
@@ -143,8 +140,7 @@ class LocalApi(
         offlineRepository.saveTasksToCache(listOf(updatedTask))
         // Выполнение задачи отменено
         BinaryLogger.getInstance()?.log(
-            24u,
-            listOf(taskId)
+            24u, listOf<Any>(taskId, 23), 23
         )
 
         // 2. Добавляем в очередь синхронизации
@@ -168,14 +164,12 @@ class LocalApi(
             offlineRepository.deleteTaskFromCache(taskId)
             // Задача удалена
             BinaryLogger.getInstance()?.log(
-                23u,
-                listOf(taskId)
+                23u, listOf<Any>(taskId, 23), 23
             )
         } catch (e: Exception) {
             // Исключение: ожидалось %wait%, фактически %fact%
             BinaryLogger.getInstance()?.log(
-                91u,
-                listOf(e.message ?: "Unknown error", e::class.simpleName ?: "Unknown")
+                91u, listOf<Any>(e.message ?: "Unknown error",e::class.simpleName ?: "Unknown", 23), 23
             )
             throw e
         }

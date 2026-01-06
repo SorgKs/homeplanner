@@ -32,6 +32,7 @@ import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.bind
 import org.koin.dsl.module
 
+
 // DI Module
 val appModule = module {
     // Database
@@ -133,12 +134,14 @@ class Application : android.app.Application() {
                 val apiBaseUrl = finalNetworkConfig.toApiBaseUrl()
                 android.util.Log.i("Application", "performInitialCacheSync: apiBaseUrl = $apiBaseUrl")
 
+                // Note: baseUrl is now immutable and sourced from BuildConfig, no need to set globally
+
                 // Get syncService from DI
-                val koinApplication = GlobalContext.get()!! as KoinApplication
-                val myKoin = koinApplication.koin
-                val syncService = myKoin.get(SyncService::class) as SyncService
-                val usersApi = UsersServerApi(baseUrl = apiBaseUrl)
-                val groupsApi = GroupsServerApi(baseUrl = apiBaseUrl)
+                val koin = GlobalContext.get()!!
+                val syncService = koin.get<SyncService>()
+
+                val usersApi = UsersServerApi()
+                val groupsApi = GroupsServerApi()
 
                 android.util.Log.i("Application", "Attempting to sync users from server")
                 val result = syncService.syncCacheWithServer(groupsApi, usersApi)
@@ -166,7 +169,8 @@ class Application : android.app.Application() {
         BinaryLogger.initialize(this)
 
         // Log application start
-        BinaryLogger.getInstance()?.log(100u, emptyList())
+        // Приложение запущено
+        BinaryLogger.getInstance()?.log(100u, emptyList<Any>(), 5)
 
         // Initialize ChunkSender for automatic log upload
         initializeLogUpload()
@@ -187,9 +191,24 @@ class Application : android.app.Application() {
             useHttps = false // Default to HTTP for development
         )
 
-        val storage = BinaryLogger.getStorage() ?: return
+        android.util.Log.d("Application", "initializeLogUpload: networkConfig = $networkConfig")
+        android.util.Log.d("Application", "initializeLogUpload: BuildConfig.DEBUG = ${com.homeplanner.BuildConfig.DEBUG}")
+
+        val storage = BinaryLogger.getStorage()
+        android.util.Log.d("Application", "initializeLogUpload: storage = $storage")
+
         if (storage != null) {
             ChunkSender.start(this@Application, networkConfig, storage)
+            android.util.Log.d("Application", "initializeLogUpload: ChunkSender.start called")
+
+            // Check ChunkSender status after a short delay
+            scope.launch {
+                kotlinx.coroutines.delay(1000)
+                val status = ChunkSender.getStatus()
+                android.util.Log.d("Application", "initializeLogUpload: ChunkSender status = $status")
+            }
+        } else {
+            android.util.Log.e("Application", "initializeLogUpload: BinaryLogger.getStorage() returned null")
         }
     }
 }
