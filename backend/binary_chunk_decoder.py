@@ -307,7 +307,7 @@ class BinaryChunkDecoder:
 
         # Автоматически добавить file и line поля (всегда в конце контекста)
         file_code = struct.unpack("<B", stream.read(1))[0]  # byte = uint8
-        line_number = struct.unpack("<i", stream.read(4))[0]  # int = int32
+        line_number = struct.unpack("<H", stream.read(2))[0]  # UShort = uint16
 
         # Преобразовать file_code в имя файла
         file_name = get_file_name(file_code)

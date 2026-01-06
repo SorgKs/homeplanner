@@ -45,7 +45,7 @@ class TaskViewModel(
 
     init {
         // Приложение запущено
-        BinaryLogger.getInstance()?.log(100u, emptyList<Any>(), 69)
+        BinaryLogger.getInstance()?.log(100u, emptyList<Any>(), 69, 48)
         viewModelScope.launch {
             // Load selected user
             val selectedUser = userSettings.selectedUserFlow.first()
@@ -61,7 +61,7 @@ class TaskViewModel(
                 }
             } catch (e: Exception) {
                 // Исключение: ожидалось Error loading network config, фактически %fact%
-                BinaryLogger.getInstance()?.log(91u, listOf<Any>("Error loading network config",e.message ?: "Unknown", 69), 69)
+                BinaryLogger.getInstance()?.log(91u, listOf<Any>("Error loading network config", e.message ?: "Unknown"), 69, 64)
             }
 
             // Always try to sync with default config if networkConfig is null
@@ -76,7 +76,7 @@ class TaskViewModel(
                     val apiBaseUrl = "http://${defaultConfig.host}:${defaultConfig.port}/api/${defaultConfig.apiVersion}"
                     performInitialSyncIfNeeded(defaultConfig, apiBaseUrl)
                 } catch (e: Exception) {
-                    BinaryLogger.getInstance()?.log(91u, listOf<Any>("SYNC SKIPPED: Error syncing with default config",e.message ?: "Unknown", 69), 69)
+                    BinaryLogger.getInstance()?.log(91u, listOf<Any>("SYNC SKIPPED: Error syncing with default config",e.message ?: "Unknown"), 69, 79)
                 }
             }
 
@@ -103,10 +103,10 @@ class TaskViewModel(
 
     private suspend fun performInitialSyncIfNeeded(networkConfig: NetworkConfig?, apiBaseUrl: String?) {
         // Исключение: ожидалось performInitialSyncIfNeeded called, фактически networkConfig=...,apiBaseUrl=...
-        BinaryLogger.getInstance()?.log(91u, listOf<Any>("performInitialSyncIfNeeded called","networkConfig=$networkConfig,apiBaseUrl=$apiBaseUrl", 69), 69)
+        BinaryLogger.getInstance()?.log(91u, listOf<Any>("performInitialSyncIfNeeded called","networkConfig=$networkConfig,apiBaseUrl=$apiBaseUrl"), 69, 106)
         if (networkConfig == null || apiBaseUrl == null) {
             // Исключение: ожидалось %wait%, фактически %fact%
-            BinaryLogger.getInstance()?.log(91u, listOf<Any>(networkConfig?.toString() ?: "null", apiBaseUrl ?: "null"), 69)
+            BinaryLogger.getInstance()?.log(91u, listOf<Any>(networkConfig?.toString() ?: "null", apiBaseUrl ?: "null"), 69, 109)
             return
         }
 
@@ -125,14 +125,14 @@ class TaskViewModel(
             if (result.isSuccess) {
                 val syncResult = result.getOrNull()
                 // Синхронизация успешно завершена: сервер %server_tasks% задач, %groups% групп, %users% пользователей
-                BinaryLogger.getInstance()?.log(2u, listOf<Any>(syncResult?.users?.size ?: 0,syncResult?.groups?.size ?: 0,syncResult?.users?.size ?: 0, 69), 69)
+                BinaryLogger.getInstance()?.log(2u, listOf<Any>(syncResult?.users?.size ?: 0,syncResult?.groups?.size ?: 0,syncResult?.users?.size ?: 0), 69, 128)
             } else {
                 // Исключение: ожидалось sync_failure, фактически %fact%
-                BinaryLogger.getInstance()?.log(91u, listOf<Any>("sync_failure", result.exceptionOrNull()?.message ?: "unknown"), 69)
+                BinaryLogger.getInstance()?.log(91u, listOf<Any>("sync_failure", result.exceptionOrNull()?.message ?: "unknown"), 69, 131)
             }
         } catch (e: Exception) {
             // Исключение: ожидалось sync_exception, фактически %fact%
-            BinaryLogger.getInstance()?.log(91u, listOf<Any>("sync_exception",e.message ?: "unknown", 69), 69)
+            BinaryLogger.getInstance()?.log(91u, listOf<Any>("sync_exception",e.message ?: "unknown"), 69, 135)
         }
     }
 
@@ -143,21 +143,21 @@ class TaskViewModel(
             // Load tasks from local cache (after potential sync)
             val tasksResult = localApi.getTasksLocal()
             tasksResult.onSuccess { tasks ->
-                BinaryLogger.getInstance()?.log(200u, emptyList<Any>(), 69) // Загружены задачи из кэша
+                BinaryLogger.getInstance()?.log(200u, emptyList<Any>(), 69, 146) // Загружены задачи из кэша
                 if (tasks.isEmpty()) {
                     // Исключение: ожидалось empty_cache, фактически sync_may_have_failed
-                    BinaryLogger.getInstance()?.log(91u, listOf<Any>("empty_cache","sync_may_have_failed", 69), 69)
+                    BinaryLogger.getInstance()?.log(91u, listOf<Any>("empty_cache","sync_may_have_failed"), 69, 149)
                 }
                 updateState(_state.value.copy(tasks = tasks, isLoading = false))
             }.onFailure { error ->
                 // Исключение: ожидалось cache_load_error, фактически %fact%
-                BinaryLogger.getInstance()?.log(91u, listOf<Any>("cache_load_error",error.message ?: "unknown", 69), 69)
+                BinaryLogger.getInstance()?.log(91u, listOf<Any>("cache_load_error",error.message ?: "unknown"), 69, 154)
                 handleError(error)
             }
 
         } catch (e: Exception) {
             // Исключение: ожидалось Exception in loadInitialData, фактически %fact%
-            BinaryLogger.getInstance()?.log(91u, listOf<Any>("Exception in loadInitialData",e.message ?: "Unknown", 69), 69)
+            BinaryLogger.getInstance()?.log(91u, listOf<Any>("Exception in loadInitialData",e.message ?: "Unknown"), 69, 160)
             handleError(e)
         }
     }

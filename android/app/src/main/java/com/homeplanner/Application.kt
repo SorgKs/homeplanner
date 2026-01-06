@@ -170,7 +170,7 @@ class Application : android.app.Application() {
 
         // Log application start
         // Приложение запущено
-        BinaryLogger.getInstance()?.log(100u, emptyList<Any>(), 5)
+        BinaryLogger.getInstance()?.log(100u, emptyList<Any>(), 5, 173)
 
         // Initialize ChunkSender for automatic log upload
         initializeLogUpload()

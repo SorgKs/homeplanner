@@ -71,22 +71,18 @@ class BinaryLogger private constructor(
      * @param code Числовой код сообщения (UShort, 2 байта)
      * @param context Список значений контекста в порядке схемы (без ключей)
      * @param fileCode Код файла (Byte, 1 байт)
+     * @param line Номер строки в исходном коде
      */
     fun log(
         code: UShort,
         context: List<Any> = emptyList(),
-        fileCode: Byte
+        fileCode: Byte,
+        line: Int
     ) {
         if (!BuildConfig.DEBUG) return
 
-        // Получить line из стека вызовов
-        val stackTrace = Thread.currentThread().stackTrace
-        val caller = stackTrace.getOrNull(4) // 4-й элемент - вызывающий метод (после log() -> getInstance() -> вызывающий)
-
-        val lineNumber = caller?.lineNumber ?: -1
-
         // Добавить file и line в конец контекста
-        val fullContext = context + fileCode + lineNumber
+        val fullContext = context + fileCode + line
 
         val now = LocalDateTime.now()
         val startOfDay = LocalDate.now().atStartOfDay()
