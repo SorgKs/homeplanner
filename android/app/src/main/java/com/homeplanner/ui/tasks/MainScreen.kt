@@ -10,6 +10,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.homeplanner.model.Task
+import com.homeplanner.model.Group
 import com.homeplanner.viewmodel.TaskScreenState
 
 @Composable
@@ -59,6 +60,7 @@ fun MainScreen(
             composable(Screen.Today.route) {
                 TodayScreen(
                     state = state,
+                    groups = state.groups,
                     onCreateTask = onCreateTask,
                     onTaskClick = onTaskClick,
                     onTaskComplete = onTaskComplete,
@@ -68,6 +70,7 @@ fun MainScreen(
             composable(Screen.AllTasks.route) {
                 AllTasksScreen(
                     state = state,
+                    groups = state.groups,
                     onCreateTask = onCreateTask,
                     onTaskClick = onTaskClick,
                     onTaskComplete = onTaskComplete,

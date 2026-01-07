@@ -4,6 +4,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.homeplanner.model.Task
+import com.homeplanner.model.Group
 import com.homeplanner.viewmodel.TaskScreenState
 import com.homeplanner.UserSettings
 import com.homeplanner.utils.TodayTaskFilter
@@ -11,6 +12,7 @@ import com.homeplanner.utils.TodayTaskFilter
 @Composable
 fun TodayScreen(
     state: TaskScreenState,
+    groups: List<Group>,
     onCreateTask: () -> Unit,
     onTaskClick: (Task) -> Unit,
     onTaskComplete: (Int) -> Unit,
@@ -25,6 +27,7 @@ fun TodayScreen(
 
     TaskListContent(
         tasks = todayTasks,
+        groups = groups,
         isLoading = state.isLoading,
         error = state.error,
         onCreateTask = onCreateTask,

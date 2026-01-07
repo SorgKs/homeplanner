@@ -55,13 +55,14 @@ val appModule = module {
 
     // APIs
     single { LocalApi(get(), get()) }
+    single { com.homeplanner.api.GroupsLocalApi(get()) }
     single { ServerApi() }
 
     // Sync
     single { SyncService(get(), get(), androidContext()) }
 
     // ViewModel
-    viewModel { TaskViewModel(androidContext() as Application, get(), get(), get()) }
+    viewModel { TaskViewModel(androidContext() as Application, get(), get(), get(), get()) }
     viewModel { SettingsViewModel(androidContext() as Application, get(), get(), get()) }
     android.util.Log.d("Application", "SettingsViewModel registered in DI")
 }

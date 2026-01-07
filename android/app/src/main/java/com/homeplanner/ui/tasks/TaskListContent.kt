@@ -9,10 +9,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.homeplanner.model.Task
+import com.homeplanner.model.Group
 
 @Composable
 fun TaskListContent(
     tasks: List<Task>,
+    groups: List<Group>,
     isLoading: Boolean,
     error: String?,
     onCreateTask: () -> Unit,
@@ -27,6 +29,7 @@ fun TaskListContent(
         tasks.isEmpty() -> EmptyState(onCreateTask, modifier = modifier)
         else -> AllTasksList(
             tasks = tasks,
+            groups = groups,
             onTaskClick = onTaskClick,
             onTaskComplete = onTaskComplete,
             onTaskDelete = onTaskDelete,
@@ -80,6 +83,7 @@ private fun EmptyState(onCreateTask: () -> Unit, modifier: Modifier = Modifier) 
 @Composable
 private fun AllTasksList(
     tasks: List<Task>,
+    groups: List<Group>,
     onTaskClick: (Task) -> Unit,
     onTaskComplete: (Int) -> Unit,
     onTaskDelete: (Int) -> Unit,
@@ -89,6 +93,7 @@ private fun AllTasksList(
         items(tasks) { task ->
             TaskItem(
                 task = task,
+                groups = groups,
                 onComplete = onTaskComplete,
                 onClick = onTaskClick,
                 onDelete = onTaskDelete

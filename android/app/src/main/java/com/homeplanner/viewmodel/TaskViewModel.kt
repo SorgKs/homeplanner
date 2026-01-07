@@ -5,11 +5,13 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.homeplanner.model.Task
+import com.homeplanner.model.Group
 import com.homeplanner.utils.TaskFilter
 import com.homeplanner.utils.TaskFilterType
 import com.homeplanner.NetworkConfig
 import com.homeplanner.SelectedUser
 import com.homeplanner.api.LocalApi
+import com.homeplanner.api.GroupsLocalApi
 import com.homeplanner.NetworkSettings
 import com.homeplanner.UserSettings
 import androidx.lifecycle.viewModelScope
@@ -25,6 +27,7 @@ import org.koin.core.KoinApplication
 
 data class TaskScreenState(
     val tasks: List<Task> = emptyList(),
+    val groups: List<Group> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
     val currentFilter: TaskFilterType = TaskFilterType.TODAY,
@@ -34,6 +37,7 @@ data class TaskScreenState(
 class TaskViewModel(
     application: Application,
     private val localApi: LocalApi,
+    private val groupsLocalApi: GroupsLocalApi,
     private val networkSettings: NetworkSettings,
     private val userSettings: UserSettings
 ) : AndroidViewModel(application) {
@@ -148,6 +152,19 @@ class TaskViewModel(
             android.util.Log.d("TaskViewModel", "loadInitialData: setting loading state")
             updateState(_state.value.copy(isLoading = true, error = null))
 
+            // Load groups from local cache
+            android.util.Log.d("TaskViewModel", "loadInitialData: calling groupsLocalApi.getGroupsLocal")
+            val groupsResult = groupsLocalApi.getGroupsLocal()
+            android.util.Log.d("TaskViewModel", "loadInitialData: groupsLocalApi.getGroupsLocal result: isSuccess=${groupsResult.isSuccess}")
+            var groups = emptyList<Group>()
+            groupsResult.onSuccess { loadedGroups ->
+                android.util.Log.i("TaskViewModel", "loadInitialData: loaded ${loadedGroups.size} groups from cache")
+                groups = loadedGroups
+            }.onFailure { error ->
+                android.util.Log.e("TaskViewModel", "loadInitialData: failed to load groups from cache", error)
+                // Continue without groups, as they are optional for display
+            }
+
             // Load tasks from local cache (after potential sync)
             android.util.Log.d("TaskViewModel", "loadInitialData: calling localApi.getTasksLocal")
             val tasksResult = localApi.getTasksLocal()
@@ -157,7 +174,7 @@ class TaskViewModel(
                 if (tasks.isEmpty()) {
                     android.util.Log.w("TaskViewModel", "loadInitialData: cache is empty, sync may have failed")
                 }
-                updateState(_state.value.copy(tasks = tasks, isLoading = false))
+                updateState(_state.value.copy(tasks = tasks, groups = groups, isLoading = false))
             }.onFailure { error ->
                 android.util.Log.e("TaskViewModel", "loadInitialData: failed to load tasks from cache", error)
                 handleError(error)
