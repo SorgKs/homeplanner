@@ -7,7 +7,6 @@ import androidx.lifecycle.viewModelScope
 import com.homeplanner.model.Task
 import com.homeplanner.utils.TaskFilter
 import com.homeplanner.utils.TaskFilterType
-import com.homeplanner.debug.BinaryLogger
 import com.homeplanner.NetworkConfig
 import com.homeplanner.SelectedUser
 import com.homeplanner.api.LocalApi
@@ -23,7 +22,6 @@ import kotlinx.coroutines.launch
 import org.koin.core.context.GlobalContext
 import org.koin.core.Koin
 import org.koin.core.KoinApplication
-
 
 data class TaskScreenState(
     val tasks: List<Task> = emptyList(),
@@ -44,28 +42,35 @@ class TaskViewModel(
     val state: StateFlow<TaskScreenState> = _state.asStateFlow()
 
     init {
+        android.util.Log.d("TaskViewModel", "TaskViewModel init started")
         // Приложение запущено
-        BinaryLogger.getInstance()?.log(100u, emptyList<Any>(), 69, 48)
         viewModelScope.launch {
+            android.util.Log.d("TaskViewModel", "TaskViewModel init: loading selected user")
             // Load selected user
             val selectedUser = userSettings.selectedUserFlow.first()
+            android.util.Log.d("TaskViewModel", "TaskViewModel init: selectedUser loaded: $selectedUser")
             updateState(_state.value.copy(selectedUser = selectedUser))
 
             // Load network config and initialize
             var networkConfig: NetworkConfig? = null
             try {
+                android.util.Log.d("TaskViewModel", "TaskViewModel init: loading network config")
                 networkConfig = networkSettings.configFlow.first()
+                android.util.Log.d("TaskViewModel", "TaskViewModel init: networkConfig loaded: $networkConfig")
                 if (networkConfig != null) {
-                    val apiBaseUrl = "http://${networkConfig.host}:${networkConfig.port}/api/${networkConfig.apiVersion}"
+                    val apiBaseUrl = networkConfig.toApiBaseUrl()
+                    android.util.Log.d("TaskViewModel", "TaskViewModel init: apiBaseUrl=$apiBaseUrl, calling performInitialSyncIfNeeded")
                     performInitialSyncIfNeeded(networkConfig, apiBaseUrl)
+                } else {
+                    android.util.Log.w("TaskViewModel", "TaskViewModel init: networkConfig is null")
                 }
             } catch (e: Exception) {
-                // Исключение: ожидалось Error loading network config, фактически %fact%
-                BinaryLogger.getInstance()?.log(91u, listOf<Any>("Error loading network config", e.message ?: "Unknown"), 69, 64)
+                android.util.Log.e("TaskViewModel", "TaskViewModel init: exception loading network config", e)
             }
 
             // Always try to sync with default config if networkConfig is null
             if (networkConfig == null) {
+                android.util.Log.d("TaskViewModel", "TaskViewModel init: networkConfig is null, trying default config")
                 try {
                     val defaultConfig = NetworkConfig(
                         host = "10.0.2.2", // For emulator
@@ -73,13 +78,17 @@ class TaskViewModel(
                         apiVersion = "0.3",
                         useHttps = false
                     )
-                    val apiBaseUrl = "http://${defaultConfig.host}:${defaultConfig.port}/api/${defaultConfig.apiVersion}"
+                    val apiBaseUrl = defaultConfig.toApiBaseUrl()
+                    android.util.Log.d("TaskViewModel", "TaskViewModel init: default apiBaseUrl=$apiBaseUrl, calling performInitialSyncIfNeeded")
                     performInitialSyncIfNeeded(defaultConfig, apiBaseUrl)
                 } catch (e: Exception) {
-                    BinaryLogger.getInstance()?.log(91u, listOf<Any>("SYNC SKIPPED: Error syncing with default config",e.message ?: "Unknown"), 69, 79)
+                    android.util.Log.e("TaskViewModel", "TaskViewModel init: exception with default config", e)
                 }
+            } else {
+                android.util.Log.d("TaskViewModel", "TaskViewModel init: networkConfig loaded, skipping default")
             }
 
+            android.util.Log.d("TaskViewModel", "TaskViewModel init: calling loadInitialData")
             loadInitialData()
         }
     }
@@ -95,69 +104,67 @@ class TaskViewModel(
 
     private fun handleError(error: Throwable) {
         updateState(_state.value.copy(error = error.message))
-        // TODO: Log error through BinaryLogger
-        // BinaryLogger.logError(error, "TaskViewModel")
     }
 
-
-
     private suspend fun performInitialSyncIfNeeded(networkConfig: NetworkConfig?, apiBaseUrl: String?) {
-        // Исключение: ожидалось performInitialSyncIfNeeded called, фактически networkConfig=...,apiBaseUrl=...
-        BinaryLogger.getInstance()?.log(91u, listOf<Any>("performInitialSyncIfNeeded called","networkConfig=$networkConfig,apiBaseUrl=$apiBaseUrl"), 69, 106)
+        android.util.Log.d("TaskViewModel", "performInitialSyncIfNeeded called with networkConfig=$networkConfig, apiBaseUrl=$apiBaseUrl")
         if (networkConfig == null || apiBaseUrl == null) {
-            // Исключение: ожидалось %wait%, фактически %fact%
-            BinaryLogger.getInstance()?.log(91u, listOf<Any>(networkConfig?.toString() ?: "null", apiBaseUrl ?: "null"), 69, 109)
+            android.util.Log.w("TaskViewModel", "performInitialSyncIfNeeded: networkConfig or apiBaseUrl is null, skipping sync")
             return
         }
 
-        // Note: baseUrl is now immutable and sourced from BuildConfig, no need to set globally
+        android.util.Log.d("TaskViewModel", "performInitialSyncIfNeeded: attempting to get SyncService from DI")
 
         // Get syncService from DI
         val koin = GlobalContext.get()!!
-        val syncService = koin.get(com.homeplanner.sync.SyncService::class) as com.homeplanner.sync.SyncService
-
-        val usersApi = com.homeplanner.api.UsersServerApi()
-        val groupsApi = com.homeplanner.api.GroupsServerApi()
-
+        val syncService: com.homeplanner.sync.SyncService
         try {
-            val result = syncService.syncCacheWithServer(groupsApi, usersApi)
+            syncService = koin.get(com.homeplanner.sync.SyncService::class) as com.homeplanner.sync.SyncService
+            android.util.Log.d("TaskViewModel", "performInitialSyncIfNeeded: SyncService obtained successfully")
+        } catch (e: Exception) {
+            android.util.Log.e("TaskViewModel", "performInitialSyncIfNeeded: failed to get SyncService from DI", e)
+            return
+        }
+
+        android.util.Log.d("TaskViewModel", "performInitialSyncIfNeeded: calling syncCacheWithServer with baseUrl=$apiBaseUrl")
+        try {
+            val result = syncService.syncCacheWithServer(baseUrl = apiBaseUrl)
+            android.util.Log.d("TaskViewModel", "performInitialSyncIfNeeded: syncCacheWithServer result: isSuccess=${result.isSuccess}")
 
             if (result.isSuccess) {
                 val syncResult = result.getOrNull()
-                // Синхронизация успешно завершена: сервер %server_tasks% задач, %groups% групп, %users% пользователей
-                BinaryLogger.getInstance()?.log(2u, listOf<Any>(syncResult?.users?.size ?: 0,syncResult?.groups?.size ?: 0,syncResult?.users?.size ?: 0), 69, 128)
+                android.util.Log.i("TaskViewModel", "performInitialSyncIfNeeded: sync successful, cacheUpdated=${syncResult?.cacheUpdated}")
             } else {
-                // Исключение: ожидалось sync_failure, фактически %fact%
-                BinaryLogger.getInstance()?.log(91u, listOf<Any>("sync_failure", result.exceptionOrNull()?.message ?: "unknown"), 69, 131)
+                android.util.Log.w("TaskViewModel", "performInitialSyncIfNeeded: sync failed: ${result.exceptionOrNull()?.message}")
             }
         } catch (e: Exception) {
-            // Исключение: ожидалось sync_exception, фактически %fact%
-            BinaryLogger.getInstance()?.log(91u, listOf<Any>("sync_exception",e.message ?: "unknown"), 69, 135)
+            android.util.Log.e("TaskViewModel", "performInitialSyncIfNeeded: exception during sync", e)
         }
     }
 
     private suspend fun loadInitialData() {
+        android.util.Log.d("TaskViewModel", "loadInitialData: started")
         try {
+            android.util.Log.d("TaskViewModel", "loadInitialData: setting loading state")
             updateState(_state.value.copy(isLoading = true, error = null))
 
             // Load tasks from local cache (after potential sync)
+            android.util.Log.d("TaskViewModel", "loadInitialData: calling localApi.getTasksLocal")
             val tasksResult = localApi.getTasksLocal()
+            android.util.Log.d("TaskViewModel", "loadInitialData: localApi.getTasksLocal result: isSuccess=${tasksResult.isSuccess}")
             tasksResult.onSuccess { tasks ->
-                BinaryLogger.getInstance()?.log(200u, emptyList<Any>(), 69, 146) // Загружены задачи из кэша
+                android.util.Log.i("TaskViewModel", "loadInitialData: loaded ${tasks.size} tasks from cache")
                 if (tasks.isEmpty()) {
-                    // Исключение: ожидалось empty_cache, фактически sync_may_have_failed
-                    BinaryLogger.getInstance()?.log(91u, listOf<Any>("empty_cache","sync_may_have_failed"), 69, 149)
+                    android.util.Log.w("TaskViewModel", "loadInitialData: cache is empty, sync may have failed")
                 }
                 updateState(_state.value.copy(tasks = tasks, isLoading = false))
             }.onFailure { error ->
-                // Исключение: ожидалось cache_load_error, фактически %fact%
-                BinaryLogger.getInstance()?.log(91u, listOf<Any>("cache_load_error",error.message ?: "unknown"), 69, 154)
+                android.util.Log.e("TaskViewModel", "loadInitialData: failed to load tasks from cache", error)
                 handleError(error)
             }
 
         } catch (e: Exception) {
-            // Исключение: ожидалось Exception in loadInitialData, фактически %fact%
-            BinaryLogger.getInstance()?.log(91u, listOf<Any>("Exception in loadInitialData",e.message ?: "Unknown"), 69, 160)
+            android.util.Log.e("TaskViewModel", "loadInitialData: exception", e)
             handleError(e)
         }
     }

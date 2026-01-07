@@ -5,7 +5,6 @@ import com.homeplanner.model.Group
 import com.homeplanner.model.User
 import com.homeplanner.repository.OfflineRepository
 import com.homeplanner.utils.TaskDateCalculator
-import com.homeplanner.debug.BinaryLogger
 
 /**
  * API для работы с локальным хранилищем для UI.
@@ -37,9 +36,9 @@ class LocalApi(
      * @return Список задач из кэша
      */
     suspend fun getTasksLocal(activeOnly: Boolean = true): Result<List<Task>> = runCatching {
+        android.util.Log.d(TAG, "getTasksLocal: loading tasks from cache")
         val cachedTasks = offlineRepository.loadTasksFromCache()
-        // Загружены задачи из кэша
-        BinaryLogger.getInstance()?.log(200u, listOf<Any>(cachedTasks.size, 23), 23)
+        android.util.Log.i(TAG, "getTasksLocal: loaded ${cachedTasks.size} tasks from cache")
         cachedTasks
     }
     
@@ -56,10 +55,7 @@ class LocalApi(
     suspend fun createTaskLocal(task: Task, assignedUserIds: List<Int> = emptyList()): Result<Task> = runCatching {
         // 1. Сразу сохраняем в кэш для немедленного отображения
         offlineRepository.saveTasksToCache(listOf(task))
-        // Создана задача
-        BinaryLogger.getInstance()?.log(
-            20u, listOf<Any>(task.id,task.title, 23), 23
-        )
+
 
         // 2. Добавляем в очередь синхронизации
         addToSyncQueue("create", "task", null, task)
@@ -82,10 +78,7 @@ class LocalApi(
     suspend fun updateTaskLocal(taskId: Int, task: Task, assignedUserIds: List<Int> = emptyList()): Result<Task> = runCatching {
         // 1. Сразу обновляем в кэше для немедленного отображения
         offlineRepository.saveTasksToCache(listOf(task))
-        // Задача обновлена
-        BinaryLogger.getInstance()?.log(
-            21u, listOf<Any>(taskId,task.title, 23), 23
-        )
+
 
         // 2. Добавляем в очередь синхронизации
         addToSyncQueue("update", "task", taskId, task)
@@ -110,10 +103,7 @@ class LocalApi(
             ?: throw Exception("Task not found in cache: id=$taskId")
         val updatedTask = cachedTask.copy(completed = true)
         offlineRepository.saveTasksToCache(listOf(updatedTask))
-        // Задача выполнена
-        BinaryLogger.getInstance()?.log(
-            22u, listOf<Any>(taskId,updatedTask.title, 23), 23
-        )
+
 
         // 2. Добавляем в очередь синхронизации
         addToSyncQueue("complete", "task", taskId, null)
@@ -138,10 +128,7 @@ class LocalApi(
             ?: throw Exception("Task not found in cache: id=$taskId")
         val updatedTask = cachedTask.copy(completed = false)
         offlineRepository.saveTasksToCache(listOf(updatedTask))
-        // Выполнение задачи отменено
-        BinaryLogger.getInstance()?.log(
-            24u, listOf<Any>(taskId, 23), 23
-        )
+
 
         // 2. Добавляем в очередь синхронизации
         addToSyncQueue("uncomplete", "task", taskId, null)
@@ -162,15 +149,7 @@ class LocalApi(
         // 1. Сразу удаляем из кэша для немедленного отображения
         try {
             offlineRepository.deleteTaskFromCache(taskId)
-            // Задача удалена
-            BinaryLogger.getInstance()?.log(
-                23u, listOf<Any>(taskId, 23), 23
-            )
         } catch (e: Exception) {
-            // Исключение: ожидалось %wait%, фактически %fact%
-            BinaryLogger.getInstance()?.log(
-                91u, listOf<Any>(e.message ?: "Unknown error",e::class.simpleName ?: "Unknown", 23), 23
-            )
             throw e
         }
 

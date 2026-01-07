@@ -6,7 +6,6 @@ import com.homeplanner.api.GroupsServerApi
 import com.homeplanner.api.ServerApi
 import com.homeplanner.api.UserSummary
 import com.homeplanner.api.UsersServerApi
-import com.homeplanner.debug.BinaryLogger
 import com.homeplanner.model.Task
 import com.homeplanner.repository.OfflineRepository
 import org.json.JSONObject
@@ -51,28 +50,25 @@ class CacheSyncService(
         groupsApi: GroupsServerApi? = null,
         usersApi: UsersServerApi? = null
     ): Result<SyncCacheResult> {
+        android.util.Log.d(TAG, "syncCacheWithServer: started with groupsApi=$groupsApi, usersApi=$usersApi")
         // Реальный статус соединения контролируется в MainActivity через connectionStatus
         // на основе реальных попыток соединения с сервером (ONLINE/DEGRADED/OFFLINE).
         // Здесь просто пытаемся синхронизироваться, ошибки будут обработаны в MainActivity.
 
-        // syncCacheWithServer: [STEP 1] Начало синхронизации
-        BinaryLogger.getInstance()?.log(303u, emptyList<Any>(), 10)
-
         return try {
+            android.util.Log.d(TAG, "syncCacheWithServer: calling syncQueue()")
             // syncCacheWithServer: вызов syncQueue()
-            BinaryLogger.getInstance()?.log(321u, emptyList<Any>(), 10)
             // Единый код синхронизации: просто вызываем syncQueue()
             // В онлайн режиме он работает сразу, в оффлайн - вернет ошибку, но при восстановлении сети сработает так же
             // syncQueue() сам обновит кэш актуальными данными с сервера после применения операций
             val queueSyncResult = syncQueue()
             // syncCacheWithServer: результат syncQueue()
-            BinaryLogger.getInstance()?.log(322u, listOf<Any>(queueSyncResult.isSuccess.toString()), 10)
 
-            android.util.Log.d(TAG, "syncQueue result: success=${queueSyncResult.isSuccess}")
+            android.util.Log.d(TAG, "syncCacheWithServer: syncQueue result: success=${queueSyncResult.isSuccess}")
             val syncResult = queueSyncResult.getOrNull()
-            android.util.Log.d(TAG, "syncResult: $syncResult")
+            android.util.Log.d(TAG, "syncCacheWithServer: syncResult: $syncResult")
             if (syncResult != null) {
-                android.util.Log.d(TAG, "successCount=${syncResult.successCount}, tasks.size=${syncResult.tasks.size}")
+                android.util.Log.d(TAG, "syncCacheWithServer: successCount=${syncResult.successCount}, tasks.size=${syncResult.tasks.size}")
             }
 
             // Если syncQueue() успешно выполнился и были операции, кэш уже обновлен актуальными данными с сервера
@@ -80,19 +76,16 @@ class CacheSyncService(
             val cacheUpdated = if (queueSyncResult.isSuccess) {
                 val queueHasTasks = syncResult != null && syncResult.successCount > 0 && syncResult.tasks.isNotEmpty()
                 android.util.Log.d(TAG, "syncCacheWithServer: queueHasTasks=$queueHasTasks, successCount=${syncResult?.successCount}, tasks.size=${syncResult?.tasks?.size}")
-                BinaryLogger.getInstance()?.log(500u, listOf<Any>(queueHasTasks.toString(), syncResult?.successCount ?: 0, syncResult?.tasks?.size ?: 0), 10)
                 if (queueHasTasks) {
                     // Кэш уже обновлен syncQueue()
                     true
                 } else {
                     // Очередь была пуста или syncQueue не вернул задачи - загружаем задачи с сервера для полной синхронизации
                     try {
-                        // syncCacheWithServer: загрузка задач с сервера для полной синхронизации
-                        BinaryLogger.getInstance()?.log(319u, emptyList<Any>(), 10)
-                        android.util.Log.d(TAG, "Loading tasks from server for full sync")
-                        android.util.Log.d(TAG, "Calling getTasksServer(enabledOnly = false)")
+                        android.util.Log.d(TAG, "syncCacheWithServer: loading tasks from server for full sync")
+                        android.util.Log.d(TAG, "syncCacheWithServer: calling getTasksServer(enabledOnly = false)")
                         val serverTasks = serverApi.getTasksServer(enabledOnly = false).getOrThrow()
-                        android.util.Log.d(TAG, "Loaded ${serverTasks.size} tasks from server")
+                        android.util.Log.d(TAG, "syncCacheWithServer: loaded ${serverTasks.size} tasks from server")
                         val cachedTasks = repository.loadTasksFromCache()
                         android.util.Log.d(TAG, "Cached tasks: ${cachedTasks.size}, server tasks: ${serverTasks.size}")
                         val cachedHash = calculateTasksHash(cachedTasks)
@@ -101,29 +94,20 @@ class CacheSyncService(
 
                         if (cachedHash != serverHash) {
                             repository.saveTasksToCache(serverTasks)
-                            // Кэш обновлен после синхронизации: %tasks_count% задач из %source%, очередь: %queue_items%
-                            BinaryLogger.getInstance()?.log(
-                                41u, listOf<Any>(serverTasks.size,"syncCacheWithServer_full","syncCacheWithServer_full"), 10
-                            )
                             android.util.Log.d(TAG, "Full sync: hashes differ, cache updated with ${serverTasks.size} tasks")
                             true
                         } else {
                             // syncCacheWithServer: хеши совпадают, кэш не обновлен
-                            BinaryLogger.getInstance()?.log(320u, emptyList<Any>(), 10)
                             android.util.Log.d(TAG, "Full sync: hashes match, no cache update needed")
                             false
                         }
                     } catch (e: Exception) {
                         android.util.Log.e(TAG, "Full sync failed", e)
-                        BinaryLogger.getInstance()?.log(
-                            91u, listOf<Any>("full_sync_exception",e.message ?: "unknown", 10), 10
-                        )
                         false
                     }
                 }
             } else {
                 // syncCacheWithServer: синхронизация очереди завершилась с ошибкой, но продолжаем для загрузки групп/пользователей
-                BinaryLogger.getInstance()?.log(310u, emptyList<Any>(), 10)
                 false
             }
 
@@ -134,25 +118,16 @@ class CacheSyncService(
             if (groupsApi != null) {
                 try {
                     groups = groupsApi.getAll()
-                    // syncCacheWithServer: загружены группы
-                    BinaryLogger.getInstance()?.log(311u, emptyList<Any>(), 10)
                 } catch (e: Exception) {
-                    // Исключение: ожидалось %wait%, фактически %fact%
-                    BinaryLogger.getInstance()?.log(
-                        91u, listOf<Any>(e.message ?: "Unknown error",e::class.simpleName ?: "Unknown", 10), 10
-                    )
                 }
             }
 
             if (usersApi != null) {
                 // syncCacheWithServer: вызов загрузки пользователей с сервера
-                BinaryLogger.getInstance()?.log(400u, emptyList<Any>(), 10)
                 try {
                     users = usersApi.getUsers()
                     // syncCacheWithServer: получен ответ от сервера с пользователями
-                    BinaryLogger.getInstance()?.log(401u, listOf<Any>(users?.size ?: 0, 10), 10)
                     // syncCacheWithServer: загружены пользователи
-                    BinaryLogger.getInstance()?.log(312u, emptyList<Any>(), 10)
 
                     // Save users to cache
                     if (users != null && users.isNotEmpty()) {
@@ -163,14 +138,9 @@ class CacheSyncService(
                             )
                         }
                         repository.saveUsersToCache(userModels)
-                        // syncCacheWithServer: пользователи сохранены в локальный кеш
-                        BinaryLogger.getInstance()?.log(402u, listOf<Any>(userModels.size, 10), 10)
                     }
                 } catch (e: Exception) {
-                    // Исключение: ожидалось %wait%, фактически %fact%
-                    BinaryLogger.getInstance()?.log(
-                        91u, listOf<Any>("users_load_error",e.message ?: "unknown", 10), 10
-                    )
+                    android.util.Log.e(TAG, "Failed to sync users from server", e)
                 }
             }
 
@@ -181,13 +151,8 @@ class CacheSyncService(
                 groups = groups
             )
             // syncCacheWithServer: успешно завершено
-            BinaryLogger.getInstance()?.log(313u, emptyList<Any>(), 10)
             Result.success(result)
         } catch (e: Exception) {
-            // Исключение: ожидалось %wait%, фактически %fact%
-            BinaryLogger.getInstance()?.log(
-                91u, listOf<Any>(e.message ?: "unknown_error",e::class.simpleName ?: "unknown_class", 10), 10
-            )
             Result.failure(e)
         }
     }

@@ -2,7 +2,6 @@ package com.homeplanner.api
 
 import com.homeplanner.BuildConfig
 import com.homeplanner.model.Task
-import com.homeplanner.debug.BinaryLogger
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -15,6 +14,9 @@ import okhttp3.Callback
 import java.io.IOException
 import org.json.JSONArray
 import org.json.JSONObject
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
 
 /**
  * Базовый класс для API работы с сервером.
@@ -91,6 +93,20 @@ open class ServerApiBase(
     }
 }
 
+private fun parseIsoDateTime(dateTimeStr: String?): Long? {
+    if (dateTimeStr.isNullOrEmpty()) return null
+    return try {
+        val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
+        val date = sdf.parse(dateTimeStr.substring(0, 19)) // Take only date and time part, ignore microseconds and timezone
+        date?.time ?: System.currentTimeMillis()
+    } catch (e: Exception) {
+        android.util.Log.w("ServerApiBase", "Failed to parse datetime: $dateTimeStr", e)
+        System.currentTimeMillis()
+    }
+}
+
 internal fun JSONObject.toTask(): Task {
     // Извлекаем id задачи для логирования
     val taskId = if (has("id") && !isNull("id")) getInt("id") else -1
@@ -98,13 +114,11 @@ internal fun JSONObject.toTask(): Task {
     // Проверяем reminder_time: может быть строкой или null в JSON
     val reminderValue = if (isNull("reminder_time")) {
         // Задача имеет null reminder_time
-        BinaryLogger.getInstance()?.log(213u, listOf<Any>(taskId, 43), 43)
         throw IllegalStateException("Missing reminder_time in task payload: $this")
     } else {
         val reminderStr = optString("reminder_time", null)
         if (reminderStr.isNullOrEmpty()) {
             // Задача имеет пустой reminder_time
-            BinaryLogger.getInstance()?.log(214u, listOf<Any>(taskId, 43), 43)
             throw IllegalStateException("Empty reminder_time in task payload: $this")
         } else {
             reminderStr
@@ -135,9 +149,9 @@ internal fun JSONObject.toTask(): Task {
         enabled = enabledValue,
         completed = completedValue,
         assignedUserIds = assignedUserIds,
-        updatedAt = if (isNull("updated_at")) System.currentTimeMillis() else getLong("updated_at"),
+        updatedAt = parseIsoDateTime(optString("updated_at", null)) ?: System.currentTimeMillis(),
         lastAccessed = System.currentTimeMillis(),
-        lastShownAt = if (isNull("last_shown_at")) null else getLong("last_shown_at"),
-        createdAt = if (isNull("created_at")) System.currentTimeMillis() else getLong("created_at")
+        lastShownAt = parseIsoDateTime(optString("last_shown_at", null)),
+        createdAt = parseIsoDateTime(optString("created_at", null)) ?: System.currentTimeMillis()
     )
 }

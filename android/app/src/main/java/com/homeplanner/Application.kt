@@ -6,9 +6,6 @@ import com.homeplanner.api.LocalApi
 import com.homeplanner.api.ServerApi
 import com.homeplanner.api.UsersServerApi
 import com.homeplanner.database.AppDatabase
-import com.homeplanner.debug.BinaryLogger
-import com.homeplanner.debug.ChunkSender
-import com.homeplanner.debug.LogCleanupManager
 import com.homeplanner.repository.OfflineRepository
 import com.homeplanner.sync.SyncService
 import com.homeplanner.utils.TaskDateCalculator
@@ -32,7 +29,6 @@ import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.bind
 import org.koin.dsl.module
 
-
 // DI Module
 val appModule = module {
     // Database
@@ -48,16 +44,26 @@ val appModule = module {
     single { NetworkSettings(androidContext()) }
     single { UserSettings(androidContext()) }
 
+    // HTTP Client
+    single {
+        okhttp3.OkHttpClient.Builder()
+            .connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+            .writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+            .build()
+    }
+
     // APIs
     single { LocalApi(get(), get()) }
-    singleOf(::ServerApi)
+    single { ServerApi() }
 
     // Sync
     single { SyncService(get(), get(), androidContext()) }
 
     // ViewModel
-    viewModel { TaskViewModel(get(), get(), get(), get()) }
-    viewModel { SettingsViewModel(get(), get(), get(), get()) }
+    viewModel { TaskViewModel(androidContext() as Application, get(), get(), get()) }
+    viewModel { SettingsViewModel(androidContext() as Application, get(), get(), get()) }
+    android.util.Log.d("Application", "SettingsViewModel registered in DI")
 }
 
 class Application : android.app.Application() {
@@ -69,12 +75,16 @@ class Application : android.app.Application() {
         android.util.Log.d("Application", "Starting Application onCreate")
 
         // Initialize Koin DI
-        startKoin {
-            androidContext(this@Application)
-            modules(appModule)
+        try {
+            startKoin {
+                androidContext(this@Application)
+                modules(appModule)
+            }
+            android.util.Log.d("Application", "Koin initialized successfully")
+        } catch (e: Exception) {
+            android.util.Log.e("Application", "Failed to initialize Koin", e)
+            return // Don't continue if DI fails
         }
-
-        android.util.Log.d("Application", "Koin initialized successfully")
 
         // Initialize DI container
         initializeDependencies()
@@ -105,13 +115,16 @@ class Application : android.app.Application() {
         // Получить serverApi, offlineRepository, syncService, taskValidationService из DI
 
         // Perform initial cache synchronization to load users
+        android.util.Log.d("Application", "createTaskSyncManager: launching performInitialCacheSync")
         scope.launch {
+            android.util.Log.d("Application", "createTaskSyncManager: inside launch, calling performInitialCacheSync")
             performInitialCacheSync()
         }
     }
 
     private fun performInitialCacheSync() {
         android.util.Log.i("Application", "performInitialCacheSync: starting")
+        android.util.Log.i("Application", "performInitialCacheSync: checking if network settings are configured")
         val networkSettings = NetworkSettings(this)
 
         scope.launch {
@@ -124,12 +137,13 @@ class Application : android.app.Application() {
                     null
                 }
                 val finalNetworkConfig = networkConfig ?: NetworkConfig(
-                    host = "192.168.0.2", // Default host for debug
+                    host = "192.168.1.1", // Default host for device to reach host machine
                     port = 8000,
-                    apiVersion = "0.3", // Changed to match backend
+                    apiVersion = "0.3", // Use v0.3 to match backend
                     useHttps = false
                 )
                 android.util.Log.i("Application", "performInitialCacheSync: networkConfig = $networkConfig")
+                android.util.Log.i("Application", "performInitialCacheSync: finalNetworkConfig = $finalNetworkConfig")
 
                 val apiBaseUrl = finalNetworkConfig.toApiBaseUrl()
                 android.util.Log.i("Application", "performInitialCacheSync: apiBaseUrl = $apiBaseUrl")
@@ -137,14 +151,14 @@ class Application : android.app.Application() {
                 // Note: baseUrl is now immutable and sourced from BuildConfig, no need to set globally
 
                 // Get syncService from DI
+                android.util.Log.d("Application", "Getting Koin context")
                 val koin = GlobalContext.get()!!
+                android.util.Log.d("Application", "Koin context obtained: $koin")
                 val syncService = koin.get<SyncService>()
+                android.util.Log.d("Application", "SyncService obtained from DI")
 
-                val usersApi = UsersServerApi()
-                val groupsApi = GroupsServerApi()
-
-                android.util.Log.i("Application", "Attempting to sync users from server")
-                val result = syncService.syncCacheWithServer(groupsApi, usersApi)
+                android.util.Log.i("Application", "Attempting to sync from server with baseUrl: $apiBaseUrl")
+                val result = syncService.syncCacheWithServer(baseUrl = apiBaseUrl)
                 if (result.isFailure) {
                     android.util.Log.w("Application", "Failed to sync users from server: ${result.exceptionOrNull()?.message}")
                 } else {
@@ -165,50 +179,7 @@ class Application : android.app.Application() {
     }
 
     private fun initializeLogging() {
-        // Initialize BinaryLogger
-        BinaryLogger.initialize(this)
-
-        // Log application start
-        // Приложение запущено
-        BinaryLogger.getInstance()?.log(100u, emptyList<Any>(), 5, 173)
-
-        // Initialize ChunkSender for automatic log upload
-        initializeLogUpload()
-
-        // Initialize LogCleanupManager for automatic cleanup
-        LogCleanupManager.start(this)
+        // Logging initialization removed - BinaryLogger deleted
     }
 
-    private fun initializeLogUpload() {
-        // Get networkConfig from NetworkSettings or use default
-        val networkSettings = NetworkSettings(this)
-        val networkConfig = runBlocking {
-            networkSettings.configFlow.first()
-        } ?: NetworkConfig(
-            apiVersion = "0.2",
-            host = "localhost",
-            port = 8000,
-            useHttps = false // Default to HTTP for development
-        )
-
-        android.util.Log.d("Application", "initializeLogUpload: networkConfig = $networkConfig")
-        android.util.Log.d("Application", "initializeLogUpload: BuildConfig.DEBUG = ${com.homeplanner.BuildConfig.DEBUG}")
-
-        val storage = BinaryLogger.getStorage()
-        android.util.Log.d("Application", "initializeLogUpload: storage = $storage")
-
-        if (storage != null) {
-            ChunkSender.start(this@Application, networkConfig, storage)
-            android.util.Log.d("Application", "initializeLogUpload: ChunkSender.start called")
-
-            // Check ChunkSender status after a short delay
-            scope.launch {
-                kotlinx.coroutines.delay(1000)
-                val status = ChunkSender.getStatus()
-                android.util.Log.d("Application", "initializeLogUpload: ChunkSender status = $status")
-            }
-        } else {
-            android.util.Log.e("Application", "initializeLogUpload: BinaryLogger.getStorage() returned null")
-        }
-    }
 }
