@@ -127,15 +127,11 @@
                     <div class="card" style="margin-bottom:16px; padding:12px;">
                         <h3 style="margin-top:0;">Установить Android приложение</h3>
                         <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
-                            <button class="btn btn-primary" id="show-apk-qr-btn">Показать QR для APK</button>
                             <a class="btn btn-secondary" id="direct-apk-link" href="#" target="_blank" rel="noopener">Скачать APK</a>
-                            <div id="apk-qr" style="display:none; padding:8px; border:1px solid #ddd; border-radius:8px;"></div>
                         </div>
                         <div style="margin-top:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                             <label for="apk-host-input" style="font-size:0.9em;">Хост для телефона (LAN/IP:порт):</label>
                             <input id="apk-host-input" type="text" placeholder="192.168.1.10:8000" style="max-width:260px;">
-                            <button class="btn btn-secondary" id="apply-apk-host">Обновить QR</button>
-                            <small id="apk-host-hint" style="color:#666;">Если здесь localhost — телефон не откроет ссылку. Укажите IP машины с бэкендом.</small>
                         </div>
                         <div style="margin-top:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                             <label for="api-base-input" style="font-size:0.9em;">API Base URL (frontend):</label>
@@ -146,22 +142,6 @@
                     </div>
                     <div class="card" style="margin-bottom:16px; padding:12px;">
                         <h3 style="margin-top:0;">Настройки подключения для Android</h3>
-                        <div id="network-config-info" style="margin-bottom:12px; padding:8px; background:#f5f5f5; border-radius:4px;">
-                            <div><strong>Текущие настройки:</strong></div>
-                            <div id="network-config-details" style="margin-top:4px; font-size:0.9em; color:#666;"></div>
-                        </div>
-                        <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
-                            <button class="btn btn-primary" id="show-network-config-qr-btn">Показать QR-код с настройками</button>
-                            <div id="network-config-qr" style="display:none; padding:8px; border:1px solid #ddd; border-radius:8px;"></div>
-                        </div>
-                        <div style="margin-top:10px; padding:8px; background:#e3f2fd; border-radius:4px; font-size:0.9em;">
-                            <strong>ℹ️</strong> Отсканируйте QR-код в Android приложении для автоматической настройки подключения к серверу.
-                            <br>Убедитесь, что хост доступен с вашего Android устройства (для LAN используйте IP адрес устройства в сети).
-                        </div>
-                    </div>
-                </div>
-                <div id="users-view" style="display:none;">
-                    <div class="users-view-layout">
                         <div class="users-form-card">
                             <div class="users-card-header">
                                 <div>
@@ -369,11 +349,44 @@
     <!-- Toast Container -->
     <div class="toast-container" id="toast-container"></div>
 
+    <!-- Load client config from server -->
+    <script>
+        // Load client configuration dynamically
+        (function() {
+            // Try current API version first (v0.3), fallback to v0.2
+            const tryLoadConfig = (apiVersion) => {
+                return fetch(`/api/v${apiVersion}/client-config`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    return response.json();
+                })
+                .then(config => {
+                    window.HP_CONFIG = {
+                        websocketUrl: config.websocket_url,
+                        apiVersionPath: config.api_version_path
+                    };
+                    console.log(`Client config loaded from API v${apiVersion}:`, window.HP_CONFIG);
+                });
+            };
+
+            tryLoadConfig('0.3')
+                .catch(() => tryLoadConfig('0.2'))
+                .catch(error => {
+                    console.warn('Failed to load client config, using defaults:', error);
+                    // Fallback to defaults (latest version)
+                    window.HP_CONFIG = {
+                        websocketUrl: 'ws://localhost:8000/api/v0.3/tasks/stream',
+                        apiVersionPath: '/api/v0.3'
+                    };
+                });
+        })();
+    </script>
     <script src="config.js"></script>
     <script src="utils/todayViewFilter.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-    <script src="api.js"></script>
-    <script src="app.js"></script>
+    <script type="module" src="app.js"></script>
     <script>
         (function(){
             // Compute backend host for phone: prefer user input, else API_BASE_URL, else window
@@ -448,18 +461,6 @@
                 linkEl.href = apkUrl;
                 return apkUrl;
             }
-            const applyBtn = document.getElementById('apply-apk-host');
-            if (applyBtn) applyBtn.addEventListener('click', function(){
-                const v = (hostInput && hostInput.value || '').trim();
-                if (v) localStorage.setItem('apkHost', v);
-                refreshApkUrl().then(function(url){
-                    const qrBox = document.getElementById('apk-qr');
-                    if (qrBox && qrBox.style.display !== 'none') {
-                        qrBox.innerHTML = '';
-                        renderQr(url, qrBox);
-                    }
-                });
-            });
             const applyApiBtn = document.getElementById('apply-api-base');
             if (applyApiBtn) applyApiBtn.addEventListener('click', function(){
                 const v = (apiBaseInput && apiBaseInput.value || '').trim();
@@ -469,91 +470,6 @@
                     alert('API Base URL сохранён. Обновите страницу, чтобы применить.');
                 }
             });
-            function renderQr(url, container){
-                if (window.QRCode && typeof QRCode.toCanvas === 'function') {
-                    QRCode.toCanvas(url, { width: 180 }, function(err, canvas){
-                        if (!err && canvas) container.appendChild(canvas);
-                        else {
-                            const img = new Image(); img.width = 180; img.height = 180; img.alt = 'QR code';
-                            img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(url);
-                            container.appendChild(img);
-                        }
-                    });
-                } else {
-                    const img = new Image(); img.width = 180; img.height = 180; img.alt = 'QR code';
-                    img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(url);
-                    container.appendChild(img);
-                }
-            }
-
-            document.getElementById('show-apk-qr-btn').addEventListener('click', function(){
-                const qrBox = document.getElementById('apk-qr');
-                const render = function(url){
-                    qrBox.style.display = 'block';
-                    qrBox.innerHTML = '';
-                    renderQr(url, qrBox);
-                };
-                if (apkUrl) {
-                    render(apkUrl);
-                } else {
-                    refreshApkUrl().then(render);
-                }
-            });
-            
-            // Network config QR code generation
-            function extractApiVersion(apiBaseUrl) {
-                const match = apiBaseUrl.match(/\/api\/v([\d.]+)/);
-                return match ? match[1] : "0.2";
-            }
-            
-            function generateNetworkConfig() {
-                const host = window.HP_BACKEND_HOST || "localhost";
-                const port = window.HP_BACKEND_PORT || 8000;
-                const apiVersion = extractApiVersion(window.HP_API_BASE_URL || "http://localhost:8000/api/v0.2");
-                const useHttps = window.location.protocol === "https:" || false;
-                
-                return {
-                    host: host,
-                    port: port,
-                    apiVersion: apiVersion,
-                    useHttps: useHttps
-                };
-            }
-            
-            function updateNetworkConfigInfo() {
-                const config = generateNetworkConfig();
-                const detailsEl = document.getElementById('network-config-details');
-                if (detailsEl) {
-                    detailsEl.innerHTML = 'Хост: ' + config.host + '<br>Порт: ' + config.port + '<br>API Версия: ' + config.apiVersion + '<br>Протокол: ' + (config.useHttps ? 'HTTPS' : 'HTTP');
-                }
-            }
-            
-            // Update info when settings view is shown
-            const settingsBtn = document.getElementById('view-settings-btn');
-            if (settingsBtn) {
-                settingsBtn.addEventListener('click', function() {
-                    setTimeout(updateNetworkConfigInfo, 100);
-                });
-            }
-            
-            // Generate QR code for network config
-            const showNetworkConfigQrBtn = document.getElementById('show-network-config-qr-btn');
-            if (showNetworkConfigQrBtn) {
-                showNetworkConfigQrBtn.addEventListener('click', function() {
-                    const config = generateNetworkConfig();
-                    const jsonString = JSON.stringify(config);
-                    const qrBox = document.getElementById('network-config-qr');
-                    
-                    if (qrBox) {
-                        qrBox.style.display = 'block';
-                        qrBox.innerHTML = '';
-                        renderQr(jsonString, qrBox);
-                    }
-                });
-            }
-            
-            // Initial update
-            updateNetworkConfigInfo();
         })();
     </script>
 </body>

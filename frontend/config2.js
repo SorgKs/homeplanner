@@ -7,12 +7,19 @@
  */
 (function configureHomePlanner() {
     function loadJson(path, fallback) {
+        console.log("loadJson called with path:", path);
+        console.log("DEBUG: About to create XMLHttpRequest");
         try {
             const xhr = new XMLHttpRequest();
+            console.log("DEBUG: Created XMLHttpRequest, about to open");
             xhr.open("GET", path, false);
+            console.log("DEBUG: xhr.open completed, about to overrideMimeType");
             xhr.overrideMimeType("application/json");
+            console.log("DEBUG: overrideMimeType completed, about to send");
             xhr.send(null);
+            console.log("DEBUG: xhr.send completed, checking status");
             if (xhr.status >= 200 && xhr.status < 300 && xhr.responseText) {
+                console.log("loadJson parsing JSON for", path, "response length:", xhr.responseText.length);
                 return JSON.parse(xhr.responseText);
             }
         } catch (error) {

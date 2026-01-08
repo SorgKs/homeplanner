@@ -1,32 +1,17 @@
-/**
- * Main application logic for HomePlanner frontend.
- */
+// Main application entry point
+console.log('app.js loading...');
 
-let allTasks = []; // Все задачи (для текущего вида)
-let todayTasksCache = []; // Кэш задач для вида "Сегодня"
-let allTasksCache = []; // Кэш всех задач
-let groups = []; // Список групп
-let filteredTasks = [];
-let searchQuery = '';
-let filterState = null;
-let currentView = 'today'; // 'today', 'all', 'history', 'settings', 'users'
-let adminMode = false; // Режим администратора
-let ws = null; // WebSocket connection
-let wsReconnectTimer = null; // Таймер переподключения WebSocket
-let timeControlState = null; // Состояние панели управления временем
-let users = []; // Пользователи для назначения
-let selectedUserId = null; // ID выбранного пользователя для фильтра (для "Сегодня" - из cookie, для "Все задачи" - из UI)
-let allTasksUserFilterId = null; // ID пользователя для фильтра во вкладке "Все задачи" (опционально)
-let appInitialized = false; // Флаг инициализации интерфейса
-const USER_ROLE_LABELS = {
-    admin: 'Админ',
-    regular: 'Обычный',
-    guest: 'Гость',
-};
-const USER_STATUS_LABELS = {
-    true: 'Активен',
-    false: 'Неактивен',
-};
+import './utils.js';
+import { appInitialized, fetchAndRenderTimeState, setupEventListeners, setWsReconnectTimer } from './utils.js';
+import { getWsUrl } from './websocket.js';
+import './user_management.js';
+import './task_management.js';
+import './rendering.js';
+import './filters.js';
+import './history.js';
+import './main.js';
+import './time_utils.js';
+import './api.js';
 
 // Cookie utilities to persist selected user
 function setCookie(name, value, days = 180) {
@@ -77,16 +62,7 @@ function applySelectedUserFromCookie() {
     selectedUserId = idNum;
 }
 
-function getWsUrl() {
-    const host =
-        (typeof window !== "undefined" && window.HP_BACKEND_HOST) || "localhost";
-    const port =
-        (typeof window !== "undefined" && window.HP_BACKEND_PORT) || 8000;
-    const path =
-        (typeof window !== "undefined" && window.HP_WS_PATH) ||
-        "/api/v0.2/tasks/stream";
-    return `ws://${host}:${port}${path}`;
-}
+
 
 function applyTaskEventFromWs(action, taskJson, taskId) {
     // For today view, reload from backend to ensure correct filtering
@@ -179,7 +155,7 @@ function connectWebSocket() {
         // Отменяем предыдущий таймер переподключения, если есть
         if (wsReconnectTimer) {
             clearTimeout(wsReconnectTimer);
-            wsReconnectTimer = null;
+            setWsReconnectTimer(null);
         }
         ws = new WebSocket(url);
         ws.onopen = () => {
@@ -201,7 +177,7 @@ function connectWebSocket() {
         ws.onclose = () => {
             console.log('[WS] connection closed, retry in 2s');
             // Сохраняем таймер, чтобы можно было его отменить
-            wsReconnectTimer = setTimeout(connectWebSocket, 2000);
+            setWsReconnectTimer(setTimeout(connectWebSocket, 2000));
         };
         ws.onerror = (e) => {
             console.error('[WS] error', e);
@@ -215,7 +191,7 @@ function disconnectWebSocket() {
     // Отменяем таймер переподключения
     if (wsReconnectTimer) {
         clearTimeout(wsReconnectTimer);
-        wsReconnectTimer = null;
+        setWsReconnectTimer(null);
     }
     // Закрываем соединение
     if (ws) {
@@ -500,197 +476,7 @@ function updateMonthlyYearlyOptions() {
     }
 }
 
-/**
- * Setup event listeners.
- */
-function setupEventListeners() {
-    // Add buttons
-    document.getElementById('add-task-btn').addEventListener('click', () => openTaskModal());
-    document.getElementById('add-group-btn').addEventListener('click', () => openGroupModal());
 
-    // Search input
-    document.getElementById('tasks-search').addEventListener('input', (e) => {
-        searchQuery = e.target.value;
-        filterAndRenderTasks();
-    });
-    const userFilter = document.getElementById('user-filter');
-    if (userFilter) {
-        userFilter.addEventListener('change', (e) => {
-            const value = e.target.value;
-            const userId = value ? parseInt(value, 10) : null;
-            
-            // Для вкладки "Все задачи" используем отдельный фильтр (не сохраняем в cookie)
-            if (currentView === 'all') {
-                allTasksUserFilterId = userId;
-            } else {
-                // Для других вкладок (включая "Сегодня") используем selectedUserId и сохраняем в cookie
-                selectedUserId = userId;
-                if (value) {
-                    setCookie('hp.selectedUserId', selectedUserId);
-                } else {
-                    deleteCookie('hp.selectedUserId');
-                }
-            }
-            filterAndRenderTasks();
-        });
-    }
-    const resetUserBtn = document.getElementById('user-reset-btn');
-    if (resetUserBtn) {
-        resetUserBtn.addEventListener('click', () => {
-            if (currentView === 'all') {
-                // Для "Все задачи" просто сбрасываем фильтр
-                const select = document.getElementById('user-filter');
-                if (select) select.value = '';
-                allTasksUserFilterId = null;
-                showToast('Фильтр по пользователю сброшен', 'info');
-            } else {
-                // Для других вкладок (включая "Сегодня") сбрасываем selectedUserId и cookie
-                deleteCookie('hp.selectedUserId');
-                const select = document.getElementById('user-filter');
-                if (select) select.value = '';
-                selectedUserId = null;
-                showToast('Выбор пользователя сброшен', 'info');
-            }
-            filterAndRenderTasks();
-        });
-    }
-
-    // Logout button
-    const logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', async () => {
-            // Закрываем WebSocket соединение и отменяем переподключение
-            disconnectWebSocket();
-            
-            // Удаляем cookie с выбранным пользователем
-            deleteCookie('hp.selectedUserId');
-            selectedUserId = null;
-            
-            // Сбрасываем состояние приложения
-            appInitialized = false;
-            
-            // Показываем экран выбора пользователя
-            await showUserPickScreen();
-            
-            showToast('Вы вышли из системы', 'info');
-        });
-    }
-
-    // Filter button
-    document.getElementById('tasks-filter-btn').addEventListener('click', () => toggleTaskFilter());
-
-    // View toggle buttons
-    document.getElementById('view-today-btn').addEventListener('click', () => switchView('today'));
-    document.getElementById('view-all-btn').addEventListener('click', () => switchView('all'));
-    document.getElementById('view-history-btn').addEventListener('click', () => switchView('history'));
-    const settingsBtn = document.getElementById('view-settings-btn');
-    if (settingsBtn) settingsBtn.addEventListener('click', () => switchView('settings'));
-    const usersBtn = document.getElementById('view-users-btn');
-    if (usersBtn) usersBtn.addEventListener('click', () => switchView('users'));
-    
-    // Admin mode toggle
-    document.getElementById('toggle-admin-btn').addEventListener('click', toggleAdminMode);
-    setupTimeControlButtons();
-    
-    // History filters
-    document.getElementById('history-group-filter').addEventListener('change', () => {
-        updateHistoryFilters(); // Update task list based on group
-        renderHistoryView();
-    });
-    document.getElementById('history-task-filter').addEventListener('change', renderHistoryView);
-    document.getElementById('history-date-from').addEventListener('change', renderHistoryView);
-    document.getElementById('history-date-to').addEventListener('change', renderHistoryView);
-
-    // Form submissions
-    document.getElementById('task-form').addEventListener('submit', handleTaskSubmit);
-    document.getElementById('group-form').addEventListener('submit', handleGroupSubmit);
-    const userForm = document.getElementById('user-form');
-    if (userForm) {
-        userForm.addEventListener('submit', handleUserSubmit);
-    }
-
-    // Cancel buttons
-    document.getElementById('task-cancel').addEventListener('click', closeTaskModal);
-    document.getElementById('group-cancel').addEventListener('click', closeGroupModal);
-    const userCancelBtn = document.getElementById('user-cancel');
-    if (userCancelBtn) {
-        userCancelBtn.addEventListener('click', resetUserForm);
-    }
-
-    // Task type toggle
-    document.getElementById('task-is-recurring').addEventListener('change', (e) => {
-        const recurringFields = document.getElementById('recurring-fields');
-        const intervalFields = document.getElementById('interval-fields');
-        const dateLabel = document.getElementById('date-label');
-        const taskType = e.target.value;
-        
-        if (taskType === 'one_time') {
-            recurringFields.style.display = 'none';
-            intervalFields.style.display = 'none';
-            dateLabel.textContent = 'Начало:';
-            document.getElementById('task-recurrence').required = false;
-            document.getElementById('task-interval').required = false;
-            document.getElementById('task-interval-days').required = false;
-        } else if (taskType === 'recurring') {
-            recurringFields.style.display = 'block';
-            intervalFields.style.display = 'none';
-            dateLabel.textContent = 'Начало:';
-            document.getElementById('task-recurrence').required = true;
-            document.getElementById('task-interval').required = true;
-            document.getElementById('task-interval-days').required = false;
-            // Update interval field visibility based on recurrence type
-            updateIntervalFieldVisibility();
-            updateMonthlyYearlyOptions();
-        } else if (taskType === 'interval') {
-            recurringFields.style.display = 'none';
-            intervalFields.style.display = 'block';
-            dateLabel.textContent = 'Начало:';
-            document.getElementById('task-recurrence').required = false;
-            document.getElementById('task-interval').required = false;
-            document.getElementById('task-interval-days').required = true;
-        }
-        
-        // Устанавливаем дефолт на сегодня при изменении типа задачи (только для новых задач)
-        const taskId = document.getElementById('task-id').value;
-        if (!taskId) {
-            setQuickDate('today');
-        }
-    });
-    
-    // Recurrence type toggle - show/hide interval field and monthly/yearly options
-    document.getElementById('task-recurrence').addEventListener('change', () => {
-        updateIntervalFieldVisibility();
-        updateMonthlyYearlyOptions();
-    });
-    
-    // Binding type toggle - show/hide weekday fields
-    document.querySelectorAll('input[name="monthly-yearly-binding"]').forEach(radio => {
-        radio.addEventListener('change', () => {
-            updateMonthlyYearlyOptions();
-        });
-    });
-
-    // Modal close buttons
-    document.querySelectorAll('.close').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const modal = e.target.closest('.modal');
-            if (modal.id === 'task-modal') closeTaskModal();
-            else if (modal.id === 'group-modal') closeGroupModal();
-            else if (modal.id === 'history-modal') closeHistoryModal();
-        });
-    });
-
-    // Close modals when clicking outside
-    window.addEventListener('click', (e) => {
-        if (e.target.classList.contains('modal')) {
-            e.target.classList.remove('show');
-            e.target.style.display = 'none';
-        }
-    });
-
-    resetUserForm();
-    updateAdminNavigation();
-}
 
 function mapTaskResponse(task) {
     const reminderTime = task.reminder_time ?? null;
@@ -718,101 +504,7 @@ function applyCurrentViewData() {
     filterAndRenderTasks();
 }
 
-/**
- * Load all data from API.
- */
-async function loadData() {
-    try {
-        showLoading('tasks-list');
-        // Загружаем полный список задач и отдельный список для вида "Сегодня"
-        const [tasks, todayTaskIdsList, groupsData, usersData] = await Promise.all([
-            tasksAPI.getAll(),
-            tasksAPI.getTodayIds(),
-            groupsAPI.getAll(),
-            usersAPI.getAll()
-        ]);
-        
-        todayTaskIds = new Set(todayTaskIdsList || []);
-        groups = groupsData;
-        users = usersData;
-        updateUserFilterOptions();
-        updateAssigneeSelect();
-        // Apply selected user from cookie (if present)
-        applySelectedUserFromCookie();
-        renderUsersList();
-        if (currentView === 'users') {
-            renderUsersView();
-        }
-        
-        // Все теперь задачи
-        const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        
-        // Map tasks and remove duplicates by ID (keep first occurrence)
-        const tasksMap = new Map();
-        tasks.forEach(t => {
-            // Определяем статус выполнения: задача выполнена если:
-            // 1. Для разовых задач: не включена (enabled = false)
-            // 2. Для повторяющихся и интервальных: completed = true
-            // Галка подтверждения НЕ зависит от reminder_time
-            let isCompleted = false;
 
-            // Для разовых задач: выполнена если не включена
-            if (t.task_type === 'one_time') {
-                isCompleted = !t.enabled;
-            } else {
-                // Для повторяющихся и интервальных задач: выполнена если completed = true
-                isCompleted = t.completed === true;
-            }
-            
-            const mappedTask = {
-                ...t, 
-                type: 'task', 
-                is_recurring: t.task_type === 'recurring',
-                task_type: t.task_type || 'one_time',
-                due_date: t.reminder_time,  // reminder_time теперь хранит дату выполнения
-                is_completed: isCompleted,
-                is_enabled: t.enabled,  // enabled заменяет is_enabled
-                assigned_user_ids: Array.isArray(t.assigned_user_ids) ? t.assigned_user_ids.map(Number) : [],
-                assignees: Array.isArray(t.assignees) ? t.assignees : []
-            };
-            
-            // Keep first occurrence if duplicate
-            if (!tasksMap.has(mappedTask.id)) {
-                tasksMap.set(mappedTask.id, mappedTask);
-            }
-        });
-        
-        allTasks = Array.from(tasksMap.values());
-        
-        if (allTasks.length !== tasks.length) {
-            console.warn(`Found ${tasks.length - allTasks.length} duplicate tasks, removed`);
-        }
-        
-        // Сохраняем задачи в кэш для разных видов
-        allTasksCache = [...allTasks];
-        
-        // Фильтруем задачи для вида "Сегодня" по ID, полученным с бэкенда
-        todayTasksCache = allTasks.filter(t => todayTaskIds.has(t.id));
-        
-        // Устанавливаем активный вид по умолчанию только при первой загрузке
-        if (!document.getElementById('view-today-btn').classList.contains('active') && 
-            !document.getElementById('view-all-btn').classList.contains('active')) {
-            switchView('today');
-        }
-        filterAndRenderTasks();
-        updateGroupSelect();
-    } catch (error) {
-        console.error('Failed to load data:', error);
-        showToast('Ошибка загрузки данных. Убедитесь, что backend запущен.', 'error');
-        document.getElementById('tasks-list').innerHTML = `
-            <div class="empty-state">
-                <div class="empty-state-icon">⚠️</div>
-                <div class="empty-state-text">Ошибка загрузки</div>
-            </div>
-        `;
-    }
-}
 
 /**
  * Update group select in task modal.
@@ -887,120 +579,15 @@ function setAssigneeSelection(selectedIds) {
     updateAssigneeSelect(selectedIds);
 }
 
-function renderUsersList() {
-    const container = document.getElementById('users-list');
-    if (!container) return;
-    const sortedUsers = [...users].sort((a, b) => {
-        if (a.is_active !== b.is_active) {
-            return a.is_active ? -1 : 1;
-        }
-        return a.name.localeCompare(b.name, 'ru');
-    });
-    if (!sortedUsers.length) {
-        container.innerHTML = `
-            <div class="empty-state" style="min-height: unset; padding: 12px;">
-                <div class="empty-state-icon">👥</div>
-                <div class="empty-state-text">Нет пользователей</div>
-                <div class="empty-state-hint">Добавьте хотя бы одного пользователя, чтобы назначать задачи</div>
-            </div>
-        `;
-        return;
-    }
-    container.innerHTML = sortedUsers.map(user => `
-        <div class="user-row">
-            <div class="user-info">
-                <span class="user-name">${escapeHtml(user.name)}</span>
-                ${user.email ? `<span class="user-email">${escapeHtml(user.email)}</span>` : '<span class="user-email">Без email</span>'}
-                <div class="user-meta">
-                    <span class="user-chip">${USER_ROLE_LABELS[user.role] || user.role}</span>
-                    <span class="user-chip ${user.is_active ? 'user-chip-active' : 'user-chip-inactive'}">${USER_STATUS_LABELS[user.is_active] || ''}</span>
-                </div>
-            </div>
-            <div class="user-actions">
-                <button class="btn btn-secondary btn-sm" onclick="editUser(${user.id})" title="Редактировать">✎</button>
-                <button class="btn btn-danger btn-sm" onclick="deleteUser(${user.id})" title="Удалить">✕</button>
-            </div>
-        </div>
-    `).join('');
-}
 
-function renderUsersView() {
-    renderUsersList();
-}
 
-function resetUserForm() {
-    const form = document.getElementById('user-form');
-    if (!form) return;
-    form.reset();
-    const idInput = document.getElementById('user-id');
-    if (idInput) idInput.value = '';
-    const title = document.getElementById('user-form-title');
-    if (title) title.textContent = 'Добавить пользователя';
-    const saveBtn = document.getElementById('user-save');
-    if (saveBtn) saveBtn.textContent = 'Добавить';
-    const roleSelect = document.getElementById('user-role');
-    if (roleSelect) roleSelect.value = 'regular';
-    const activeCheckbox = document.getElementById('user-active');
-    if (activeCheckbox) activeCheckbox.checked = true;
-}
 
-async function handleUserSubmit(e) {
-    e.preventDefault();
-    const id = document.getElementById('user-id').value;
-    const name = document.getElementById('user-name').value.trim();
-    const email = document.getElementById('user-email').value.trim();
-    if (!name) {
-        showToast('Имя пользователя обязательно', 'warning');
-        return;
-    }
-    const role = document.getElementById('user-role').value;
-    const isActive = document.getElementById('user-active').checked;
-    const payload = { name, email: email || null, role, is_active: isActive };
-    try {
-        if (id) {
-            await usersAPI.update(parseInt(id, 10), payload);
-            showToast('Пользователь обновлён', 'success');
-        } else {
-            await usersAPI.create(payload);
-            showToast('Пользователь создан', 'success');
-        }
-        resetUserForm();
-        await loadData();
-    } catch (error) {
-        console.error('Failed to save user', error);
-        showToast(error.message || 'Не удалось сохранить пользователя', 'error');
-    }
-}
 
-function editUser(id) {
-    const user = users.find(u => u.id === id);
-    if (!user) return;
-    const title = document.getElementById('user-form-title');
-    if (title) title.textContent = 'Редактировать пользователя';
-    document.getElementById('user-id').value = user.id;
-    document.getElementById('user-name').value = user.name;
-    document.getElementById('user-email').value = user.email || '';
-    const roleSelect = document.getElementById('user-role');
-    if (roleSelect) roleSelect.value = user.role || 'regular';
-    const activeCheckbox = document.getElementById('user-active');
-    if (activeCheckbox) activeCheckbox.checked = !!user.is_active;
-    const saveBtn = document.getElementById('user-save');
-    if (saveBtn) saveBtn.textContent = 'Сохранить';
-    switchView('users');
-}
 
-async function deleteUser(id) {
-    if (!confirm('Удалить пользователя? Назначенные задачи потеряют связь с ним.')) return;
-    try {
-        await usersAPI.delete(id);
-        showToast('Пользователь удалён', 'success');
-        resetUserForm();
-        await loadData();
-    } catch (error) {
-        console.error('Failed to delete user', error);
-        showToast(error.message || 'Не удалось удалить пользователя', 'error');
-    }
-}
+
+
+
+
 
 /**
  * Switch between views.
@@ -1087,7 +674,7 @@ async function switchView(view) {
     filterAndRenderTasks();
 }
 
-function toggleUserFilterControls(visible) {
+export function toggleUserFilterControls(visible) {
     const select = document.getElementById('user-filter');
     const resetBtn = document.getElementById('user-reset-btn');
     if (select) select.parentElement.style.display = visible ? 'block' : 'none';
@@ -1142,129 +729,11 @@ function updateAdminNavigation() {
     }
 }
 
-function setupTimeControlButtons() {
-    const panel = document.getElementById('time-controls');
-    if (!panel) return;
 
-    panel.querySelectorAll('[data-time-shift-days]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const days = Number(btn.getAttribute('data-time-shift-days')) || 0;
-            handleTimeShift({ days });
-        });
-    });
-    panel.querySelectorAll('[data-time-shift-hours]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const hours = Number(btn.getAttribute('data-time-shift-hours')) || 0;
-            handleTimeShift({ hours });
-        });
-    });
 
-    const setBtn = document.getElementById('time-set-btn');
-    if (setBtn) {
-        setBtn.addEventListener('click', handleTimeSet);
-    }
 
-    const resetBtn = document.getElementById('time-reset-btn');
-    if (resetBtn) {
-        resetBtn.addEventListener('click', handleTimeReset);
-    }
-}
 
-function formatTimeDisplay(isoString) {
-    if (!isoString) return '—';
-    try {
-        const date = new Date(isoString);
-        return date.toLocaleString('ru-RU', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-        });
-    } catch (e) {
-        return isoString;
-    }
-}
 
-function renderTimeState(state) {
-    timeControlState = state;
-    const panel = document.getElementById('time-controls');
-    if (!panel) return;
-
-    const virtualEl = document.getElementById('time-virtual-value');
-    const realEl = document.getElementById('time-real-value');
-    const statusEl = document.getElementById('time-override-status');
-    const input = document.getElementById('time-set-input');
-
-    if (virtualEl) virtualEl.textContent = formatTimeDisplay(state?.virtual_now);
-    if (realEl) realEl.textContent = formatTimeDisplay(state?.real_now);
-    if (statusEl) {
-        const isOverride = !!state?.override_enabled;
-        statusEl.textContent = isOverride ? 'Переопределено' : 'Системное время';
-        statusEl.classList.toggle('override-on', isOverride);
-    }
-    if (input && state?.virtual_now && typeof formatDatetimeLocal === 'function') {
-        input.value = formatDatetimeLocal(state.virtual_now);
-    }
-}
-
-async function fetchAndRenderTimeState(showErrors = true) {
-    try {
-        const state = await timeAPI.getState();
-        renderTimeState(state);
-    } catch (error) {
-        console.error('Failed to fetch time state', error);
-        if (showErrors) showToast('Не удалось получить время с сервера', 'error');
-    }
-}
-
-async function handleTimeShift({ days = 0, hours = 0, minutes = 0 }) {
-    if (!adminMode) return;
-    try {
-        const state = await timeAPI.shift({ days, hours, minutes });
-        renderTimeState(state);
-        const deltaText =
-            days !== 0 ? `${days > 0 ? '+' : ''}${days}д` :
-            hours !== 0 ? `${hours > 0 ? '+' : ''}${hours}ч` :
-            `${minutes > 0 ? '+' : ''}${minutes}м`;
-        showToast(`Текущее время сдвинуто (${deltaText})`, 'success');
-        loadData();
-    } catch (error) {
-        console.error('Failed to shift time', error);
-        showToast(error.message || 'Не удалось сдвинуть время', 'error');
-    }
-}
-
-async function handleTimeSet() {
-    if (!adminMode) return;
-    const input = document.getElementById('time-set-input');
-    if (!input || !input.value) {
-        showToast('Выберите дату и время', 'warning');
-        return;
-    }
-    try {
-        const state = await timeAPI.set(input.value);
-        renderTimeState(state);
-        showToast('Текущее время обновлено', 'success');
-        loadData();
-    } catch (error) {
-        console.error('Failed to set time', error);
-        showToast(error.message || 'Не удалось установить время', 'error');
-    }
-}
-
-async function handleTimeReset() {
-    if (!adminMode) return;
-    try {
-        const state = await timeAPI.reset();
-        renderTimeState(state);
-        showToast('Возврат к системному времени', 'info');
-        loadData();
-    } catch (error) {
-        console.error('Failed to reset time', error);
-        showToast('Не удалось сбросить время', 'error');
-    }
-}
 
 /**
  * Filter and render tasks.
@@ -1685,11 +1154,9 @@ function renderAllTasksView() {
 function renderAllTasksHeader() {
     return `
         <div class="task-table-header">
+            <div class="task-row-cell task-row-date">Время</div>
             <div class="task-row-cell task-row-title">Задача</div>
-            <div class="task-row-cell task-row-config">Конфигурация</div>
-            <div class="task-row-cell task-row-users">Пользователи</div>
-            <div class="task-row-cell task-row-date">Следующая дата</div>
-            <div class="task-row-cell task-row-status">Статус</div>
+            <div class="task-row-cell task-row-config">Формула</div>
             <div class="task-row-cell task-row-actions">Действия</div>
         </div>
     `;
@@ -1715,21 +1182,14 @@ function renderAllTasksCard(task, now) {
     yesterdayStart.setDate(yesterdayStart.getDate() - 1);
     const category = getTaskTimeCategory(task, referenceDate, todayStart, yesterdayStart);
 
-    const statusText = isEnabled
-        ? (isCompleted ? 'Выполнена' : 'Включена')
-        : 'Отключена';
-
     const configText = task.readable_config || 'Не указано';
     const dueDateText = task.due_date ? formatDateTime(task.due_date) : '—';
-    const assigneesList = Array.isArray(task.assignees) ? task.assignees : [];
-    const assigneesHtml = assigneesList.length
-        ? assigneesList.map(user => `<span class="user-chip">${escapeHtml(user.name)}</span>`).join('')
-        : '<span style="color: var(--text-secondary); font-size: 0.85rem;">Не назначено</span>';
+    const fullTitle = task.group_id ? `${escapeHtml(groups.find(g => g.id === task.group_id)?.name || 'Без группы')}: ${escapeHtml(task.title)}` : escapeHtml(task.title);
     const rowClasses = [
         'task-row',
         isCompleted ? 'completed' : '',
-        !isCompleted && isActive && category === 'overdue' ? 'overdue' : '',
-        !isCompleted && isActive && category === 'current' ? 'current' : '',
+        !isCompleted && isEnabled && category === 'overdue' ? 'overdue' : '',
+        !isCompleted && isEnabled && category === 'current' ? 'current' : '',
         !isCompleted && isEnabled && category === 'planned' ? 'planned' : '',
         !isEnabled ? 'inactive' : '',
     ].filter(Boolean).join(' ');
@@ -2416,65 +1876,13 @@ async function deleteTask(id) {
     }
 }
 
-/**
- * Utility functions.
- */
-function formatDateTime(isoString) {
-    const date = new Date(isoString);
-    return date.toLocaleString('ru-RU', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-    });
-}
 
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
 
-/**
- * Show toast notification.
- */
-function showToast(message, type = 'info') {
-    const container = document.getElementById('toast-container');
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    
-    const icons = {
-        success: '✓',
-        error: '✕',
-        warning: '⚠',
-        info: 'ℹ'
-    };
-    
-    toast.innerHTML = `
-        <span class="toast-icon">${icons[type] || icons.info}</span>
-        <span class="toast-message">${escapeHtml(message)}</span>
-        <button class="toast-close" onclick="this.parentElement.remove()">×</button>
-    `;
-    
-    container.appendChild(toast);
-    
-    // Auto remove after 5 seconds
-    setTimeout(() => {
-        if (toast.parentElement) {
-            toast.style.animation = 'slideInRight 0.3s ease-out reverse';
-            setTimeout(() => toast.remove(), 300);
-        }
-    }, 5000);
-}
 
-/**
- * Show loading state.
- */
-function showLoading(containerId) {
-    const container = document.getElementById(containerId);
-    container.innerHTML = '<div class="loading"><span class="spinner"></span> Загрузка...</div>';
-}
+
+
+
+
 
 /**
  * Toggle task filter.
@@ -2877,5 +2285,4 @@ async function deleteHistoryEntry(historyId, taskId) {
     }
 }
 
-// Initialize app on load
-document.addEventListener('DOMContentLoaded', init);
+// Initialize app on load - handled in main.js

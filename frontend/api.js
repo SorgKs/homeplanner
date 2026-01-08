@@ -1,6 +1,7 @@
 /**
  * API client for HomePlanner backend.
  */
+console.log('api.js loading...');
 
 // API base URL configuration
 const CONFIGURED_API_BASE_URL =
@@ -23,6 +24,8 @@ if (typeof localStorage !== "undefined") {
 if (typeof window !== "undefined") {
     window.API_BASE_URL = API_BASE_URL;
 }
+
+export { timeAPI, tasksAPI, groupsAPI, usersAPI, eventsAPI };
 
 /**
  * Format datetime-local input value from ISO string.
