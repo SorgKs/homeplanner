@@ -33,6 +33,10 @@ class TaskSyncManager(
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
+    private var isQueueSyncInProgress = false
+    private var isFullSyncInProgress = false
+    private var lastFullSyncTime = 0L
+
     suspend fun syncTasksServer(): Result<Unit> = runCatching {
         sendQueueToServer().getOrThrow()
 
@@ -40,27 +44,7 @@ class TaskSyncManager(
         updateLocalCache(serverTasks).getOrThrow()
     }
 
-    private suspend fun performQueueSync() {
-        val networkConfig = null // TODO: pass from caller
 
-        // 1. Sync queue first (apply pending changes to server)
-        val queueResult = try {
-            syncService.syncQueue()
-        } catch (e: Exception) {
-            Log.w("TaskSyncManager", "Queue sync failed", e)
-            null
-        }
-
-        // 2. If queue sync was successful and had operations, cache is already updated
-        val syncResult = queueResult?.getOrNull()
-        if (syncResult?.successCount ?: 0 > 0) {
-            Log.d("TaskSyncManager", "Queue sync applied ${syncResult?.successCount} operations")
-            return
-        }
-
-        // 3. Otherwise, perform full server sync
-        performServerSync()
-    }
 
     private suspend fun performServerSync() {
         try {
@@ -127,27 +111,102 @@ class TaskSyncManager(
         Log.d("TaskSyncManager", "Full sync completed successfully")
     }
 
+    /**
+     * Синхронизация только очереди операций с сервером.
+     * Не включает полную синхронизацию задач/групп/пользователей.
+     */
+    private suspend fun performQueueSync(): Result<Unit> = runCatching {
+        syncService.syncQueue().getOrThrow()
+    }
+
+    /**
+     * Синхронизация данных с сервера (задачи/группы/пользователи).
+     * Не включает отправку очереди операций.
+     */
+    private suspend fun performDataSync(): Result<Unit> = runCatching {
+        val serverTasks = serverApi.getTasksServer().getOrThrow()
+        updateLocalCache(serverTasks).getOrThrow()
+        syncGroupsAndUsersServer().getOrThrow()
+        Log.d("TaskSyncManager", "Data sync completed successfully")
+    }
+
+    /**
+     * Проверка наличия сообщений и отправка очереди на сервер.
+     */
+    private suspend fun checkAndSubmitQueue() {
+        if (isQueueSyncInProgress || isFullSyncInProgress) return
+
+        val pendingCount = offlineRepository.getPendingOperationsCount()
+        if (pendingCount > 0) {
+            Log.d("TaskSyncManager", "Pending operations detected: $pendingCount, starting queue submission")
+            isQueueSyncInProgress = true
+
+            val syncResult = performQueueSync()
+
+            if (syncResult.isSuccess) {
+                Log.d("TaskSyncManager", "Queue submission completed successfully")
+            } else {
+                Log.w("TaskSyncManager", "Queue submission failed: ${syncResult.exceptionOrNull()?.message}")
+            }
+            isQueueSyncInProgress = false
+        }
+    }
+
     fun observeSyncRequests() {
+        Log.d("TaskSyncManager", "observeSyncRequests: starting sync observation loops")
+
+        // Быстрая проверка флага синхронизации (каждые 200 мс)
         scope.launch {
             while (true) {
                 try {
-                    // Проверяем флаг requestSync каждые 30 секунд
-                    delay(30_000L)
+                    delay(200L) // Проверка каждые 200 мс
 
                     if (offlineRepository.requestSync) {
-                        Log.d("TaskSyncManager", "Sync request detected, starting sync")
-                        val syncResult = performFullSync()
-
-                        if (syncResult.isSuccess) {
-                            // Сбрасываем флаг после успешной синхронизации
-                            offlineRepository.requestSync = false
-                            Log.d("TaskSyncManager", "Sync completed successfully")
-                        } else {
-                            Log.w("TaskSyncManager", "Sync failed: ${syncResult.exceptionOrNull()?.message}")
-                        }
+                        offlineRepository.requestSync = false  // Сбрасываем флаг сразу
+                        checkAndSubmitQueue()
                     }
                 } catch (e: Exception) {
-                    Log.e("TaskSyncManager", "Error in sync observation", e)
+                    Log.e("TaskSyncManager", "Error in sync flag observation", e)
+                }
+            }
+        }
+
+        // Проверка наличия сообщений в очереди (каждые 15 секунд)
+        scope.launch {
+            while (true) {
+                try {
+                    delay(15_000L) // 15 секунд
+                    checkAndSubmitQueue()
+                } catch (e: Exception) {
+                    Log.e("TaskSyncManager", "Error in queue observation", e)
+                }
+            }
+        }
+
+        // Периодическая синхронизация данных с сервера
+        scope.launch {
+            while (true) {
+                try {
+                    delay(15 * 60 * 1000L) // 15 минут
+
+                    val currentTime = System.currentTimeMillis()
+                    if (currentTime - lastFullSyncTime >= 15 * 60 * 1000L) {
+                        Log.d("TaskSyncManager", "Starting periodic data sync")
+                        isFullSyncInProgress = true
+
+                        val syncResult = performDataSync()
+
+                        if (syncResult.isSuccess) {
+                            lastFullSyncTime = currentTime
+                            Log.d("TaskSyncManager", "Data sync completed successfully")
+                        } else {
+                            Log.w("TaskSyncManager", "Data sync failed: ${syncResult.exceptionOrNull()?.message}")
+                        }
+                        isFullSyncInProgress = false
+                    }
+                } catch (e: Exception) {
+                    Log.e("TaskSyncManager", "Error in data sync observation", e)
+                    isFullSyncInProgress = false
                 }
             }
         }
