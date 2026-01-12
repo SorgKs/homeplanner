@@ -41,6 +41,9 @@ None
 - Implemented offline task recalculation in Android app following the same principles as backend: check on every local storage access and scheduled daily at day start +1 minute
 - [2026-01-10 10:26:01] - Forced task recalculation executed successfully, updating 5 completed tasks according to business logic (deactivating one-time tasks, resetting recurring tasks to next occurrence)
 - [2026-01-11 14:58:08] - Forced task recalculation executed successfully, updating 6 completed tasks according to business logic (deactivating one-time tasks, resetting recurring tasks to next occurrence)
+- Fixed WebSocket "Assignment to constant variable" error by replacing direct reassignments of imported variables with setter function calls in frontend/websocket.js
+- Updated task recalculation logic to process ALL completed tasks regardless of reminder_time, and calculate next dates from task's reminder_time when it's in the future
+- Added test to verify recalculation of completed tasks with future reminder_time
 
 ## Metrics
 - Backend: FastAPI with comprehensive API

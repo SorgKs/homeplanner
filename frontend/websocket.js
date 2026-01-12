@@ -1,6 +1,6 @@
 // WebSocket functions
 
-import { allTasks, todayTasksCache, allTasksCache, currentView, showToast, loadData, ws, wsReconnectTimer, setWs, setWsReconnectTimer, todayTaskIds } from './utils.js';
+import { allTasks, todayTasksCache, allTasksCache, currentView, showToast, loadData, ws, wsReconnectTimer, setWs, setWsReconnectTimer, todayTaskIds, setAllTasks, setTodayTasksCache, setAllTasksCache } from './utils.js';
 import { filterAndRenderTasks } from './filters.js';
 import { groups } from './utils.js';
 
@@ -32,10 +32,10 @@ export function applyTaskEventFromWs(action, taskJson, taskId) {
 
     // For other views, update locally
     if (action === 'deleted' && taskId != null) {
-        allTasks = allTasks.filter(t => t.id !== taskId);
+        setAllTasks(allTasks.filter(t => t.id !== taskId));
         // Обновляем кэши
-        allTasksCache = [...allTasks];
-        todayTasksCache = todayTasksCache.filter(t => t.id !== taskId);
+        setAllTasksCache([...allTasks]);
+        setTodayTasksCache(todayTasksCache.filter(t => t.id !== taskId));
         filterAndRenderTasks();
         return;
     }
@@ -90,14 +90,14 @@ export function applyTaskEventFromWs(action, taskJson, taskId) {
         }
     } else {
         // Удаляем из кэша "Сегодня" если задача больше не должна там быть
-        todayTasksCache = todayTasksCache.filter(t => t.id !== mapped.id);
+        setTodayTasksCache(todayTasksCache.filter(t => t.id !== mapped.id));
     }
 
     // Синхронизируем allTasks с кэшем в зависимости от текущего вида
     if (currentView === 'today') {
-        allTasks = [...todayTasksCache];
+        setAllTasks([...todayTasksCache]);
     } else {
-        allTasks = [...allTasksCache];
+        setAllTasks([...allTasksCache]);
     }
 
     filterAndRenderTasks();

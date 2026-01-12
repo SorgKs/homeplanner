@@ -23,7 +23,7 @@
 #### 2.2. Вкладка «Все задачи»
 
 - Должны корректно отображаться все задачи с учётом их актуальных свойств
-  (`active`, `completed`, `reminder_time` и т.д.).
+  (`enabled`, `completed`, `reminder_time` и т.д.).
 - Базовые правила видимости также определены каноническим разделом фильтрации.
 
 ### 3. Уведомления
@@ -37,7 +37,7 @@
 
 - В офлайне должны корректно устанавливаться и сниматься подтверждения задач (`completed`).
 - Для `one_time` задач:
-  - При пересчёте нового дня завершённая задача должна становиться неактивной (`active = false`),
+  - При пересчёте нового дня завершённая задача должна становиться неактивной (`enabled = false`),
     при этом `reminder_time` не меняется.
 - Для `recurring` / `interval` задач:
   - При новом логическом дне выполняется пересчёт следующей даты и сброс `completed = false`
@@ -99,7 +99,7 @@
     текущего логического дня.
 - `one_time`:
   - Если `completed = true` и `reminder_time` находился в прошлом логическом дне или ранее —
-    устанавливается `active = false`, `reminder_time` не изменяется.
+    устанавливается `enabled = false`, `reminder_time` не изменяется.
   - Пересчёт **никогда** не изменяет `reminder_time` для `one_time` задач.
 - `recurring`:
   - Для всех задач с `type = recurring` и `completed = true` до пересчёта:
@@ -121,7 +121,7 @@
 Для определения видимости учитываются:
 
 - тип задачи: `one_time`, `recurring`, `interval`;
-- флаги: `completed ∈ {true,false}`, `active ∈ {true,false}`;
+- флаги: `completed ∈ {true,false}`, `enabled ∈ {true,false}`;
 - положение `reminder_time` относительно текущего логического дня:
   - `PAST` — время строго раньше начала текущего логического дня;
   - `TODAY` — внутри текущего логического дня;
@@ -130,12 +130,7 @@
 
 #### 6.2. Вкладка «Сегодня»
 
-- `one_time`:
-  - Видна, если `reminder_time ∈ {PAST, TODAY}` — **независимо** от `completed` и `active`.
-  - Видна, если `completed = true` — **даже если** `reminder_time = FUTURE`.
-- `recurring` / `interval`:
-  - Если `completed = false` — видна, если `reminder_time ∈ {PAST, TODAY}`.
-  - Если `completed = true` — видна, если `reminder_time ∈ {PAST, TODAY}`.
+- Задача видна, если `enabled = true` AND (`completed = true` OR `reminder_time ∈ {PAST, TODAY}`).
 
 #### 6.3. Вкладка «Все задачи»
 

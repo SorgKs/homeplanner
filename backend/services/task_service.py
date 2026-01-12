@@ -160,14 +160,14 @@ class TaskService:
 
         # Find tasks that need date update:
         # - Are completed (completed = True)
-        # - Have reminder_time not in the past (past completed tasks remain visible)
+        # All completed tasks are recalculated regardless of reminder_time
         all_completed_tasks = (
             db.query(Task)
             .options(selectinload(Task.assignees))
             .filter(Task.completed == True)
             .all()
         )
-        tasks_to_update = [t for t in all_completed_tasks if get_day_start(t.reminder_time) < today_start]
+        tasks_to_update = all_completed_tasks
 
         # Update all tasks in memory (no commit yet)
         for task in tasks_to_update:
@@ -178,9 +178,10 @@ class TaskService:
                 # должны стать неактивными при наступлении нового дня
                 task.enabled = False
             elif task.task_type == TaskType.INTERVAL:
-                # Interval tasks: always shift from confirmation day start
+                # Interval tasks: always shift from task's reminder_time
                 interval_days = task.interval_days or 1
-                next_date = now + timedelta(days=interval_days)
+                base_time = max(task.reminder_time, now) if task.reminder_time else now
+                next_date = base_time + timedelta(days=interval_days)
                 # Preserve original time component from reminder_time
                 if task.reminder_time is not None:
                     next_date = next_date.replace(
@@ -193,12 +194,12 @@ class TaskService:
                 # Reset completed flag - task should be active again
                 task.completed = False
             else:
-                # Recurring tasks: calculate next date based on current time,
-                # ensuring the result is strictly in the future
-                current_time = now
+                # Recurring tasks: calculate next date based on task's reminder_time,
+                # ensuring the result is strictly in the future relative to current time
+                base_time = max(task.reminder_time, now)  # Use reminder_time if in future, otherwise now
                 interval = task.recurrence_interval or 1
                 candidate = calculate_next_due_date(
-                    current_time,
+                    base_time,
                     task.recurrence_type,
                     interval,
                     task.reminder_time,
@@ -206,11 +207,11 @@ class TaskService:
                 # Ensure candidate is strictly in the future relative to current time
                 # In rare edge cases (large overdue or same-moment), advance again
                 safety_counter = 0
-                while candidate <= current_time and safety_counter < 12:
+                while candidate <= now and safety_counter < 12:
                     # Move the base forward slightly and recalculate
-                    current_time = candidate + timedelta(seconds=1)
+                    base_time = candidate + timedelta(seconds=1)
                     candidate = calculate_next_due_date(
-                        current_time,
+                        base_time,
                         task.recurrence_type,
                         interval,
                         task.reminder_time,
@@ -219,10 +220,6 @@ class TaskService:
                 task.reminder_time = candidate
                 # Reset completed flag - task should be active again
                 task.completed = False
-
-                # Ensure reminder_time is not in the past
-                if task.reminder_time <= now:
-                    task.reminder_time = now + timedelta(hours=1)
 
         # Update last_update timestamp to current real time (in same transaction)
         # This happens even if no tasks were updated, to mark that we checked
@@ -1375,10 +1372,9 @@ class TaskService:
             # Determine completed status: use completed flag for all task types
             is_completed = task.completed
 
-            include = False
-            # Tasks are visible if enabled and either completed or due today/overdue
-            if task.enabled and (is_completed or pos in ("PAST", "TODAY")):
-                include = True
+            # Каноническая логика фильтрации из OFFLINE_REQUIREMENTS:
+            # Задача видна, если enabled = true AND (completed = true OR reminder_time ∈ {PAST, TODAY})
+            include = task.enabled and (is_completed or pos in ("PAST", "TODAY"))
 
             if not include:
                 continue

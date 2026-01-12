@@ -92,7 +92,7 @@ class TestTaskService:
         assert task.description == "Test Description"
         assert task.task_type == TaskType.ONE_TIME
         assert task.reminder_time == today
-        assert task.active is True
+        assert task.enabled is True
 
     def test_get_task(self, db_session: "Session") -> None:
         """Test getting a task by ID."""
@@ -139,32 +139,32 @@ class TestTaskService:
         assert tasks[0].title == "Task 1"
         assert tasks[1].title == "Task 2"
 
-    def test_get_all_tasks_active_only(self, db_session: "Session") -> None:
-        """Test getting only active tasks."""
+    def test_get_all_tasks_enabled_only(self, db_session: "Session") -> None:
+        """Test getting only enabled tasks."""
         today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
-        
+
         task1_data = TaskCreate(
-            title="Active Task",
+            title="Enabled Task",
             task_type=TaskType.ONE_TIME,
             reminder_time=today,
         )
         task2_data = TaskCreate(
-            title="Inactive Task",
+            title="Disabled Task",
             task_type=TaskType.ONE_TIME,
             reminder_time=today,
         )
-        
+
         task1 = TaskService.create_task(db_session, task1_data, timestamp=get_current_time())
         task2 = TaskService.create_task(db_session, task2_data, timestamp=get_current_time())
-        
-        # Update task2 to be inactive
-        update_data = TaskUpdate(active=False)
+
+        # Update task2 to be disabled
+        update_data = TaskUpdate(enabled=False)
         TaskService.update_task(db_session, task2.id, update_data)
-        
-        tasks = TaskService.get_all_tasks(db_session, active_only=True)
-        
+
+        tasks = TaskService.get_all_tasks(db_session, enabled_only=True)
+
         assert len(tasks) == 1
-        assert tasks[0].title == "Active Task"
+        assert tasks[0].title == "Enabled Task"
 
     def test_update_task(self, db_session: "Session") -> None:
         """Test updating a task."""
@@ -225,7 +225,7 @@ class TestTaskService:
         completed_task = TaskService.complete_task(db_session, created_task.id)
         
         assert completed_task is not None
-        assert completed_task.active is False
+        assert completed_task.enabled is True  # enabled is set to False only during day recalculation
         assert completed_task.completed is True
         # Date should not change for one-time tasks
         assert completed_task.reminder_time.date() == today.date()
@@ -308,7 +308,8 @@ class TestTaskService:
         assert completed_task.reminder_time == today_9
 
         # Эмулируем наступление нового дня: заставляем сервис считать, что день сменился
-        monkeypatch.setattr(TaskService, "_is_new_day", staticmethod(lambda _db: True))
+        from backend.utils.date_utils import is_new_day
+        monkeypatch.setattr("backend.services.task_service.is_new_day", lambda db: True)
         
         # Мокаем текущее время на первую минуту нового дня
         # Вычисляем начало нового дня (завтра) с учетом day_start_hour
@@ -443,10 +444,10 @@ class TestTaskService:
 
         assert today_task_ids == []
 
-    def test_today_view_one_time_past_visible_even_if_inactive_and_completed(
+    def test_today_view_one_time_past_visible_even_if_completed(
         self, db_session: "Session"
     ) -> None:
-        """One-time task with past reminder_time must be visible regardless of active/completed."""
+        """One-time task with past reminder_time must be visible if enabled and completed."""
         now = datetime.now().replace(second=0, microsecond=0)
         past = now - timedelta(days=1)
 
@@ -457,8 +458,8 @@ class TestTaskService:
         )
         created = TaskService.create_task(db_session, task_data, timestamp=get_current_time())
 
-        # Имитация завершения и деактивации
-        update = TaskUpdate(active=False, completed=True)
+        # Имитация завершения задачи
+        update = TaskUpdate(completed=True)
         TaskService.update_task(db_session, created.id, update)
 
         today_task_ids = TaskService.get_today_task_ids(db_session)
@@ -501,4 +502,52 @@ class TestTaskService:
 
         today_task_ids = TaskService.get_today_task_ids(db_session)
         assert created.id not in today_task_ids
+
+    def test_recalc_completed_tasks_with_future_reminder_time(
+        self, db_session: "Session", monkeypatch: "MonkeyPatch"
+    ) -> None:
+        """Completed tasks with future reminder_time must be recalculated on new day regardless of reminder_time."""
+        now = datetime.now().replace(second=0, microsecond=0)
+        future = now + timedelta(days=2)  # 2 days in the future
+
+        # Create a recurring task with future reminder_time
+        task_data = TaskCreate(
+            title="Future recurring task",
+            task_type=TaskType.RECURRING,
+            recurrence_type=RecurrenceType.DAILY,
+            recurrence_interval=1,
+            reminder_time=future,
+        )
+        created_task = TaskService.create_task(db_session, task_data, timestamp=get_current_time())
+
+        # Complete the task
+        completed_task = TaskService.complete_task(db_session, created_task.id)
+        assert completed_task.completed is True
+        assert completed_task.reminder_time == future  # reminder_time unchanged immediately
+
+        # Simulate new day
+        from backend.utils.date_utils import is_new_day
+        monkeypatch.setattr("backend.services.task_service.is_new_day", lambda db: True)
+
+        # Get day start hour
+        from backend.config import get_settings
+        settings = get_settings()
+        day_start_hour = settings.day_start_hour
+
+        # Set new day time (day_start_hour + 1 minute)
+        tomorrow_start = (now + timedelta(days=1)).replace(
+            hour=day_start_hour,
+            minute=1,
+            second=0,
+            microsecond=0
+        )
+        monkeypatch.setattr("backend.services.task_service.get_current_time", lambda: tomorrow_start)
+
+        # Call get_all_tasks which should trigger recalculation
+        updated_tasks = TaskService.get_all_tasks(db_session)
+        updated_task = next(t for t in updated_tasks if t.id == created_task.id)
+
+        # Task should be recalculated even though original reminder_time was in the future
+        assert updated_task.completed is False  # Reset to False
+        assert updated_task.reminder_time > future  # reminder_time moved forward
 

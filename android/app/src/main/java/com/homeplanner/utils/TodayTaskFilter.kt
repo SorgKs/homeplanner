@@ -10,11 +10,12 @@ import java.time.ZoneId
  * Утилита для локальной фильтрации задач для вкладки «Сегодня».
  *
  * Логика соответствует каноническим правилам из OFFLINE_REQUIREMENTS:
+ * Задача видна, если enabled = true AND (completed = true OR reminder_time ∈ {PAST, TODAY}).
  * - one_time:
- *   - видна, если reminder_time сегодня или в прошлом (независимо от completed/active);
+ *   - видна, если reminder_time сегодня или в прошлом;
  *   - видна, если completed = true, даже если reminder_time в будущем.
  * - recurring / interval:
- *   - видна, если reminder_time сегодня или в прошлом (completed не влияет).
+ *   - видна, если reminder_time сегодня или в прошлом.
  */
 object TodayTaskFilter {
 
@@ -50,6 +51,11 @@ object TodayTaskFilter {
                 if (taskAssignedIds.isNotEmpty() && !taskAssignedIds.contains(selectedUser.id)) {
                     return@filter false
                 }
+            }
+
+            // Фильтрация по enabled: задача должна быть активной
+            if (!task.enabled) {
+                return@filter false
             }
 
             val reminderLdt = parseReminderTime(task.reminderTime) ?: return@filter false

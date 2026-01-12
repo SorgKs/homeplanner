@@ -115,3 +115,10 @@
 - **Impact**: Android app now handles task recalculation independently, ensuring proper task updates even without server connection
 - **Components**: OfflineRepository methods check for new day on every access, DayChangeScheduler uses AlarmManager for daily recalculation at day start +1 minute
 - **Date**: 2026-01-10
+
+### Task Recalculation Filter Update
+- **Decision**: Change recalculate_tasks to process ALL completed tasks regardless of reminder_time, and use task's reminder_time as base for next calculation when it's in the future
+- **Rationale**: New filtering rules require all completed tasks to be recalculated on new day, not just those with past reminder_time. For tasks completed before their due date, next reminder_time should be calculated from original reminder_time
+- **Impact**: Ensures consistent task recalculation behavior, completed future tasks are properly rescheduled
+- **Components**: Modified recalculate_tasks logic in TaskService, added test for future reminder_time recalculation
+- **Date**: 2026-01-12
