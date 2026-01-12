@@ -105,99 +105,158 @@ class TaskService:
         )
 
     @staticmethod
-    def _recalculate_completed_tasks_on_new_day(db: Session) -> None:
-        """Recalculate dates for completed tasks if a new day has started.
+    def check_new_day(db: Session, ws_manager=None) -> bool:
+        """Check if a new day has started and recalculate completed tasks if needed.
 
         Uses last_update metadata to determine if it's a new day.
-        Updates dates for completed tasks and resets their completed status.
+        If new day detected, performs recalculation of completed tasks, updates last_update,
+        and sends WebSocket notification if ws_manager is provided.
+
+        Args:
+            db: Database session.
+            ws_manager: Optional WebSocket manager for sending notifications.
+
+        Returns:
+            True if new day was detected and tasks were recalculated, False otherwise.
+        """
+        if is_new_day(db):
+            TaskService.recalculate_tasks(db)
+
+            # Send WebSocket notification if manager is provided
+            if ws_manager is not None:
+                from backend.services.time_manager import TimeManager
+                import asyncio
+                today = TimeManager.get_real_time().date().isoformat()
+
+                # Send notification asynchronously
+                async def send_notification():
+                    await ws_manager.broadcast({
+                        "type": "day_changed",
+                        "new_day": today,
+                        "timestamp": TimeManager.get_real_time().isoformat()
+                    })
+
+                # Create task for async notification (fire and forget)
+                asyncio.create_task(send_notification())
+
+            return True
+        return False
+
+    @staticmethod
+    def recalculate_tasks(db: Session) -> None:
+        """Recalculate dates for all completed tasks and update last_update.
+
+        Finds all completed tasks and updates their dates based on task type,
+        resets completed status for recurring/interval tasks, and updates last_update.
+
+        Args:
+            db: Database session.
         """
         from backend.models.task import TaskType
 
-        # Check if new day has started using last_update metadata
-        if is_new_day(db):
-            # New day - update tasks that need updating
-            # All operations happen in a single transaction to ensure atomicity
-            now = get_current_time()
-            today_start = get_day_start(now)
+        # All operations happen in a single transaction to ensure atomicity
+        now = get_current_time()
+        today_start = get_day_start(now)
 
-            # Find tasks that need date update:
-            # - Are completed (completed = True)
-            # - Have reminder_time not in the past (past completed tasks remain visible)
-            all_completed_tasks = (
-                db.query(Task)
-                .options(selectinload(Task.assignees))
-                .filter(Task.completed == True)
-                .all()
-            )
-            tasks_to_update = [t for t in all_completed_tasks if get_day_start(t.reminder_time) < today_start]
+        # Find tasks that need date update:
+        # - Are completed (completed = True)
+        # - Have reminder_time not in the past (past completed tasks remain visible)
+        all_completed_tasks = (
+            db.query(Task)
+            .options(selectinload(Task.assignees))
+            .filter(Task.completed == True)
+            .all()
+        )
+        tasks_to_update = [t for t in all_completed_tasks if get_day_start(t.reminder_time) < today_start]
 
-            # Update all tasks in memory (no commit yet)
-            for task in tasks_to_update:
-                # Task date is in the past and task was completed
-                # Update the date based on task type and reset completed flag for recurring/interval tasks
-                if task.task_type == TaskType.ONE_TIME:
-                    # One-time tasks: date never changes, но завершённые задачи
-                    # должны стать неактивными при наступлении нового дня
-                    task.enabled = False
-                elif task.task_type == TaskType.INTERVAL:
-                    # Interval tasks: always shift from confirmation day start
-                    interval_days = task.interval_days or 1
-                    next_date = now + timedelta(days=interval_days)
-                    # Preserve original time component from reminder_time
-                    if task.reminder_time is not None:
-                        next_date = next_date.replace(
-                            hour=task.reminder_time.hour,
-                            minute=task.reminder_time.minute,
-                            second=0,
-                            microsecond=0,
-                        )
-                    task.reminder_time = next_date
-                    # Reset completed flag - task should be active again
-                    task.completed = False
-                else:
-                    # Recurring tasks: calculate next date based on current time,
-                    # ensuring the result is strictly in the future
-                    current_time = now
-                    interval = task.recurrence_interval or 1
+        # Update all tasks in memory (no commit yet)
+        for task in tasks_to_update:
+            # Task date is in the past and task was completed
+            # Update the date based on task type and reset completed flag for recurring/interval tasks
+            if task.task_type == TaskType.ONE_TIME:
+                # One-time tasks: date never changes, но завершённые задачи
+                # должны стать неактивными при наступлении нового дня
+                task.enabled = False
+            elif task.task_type == TaskType.INTERVAL:
+                # Interval tasks: always shift from confirmation day start
+                interval_days = task.interval_days or 1
+                next_date = now + timedelta(days=interval_days)
+                # Preserve original time component from reminder_time
+                if task.reminder_time is not None:
+                    next_date = next_date.replace(
+                        hour=task.reminder_time.hour,
+                        minute=task.reminder_time.minute,
+                        second=0,
+                        microsecond=0,
+                    )
+                task.reminder_time = next_date
+                # Reset completed flag - task should be active again
+                task.completed = False
+            else:
+                # Recurring tasks: calculate next date based on current time,
+                # ensuring the result is strictly in the future
+                current_time = now
+                interval = task.recurrence_interval or 1
+                candidate = calculate_next_due_date(
+                    current_time,
+                    task.recurrence_type,
+                    interval,
+                    task.reminder_time,
+                )
+                # Ensure candidate is strictly in the future relative to current time
+                # In rare edge cases (large overdue or same-moment), advance again
+                safety_counter = 0
+                while candidate <= current_time and safety_counter < 12:
+                    # Move the base forward slightly and recalculate
+                    current_time = candidate + timedelta(seconds=1)
                     candidate = calculate_next_due_date(
                         current_time,
                         task.recurrence_type,
                         interval,
                         task.reminder_time,
                     )
-                    # Ensure candidate is strictly in the future relative to current time
-                    # In rare edge cases (large overdue or same-moment), advance again
-                    safety_counter = 0
-                    while candidate <= current_time and safety_counter < 12:
-                        # Move the base forward slightly and recalculate
-                        current_time = candidate + timedelta(seconds=1)
-                        candidate = calculate_next_due_date(
-                            current_time,
-                            task.recurrence_type,
-                            interval,
-                            task.reminder_time,
-                        )
-                        safety_counter += 1
-                    task.reminder_time = candidate
-                    # Reset completed flag - task should be active again
-                    task.completed = False
+                    safety_counter += 1
+                task.reminder_time = candidate
+                # Reset completed flag - task should be active again
+                task.completed = False
 
-            # Update last_update timestamp to current time (in same transaction)
-            # This happens even if no tasks were updated, to mark that we checked
-            set_last_update(db, now, commit=False)
+                # Ensure reminder_time is not in the past
+                if task.reminder_time <= now:
+                    task.reminder_time = now + timedelta(hours=1)
 
-            # Commit all changes atomically: tasks updates + last_update
-            db.commit()
+        # Update last_update timestamp to current real time (in same transaction)
+        # This happens even if no tasks were updated, to mark that we checked
+        set_last_update(db, None, commit=False)  # Uses real time
+
+        # Commit all changes atomically: tasks updates + last_update
+        db.commit()
 
     @staticmethod
-    def get_all_tasks(db: Session, enabled_only: bool = False) -> list[Task]:
+    def _recalculate_completed_tasks_on_new_day(db: Session, force: bool = False) -> None:
+        """Legacy method for backward compatibility.
+
+        Args:
+            db: Database session.
+            force: If True, force recalculation regardless of day check.
+        """
+        # For backward compatibility, maintain old behavior
+        if force or is_new_day(db):
+            TaskService.recalculate_tasks(db)
+
+    @staticmethod
+    def get_all_tasks(db: Session, enabled_only: bool = False, force_recalc: bool = False) -> list[Task]:
         """Get all tasks, optionally filtering by enabled status.
 
         Also updates dates for completed tasks if a new day has started
         since last update. Uses last_update metadata to determine if it's a new day.
+
+        Args:
+            db: Database session.
+            enabled_only: If True, return only enabled tasks.
+            force_recalc: If True, force recalculation of completed tasks.
         """
-        # Recalculate completed tasks on new day
-        TaskService._recalculate_completed_tasks_on_new_day(db)
+        # Check for new day and recalculate tasks if needed
+        TaskService.check_new_day(db)
 
         # Now get all tasks (with updated dates)
         query = db.query(Task).options(selectinload(Task.assignees))
@@ -541,10 +600,10 @@ class TaskService:
     @staticmethod
     def complete_task(db: Session, task_id: int, timestamp: datetime | None = None) -> Task | None:
         """Mark a task as completed and update next due date.
-        
+
         If task is due today or overdue, the date is not updated immediately.
         Date will be updated only after day_start_hour (next day) via get_all_tasks.
-        
+
         Args:
             db: Database session.
             task_id: Task identifier.
@@ -552,48 +611,51 @@ class TaskService:
                      If provided, used for updated_at.
                      If None, uses server current time (default behavior).
         """
-        from backend.models.task import TaskType
+        import logging
+        logger = logging.getLogger("homeplanner.tasks")
 
-        task = (
-            db.query(Task)
-            .options(selectinload(Task.assignees))
-            .filter(Task.id == task_id)
-            .first()
-        )
-        if not task:
-            return None
+        try:
+            from backend.models.task import TaskType
 
-        now = get_current_time()
-        
-        # Store iteration date for history logging
-        iteration_date = task.reminder_time
+            task = (
+                db.query(Task)
+                .options(selectinload(Task.assignees))
+                .filter(Task.id == task_id)
+                .first()
+            )
+            if not task:
+                return None
 
-        # Mark task as completed
-        task.completed = True
-        # Per specification and tests: do NOT shift reminder_time on completion for any task type.
-        # Centralized recalculation will occur at day boundaries inside get_all_tasks().
-        if task.task_type == TaskType.ONE_TIME:
-            # One-time tasks are simply marked inactive upon completion.
-            task.enabled = False
-        
-        # Если передан timestamp от клиента (для sync операций), используем его для updated_at
-        # Иначе будет использовано дефолтное значение из модели (get_current_time)
-        if timestamp is not None:
-            task.updated_at = timestamp
-        else:
-            # Логируем предупреждение, если timestamp не передан (для синхронизации он обязателен)
-            import logging
-            logger = logging.getLogger("homeplanner.tasks")
-            logger.warning("complete_task: timestamp not provided, using server current time")
+            now = get_current_time()
 
-        db.commit()
-        db.refresh(task)
-        
-        # Log confirmation to history
-        from backend.services.task_history_service import TaskHistoryService
-        TaskHistoryService.log_task_confirmed(db, task.id, iteration_date)
-        
-        return task
+            # Store iteration date for history logging
+            iteration_date = task.reminder_time
+
+            # Mark task as completed
+            task.completed = True
+            # Per specification and tests: do NOT shift reminder_time on completion for any task type.
+            # Centralized recalculation will occur at day boundaries inside get_all_tasks().
+            # Note: enabled is set to False only during day recalculation for one-time tasks
+
+            # Если передан timestamp от клиента (для sync операций), используем его для updated_at
+            # Иначе будет использовано дефолтное значение из модели (get_current_time)
+            if timestamp is not None:
+                task.updated_at = timestamp
+            else:
+                # Логируем предупреждение, если timestamp не передан (для синхронизации он обязателен)
+                logger.warning("complete_task: timestamp not provided, using server current time")
+
+            db.commit()
+            db.refresh(task)
+
+            # Log confirmation to history
+            from backend.services.task_history_service import TaskHistoryService
+            TaskHistoryService.log_task_confirmed(db, task.id, iteration_date)
+
+            return task
+        except Exception as e:
+            logger.error("Exception in complete_task for task_id=%s: %s", task_id, str(e), exc_info=True)
+            raise
 
     @staticmethod
     def uncomplete_task(db: Session, task_id: int, timestamp: datetime | None = None) -> Task | None:
@@ -610,6 +672,9 @@ class TaskService:
                      If provided, used for updated_at.
                      If None, uses server current time (default behavior).
         """
+        import logging
+        logger = logging.getLogger("homeplanner.tasks")
+
         from backend.models.task import TaskType
         from backend.models.task_history import TaskHistory, TaskHistoryAction
 
@@ -620,47 +685,40 @@ class TaskService:
             .first()
         )
         if not task:
+            logger.error("uncomplete_task: task not found, task_id=%s", task_id)
             return None
 
-        # Get original iteration date from last confirmed action in history
-        # This allows us to restore reminder_time to the date it had when task was completed
-        last_confirmed = (
-            db.query(TaskHistory)
-            .filter(TaskHistory.task_id == task_id)
-            .filter(TaskHistory.action == TaskHistoryAction.CONFIRMED)
-            .order_by(TaskHistory.action_timestamp.desc())
-            .first()
-        )
-        
+        logger.info("uncomplete_task: task found, task_type=%s, completed=%s, enabled=%s, reminder_time=%s",
+                   task.task_type, task.completed, task.enabled, task.reminder_time)
+
         # Clear completed flag
         task.completed = False
-        
-        # Restore reminder_time to original date from history if available
-        if last_confirmed and last_confirmed.iteration_date:
-            task.reminder_time = last_confirmed.iteration_date
-        # If no history found, keep current reminder_time (shouldn't happen in normal flow)
 
         if task.task_type == TaskType.ONE_TIME:
             # Make one-time task active again
             task.enabled = True
-        
+            logger.info("uncomplete_task: enabled one-time task")
+
         # Если передан timestamp от клиента (для sync операций), используем его для updated_at
         # Иначе будет использовано дефолтное значение из модели (get_current_time)
         if timestamp is not None:
             task.updated_at = timestamp
+            logger.info("uncomplete_task: using client timestamp for updated_at: %s", timestamp)
         else:
             # Логируем предупреждение, если timestamp не передан (для синхронизации он обязателен)
-            import logging
-            logger = logging.getLogger("homeplanner.tasks")
             logger.warning("uncomplete_task: timestamp not provided, using server current time")
 
         db.commit()
         db.refresh(task)
-        
+
+        logger.info("uncomplete_task: after commit, completed=%s, enabled=%s, reminder_time=%s",
+                   task.completed, task.enabled, task.reminder_time)
+
         # Log unconfirmation to history
         from backend.services.task_history_service import TaskHistoryService
         TaskHistoryService.log_task_unconfirmed(db, task.id, task.reminder_time)
 
+        logger.info("uncomplete_task: completed successfully for task_id=%s", task_id)
         return task
 
     @staticmethod
@@ -1286,8 +1344,8 @@ class TaskService:
         """
         from backend.models.task import TaskType
 
-        # Ensure completed tasks are recalculated if it's a new day
-        TaskService._recalculate_completed_tasks_on_new_day(db)
+        # Check for new day and recalculate tasks if needed
+        TaskService.check_new_day(db)
 
         now = get_current_time()
         today_start = get_day_start(now)
@@ -1314,15 +1372,13 @@ class TaskService:
             else:
                 pos = "FUTURE"
 
+            # Determine completed status: use completed flag for all task types
+            is_completed = task.completed
+
             include = False
-            # Completed tasks are always visible, regardless of date
-            if task.completed:
+            # Tasks are visible if enabled and either completed or due today/overdue
+            if task.enabled and (is_completed or pos in ("PAST", "TODAY")):
                 include = True
-            # For non-completed tasks: only show if due today or past
-            elif pos in ("PAST", "TODAY"):
-                # For PAST/TODAY tasks: include if active OR if one-time (always visible)
-                if task.enabled or task.task_type == TaskType.ONE_TIME:
-                    include = True
 
             if not include:
                 continue
