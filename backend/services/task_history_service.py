@@ -53,19 +53,26 @@ class TaskHistoryService:
         comment: str | None = None,
     ) -> TaskHistory:
         """Log an action to task history."""
-        history_data = {
-            "task_id": task_id,
-            "action": action,
-            "action_timestamp": get_current_time(),
-            "iteration_date": iteration_date,
-            "meta_data": metadata,
-            "comment": comment,
-        }
-        history = TaskHistory(**history_data)
-        db.add(history)
-        db.commit()
-        db.refresh(history)
-        return history
+        import logging
+        logger = logging.getLogger("homeplanner.task_history")
+
+        try:
+            history_data = {
+                "task_id": task_id,
+                "action": action,
+                "action_timestamp": get_current_time(),
+                "iteration_date": iteration_date,
+                "meta_data": metadata,
+                "comment": comment,
+            }
+            history = TaskHistory(**history_data)
+            db.add(history)
+            db.commit()
+            db.refresh(history)
+            return history
+        except Exception as e:
+            logger.error("Exception in log_action for task_id=%s, action=%s: %s", task_id, action, str(e), exc_info=True)
+            raise
 
     @staticmethod
     def log_task_created(db: Session, task_id: int, creation_data: dict | None = None) -> TaskHistory:

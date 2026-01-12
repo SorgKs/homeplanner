@@ -19,8 +19,9 @@ fun TaskListContent(
     error: String?,
     onCreateTask: () -> Unit,
     onTaskClick: (Task) -> Unit,
-    onTaskComplete: (Int) -> Unit,
+    onTaskComplete: (Int, Boolean) -> Unit,
     onTaskDelete: (Int) -> Unit,
+    isAllTasksView: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     when {
@@ -33,6 +34,7 @@ fun TaskListContent(
             onTaskClick = onTaskClick,
             onTaskComplete = onTaskComplete,
             onTaskDelete = onTaskDelete,
+            isAllTasksView = isAllTasksView,
             modifier = modifier
         )
     }
@@ -85,19 +87,30 @@ private fun AllTasksList(
     tasks: List<Task>,
     groups: List<Group>,
     onTaskClick: (Task) -> Unit,
-    onTaskComplete: (Int) -> Unit,
+    onTaskComplete: (Int, Boolean) -> Unit,
     onTaskDelete: (Int) -> Unit,
+    isAllTasksView: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(modifier = modifier.fillMaxSize()) {
         items(tasks) { task ->
-            TaskItem(
-                task = task,
-                groups = groups,
-                onComplete = onTaskComplete,
-                onClick = onTaskClick,
-                onDelete = onTaskDelete
-            )
+            if (isAllTasksView) {
+                TaskItemAll(
+                    task = task,
+                    groups = groups,
+                    onComplete = onTaskComplete,
+                    onClick = onTaskClick,
+                    onDelete = onTaskDelete
+                )
+            } else {
+                TaskItemToday(
+                    task = task,
+                    groups = groups,
+                    onComplete = onTaskComplete,
+                    onClick = onTaskClick,
+                    onDelete = onTaskDelete
+                )
+            }
         }
     }
 }

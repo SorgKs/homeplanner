@@ -1,16 +1,13 @@
-"""Конфигурация для Android-тестов."""
+# Android test configuration
 
-from __future__ import annotations
+class AndroidTestConfig:
+    """Configuration for Android instrumentation tests."""
 
-import os
-from pathlib import Path
-
-
-PROJECT_ROOT: Path = Path(__file__).resolve().parents[2]
-DEFAULT_LATEST_APK_PATH: Path = PROJECT_ROOT / "latest.apk"
-
-LATEST_APK_PATH: Path = Path(
-    os.getenv("HP_ANDROID_LATEST_APK_PATH", str(DEFAULT_LATEST_APK_PATH))
-).expanduser().resolve()
-
-
+    def __init__(self):
+        self.device_id = "2f0db29a"  # Default device
+        self.app_package = "com.homeplanner"
+        self.test_package = f"{self.app_package}.test"
+        self.apk_path = "android/app/build/outputs/apk/debug/homeplanner_v0_3_59.apk"
+        self.test_apk_path = "android/app/build/outputs/apk/androidTest/debug/homeplanner-debug-androidTest.apk"
+        self.timeout = 30000  # 30 seconds
+        self.retry_attempts = 3

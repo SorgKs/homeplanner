@@ -166,32 +166,7 @@ export function toggleTaskFilter() {
     filterAndRenderTasks();
 }
 
-export function toggleAdminMode() {
-    adminMode = !adminMode;
-    const adminBtn = document.getElementById('toggle-admin-btn');
-    const adminText = document.getElementById('admin-mode-text');
 
-    if (adminMode) {
-        adminBtn.classList.add('active');
-        adminText.textContent = 'Выйти из админ';
-    } else {
-        adminBtn.classList.remove('active');
-        adminText.textContent = 'Админ режим';
-    }
-
-    // Re-render current view to show/hide admin features
-    if (currentView === 'history') {
-        renderHistoryView();
-    } else {
-        filterAndRenderTasks();
-    }
-
-    updateTimePanelVisibility();
-    updateAdminNavigation();
-    if (adminMode) {
-        fetchAndRenderTimeState(false);
-    }
-}
 
 export function updateTimePanelVisibility() {
     const panel = document.getElementById('time-controls');
@@ -337,4 +312,5 @@ export async function handleTimeReset() {
 }
 
 // Import missing
-import { filteredTasks, searchQuery, todayTaskIds, renderHistoryView, loadData, formatDatetimeLocal } from './utils.js';
+import { filteredTasks, searchQuery, todayTaskIds, loadData, formatDatetimeLocal } from './utils.js';
+import { renderHistoryView } from './history.js';

@@ -25,7 +25,8 @@ class TaskSyncManager(
     private val serverApi: ServerApi,
     private val offlineRepository: OfflineRepository,
     private val syncService: SyncService,
-    private val taskValidationService: TaskValidationService
+    private val taskValidationService: TaskValidationService,
+    private val webSocketService: com.homeplanner.sync.WebSocketService
 ) {
 
     private val _syncState = MutableStateFlow(SyncState())
@@ -155,6 +156,16 @@ class TaskSyncManager(
     fun observeSyncRequests() {
         Log.d("TaskSyncManager", "observeSyncRequests: starting sync observation loops")
 
+        // Start WebSocket connection
+        scope.launch {
+            try {
+                webSocketService.start()
+                Log.d("TaskSyncManager", "WebSocket service started")
+            } catch (e: Exception) {
+                Log.e("TaskSyncManager", "Failed to start WebSocket service", e)
+            }
+        }
+
         // Быстрая проверка флага синхронизации (каждые 200 мс)
         scope.launch {
             while (true) {
@@ -235,5 +246,6 @@ class TaskSyncManager(
 
     fun destroy() {
         scope.cancel()
+        webSocketService.stop()
     }
 }

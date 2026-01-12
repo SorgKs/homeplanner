@@ -1,5 +1,6 @@
 """Task model for recurring tasks."""
 
+from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING
 
@@ -7,7 +8,6 @@ from sqlalchemy import Boolean, Column, DateTime, Enum as SQLEnum, ForeignKey, I
 from sqlalchemy.orm import relationship
 
 from backend.database import Base
-from backend.services.time_manager import get_current_time
 from backend.models.task_assignment import task_user_association
 
 if TYPE_CHECKING:
@@ -55,8 +55,8 @@ class Task(Base):
     completed = Column(Boolean, default=False, nullable=False)  # Task is completed (replaces last_completed_at)
     group_id = Column(Integer, ForeignKey("groups.id"), nullable=True, index=True)
     last_shown_at = Column(DateTime, nullable=True)  # Last time this iteration was shown
-    created_at = Column(DateTime, default=get_current_time, nullable=False)
-    updated_at = Column(DateTime, default=get_current_time, onupdate=get_current_time, nullable=False)
+    created_at = Column(DateTime, default=datetime.now, nullable=False)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
 
     # Relationships
     group = relationship("Group", back_populates="tasks")

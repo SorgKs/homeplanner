@@ -11,7 +11,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "20251110_app_metadata"
+revision = "20251110_add_app_metadata_table"
 down_revision = "20251109_task_fields"
 branch_labels = None
 depends_on = None

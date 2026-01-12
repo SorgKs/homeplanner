@@ -1,13 +1,12 @@
 package com.homeplanner.sync
 
 import android.content.Context
+import com.homeplanner.BuildConfig
 import com.homeplanner.api.GroupsServerApi
 import com.homeplanner.api.ServerApi
 import com.homeplanner.api.UsersServerApi
 import com.homeplanner.database.entity.SyncQueueItem
 import com.homeplanner.repository.OfflineRepository
-import com.homeplanner.debug.BinaryLogger
-import com.homeplanner.debug.LogLevel
 import org.json.JSONObject
 import kotlinx.coroutines.delay
 
@@ -37,38 +36,24 @@ class SyncService(
      * на основе реальных попыток соединения с сервером (ONLINE/DEGRADED/OFFLINE).
      */
     suspend fun syncStateBeforeRecalculation(): Boolean {
-        BinaryLogger.getInstance()?.log(320u, emptyList<Any>(), 55) // DEBUG: syncStateBeforeRecalculation started
         return try {
             val pending = repository.getPendingOperationsCount()
             if (pending > 0) {
-                // syncStateBeforeRecalculation: синхронизация ожидающих операций
-                BinaryLogger.getInstance()?.log(300u, emptyList<Any>(), 55)
                 val result = syncQueue()
                 if (result.isFailure) {
                     // syncStateBeforeRecalculation: syncQueue завершился с ошибкой, но продолжается
-                    BinaryLogger.getInstance()?.log(301u, emptyList<Any>(), 55)
                 }
             }
 
-            // syncStateBeforeRecalculation: загрузка задач с сервера
-            BinaryLogger.getInstance()?.log(302u, emptyList<Any>(), 55)
             val serverTasks = serverApi.getTasksServer(enabledOnly = false).getOrThrow()
             repository.saveTasksToCache(serverTasks)
             val queueSize = repository.getPendingOperationsCount()
-            // Кэш обновлен после синхронизации: %tasks_count% задач из %source%, очередь: %queue_items%
-            BinaryLogger.getInstance()?.log(
-                41u, listOf<Any>(serverTasks.size,"syncStateBeforeRecalculation",queueSize, 55), 55
-            )
 
             // Дополнительно синхронизируем пользователей и группы, если нужно
             // TODO: Implement users and groups sync here if not already done
 
             true
         } catch (e: Exception) {
-            // Исключение: ожидалось %wait%, фактически %fact%
-            BinaryLogger.getInstance()?.log(
-                91u, listOf<Any>(e.message ?: "Unknown error",e::class.simpleName ?: "Unknown", 55), 55
-            )
             false
         }
     }
@@ -80,8 +65,14 @@ class SyncService(
      */
     suspend fun syncCacheWithServer(
         groupsApi: GroupsServerApi? = null,
-        usersApi: UsersServerApi? = null
-    ): Result<SyncCacheResult> = cacheSyncService.syncCacheWithServer(groupsApi, usersApi)
+        usersApi: UsersServerApi? = null,
+        baseUrl: String = BuildConfig.API_BASE_URL
+    ): Result<SyncCacheResult> {
+        val serverApi = com.homeplanner.api.ServerSyncApi(baseUrl = baseUrl)
+        val groupsApiWithUrl = groupsApi ?: com.homeplanner.api.GroupsServerApi(baseUrl = baseUrl)
+        val usersApiWithUrl = usersApi ?: com.homeplanner.api.UsersServerApi(baseUrl = baseUrl)
+        return CacheSyncService(repository, serverApi).syncCacheWithServer(groupsApiWithUrl, usersApiWithUrl)
+    }
     
     /**
      * Отправка операций на сервер.
@@ -111,7 +102,6 @@ class SyncService(
      * Делегирует в OfflineRepository.
      */
     suspend fun clearProcessedOperations() = repository.clearAllQueue()
-
 
 }
 

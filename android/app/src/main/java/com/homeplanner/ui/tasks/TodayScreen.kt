@@ -15,7 +15,7 @@ fun TodayScreen(
     groups: List<Group>,
     onCreateTask: () -> Unit,
     onTaskClick: (Task) -> Unit,
-    onTaskComplete: (Int) -> Unit,
+    onTaskComplete: (Int, Boolean) -> Unit,
     onTaskDelete: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -34,6 +34,7 @@ fun TodayScreen(
         onTaskClick = onTaskClick,
         onTaskComplete = onTaskComplete,
         onTaskDelete = onTaskDelete,
+        isAllTasksView = false,
         modifier = modifier
     )
 }

@@ -1,6 +1,7 @@
 // User management functions
 
-import { users, selectedUserId, setCookie, showToast, initializeAppIfNeeded, resetUserForm } from './utils.js';
+import { users, selectedUserId, setCookie, showToast, initializeAppIfNeeded, resetUserForm, setUsers, setSelectedUserId } from './utils.js';
+import { usersAPI } from './api.js';
 
 export async function showUserPickScreen() {
     const appLayout = document.getElementById('app-layout');
@@ -17,7 +18,7 @@ export async function showUserPickScreen() {
     try {
         console.log('Loading users for pick screen...');
         const startTime = Date.now();
-        users = await usersAPI.getAll();
+        setUsers(await usersAPI.getAll());
         const loadTime = Date.now() - startTime;
         console.log(`Loaded users in ${loadTime}ms:`, users);
 
@@ -115,7 +116,7 @@ export function renderUserPickButtons(userList) {
             const id = parseInt(e.currentTarget.getAttribute('data-user-id'), 10);
             if (!Number.isFinite(id)) return;
             setCookie('hp.selectedUserId', id);
-            selectedUserId = id;
+            setSelectedUserId(id);
             await initializeAppIfNeeded();
             showToast('Пользователь выбран', 'success');
         });

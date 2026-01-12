@@ -4,8 +4,6 @@ import android.util.Log
 import com.homeplanner.database.AppDatabase
 import com.homeplanner.database.entity.TaskCache
 import com.homeplanner.model.Task
-import com.homeplanner.debug.BinaryLogger
-import com.homeplanner.debug.LogLevel
 import kotlinx.coroutines.flow.first
 
 /**
@@ -24,31 +22,18 @@ class TaskCacheRepository(
 
     suspend fun saveTasksToCache(tasks: List<Task>): Result<Unit> {
         return try {
-            // saveTasksToCache: [STEP 1] Начало сохранения задач в кэш
-            BinaryLogger.getInstance()?.log(314u, listOf<Any>(tasks.size, 59), 59)
+            Log.d(TAG, "saveTasksToCache: saving ${tasks.size} tasks")
             val cacheTasks = tasks.map { TaskCache.fromTask(it) }
-            // saveTasksToCache: [STEP 2] Задачи преобразованы в TaskCache
-            BinaryLogger.getInstance()?.log(315u, listOf<Any>(cacheTasks.size, 59), 59)
             taskCacheDao.insertTasks(cacheTasks)
-            // saveTasksToCache: [STEP 3] Задачи вставлены в базу данных
-            BinaryLogger.getInstance()?.log(316u, listOf<Any>(cacheTasks.size, 59), 59)
 
             // Обновление lastAccessed для сохраненных задач
             tasks.forEach { task ->
                 taskCacheDao.updateLastAccessed(task.id)
             }
-            // saveTasksToCache: [STEP 4] Обновлен lastAccessed для всех задач
-            BinaryLogger.getInstance()?.log(317u, listOf<Any>(tasks.size, 59), 59)
 
             cleanupOldCache()
-            // saveTasksToCache: [STEP 5] Успешно сохранено задач в кэш
-            BinaryLogger.getInstance()?.log(318u, listOf<Any>(tasks.size, 59), 59)
             Result.success(Unit)
         } catch (e: Exception) {
-            // saveTasksToCache: [ERROR] Ошибка сохранения задач в кэш: %wait%, %fact%
-            BinaryLogger.getInstance()?.log(
-                91u, listOf<Any>(e.message ?: "Unknown error",e::class.simpleName ?: "Unknown", 59), 59
-            )
             Result.failure(e)
         }
     }

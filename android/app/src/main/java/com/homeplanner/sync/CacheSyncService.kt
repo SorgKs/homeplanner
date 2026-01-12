@@ -84,7 +84,7 @@ class CacheSyncService(
                     try {
                         android.util.Log.d(TAG, "syncCacheWithServer: loading tasks from server for full sync")
                         android.util.Log.d(TAG, "syncCacheWithServer: calling getTasksServer(enabledOnly = false)")
-                        val serverTasks = serverApi.getTasksServer(enabledOnly = false).getOrThrow()
+                        val serverTasks = serverApi.getTasksServer(enabledOnly = true).getOrThrow()
                         android.util.Log.d(TAG, "syncCacheWithServer: loaded ${serverTasks.size} tasks from server")
                         val cachedTasks = repository.loadTasksFromCache()
                         android.util.Log.d(TAG, "Cached tasks: ${cachedTasks.size}, server tasks: ${serverTasks.size}")

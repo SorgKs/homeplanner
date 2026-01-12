@@ -18,6 +18,7 @@ from backend.schemas.task import (
 from backend.services.task_service import TaskService
 from backend.models.task import Task
 from backend.routers.realtime import manager as ws_manager
+from backend.utils.date_utils import is_new_day
 
 if TYPE_CHECKING:
     pass
@@ -210,7 +211,8 @@ def sync_task_queue(
     logger.info("HTTP sync-queue: %s operations", len(payload.operations))
 
     # Возможный пересчёт по новому дню единым местом
-    if TaskService._is_new_day(db):
+    if is_new_day(db):
+        logger.info("sync-queue: new day detected, recalculating all tasks")
         TaskService.get_all_tasks(db, active_only=False)
 
     # Сортировка операций по timestamp (на случай, если клиент прислал неотсортированный список)
@@ -218,7 +220,9 @@ def sync_task_queue(
         payload.operations, key=lambda op: op.timestamp
     )
 
-    for op in operations:
+    logger.info("sync-queue: processing %d operations", len(operations))
+    for i, op in enumerate(operations):
+        logger.info("sync-queue: processing operation %d/%d: %s for task %s with timestamp %s", i+1, len(operations), op.operation, op.task_id, op.timestamp)
         try:
             if op.operation == TaskOperationType.CREATE:
                 if op.payload is None:
@@ -293,7 +297,8 @@ def sync_task_queue(
                     broadcast_task_update({
                         "type": "task_update",
                         "action": "completed",
-                        "task_id": completed_task.id
+                        "task_id": completed_task.id,
+                        "task": TaskResponse.model_validate(completed_task).model_dump(mode="json")
                     })
             elif op.operation == TaskOperationType.UNCOMPLETE:
                 if op.task_id is None:
@@ -306,7 +311,8 @@ def sync_task_queue(
                     broadcast_task_update({
                         "type": "task_update",
                         "action": "uncompleted",
-                        "task_id": uncompleted_task.id
+                        "task_id": uncompleted_task.id,
+                        "task": TaskResponse.model_validate(uncompleted_task).model_dump(mode="json")
                     })
         except Exception as exc:  # Логируем, но продолжаем остальные операции
             logger.error(
@@ -317,8 +323,10 @@ def sync_task_queue(
             )
 
     # Возвращаем актуальное состояние задач после применения всех операций
-    tasks = TaskService.get_all_tasks(db, active_only=False)
-    return [TaskResponse.model_validate(task) for task in tasks]
+    tasks = TaskService.get_all_tasks(db, enabled_only=False)
+    result = [TaskResponse.model_validate(task) for task in tasks]
+    logger.info("sync-queue: returning %d tasks to client", len(result))
+    return result
 
 
 @router.get("/{task_id}", response_model=TaskResponse)
@@ -398,11 +406,13 @@ def complete_task(
             detail=f"Task with id {task_id} not found",
         )
     logger.info("HTTP complete: task_id=%s", completed_task.id)
-    # Для легких операций передаем только task_id, без полной задачи
+    logger.info("WS broadcast: task_update completed task_id=%s", completed_task.id)
+    # Отправляем полную задачу для синхронизации с мобильными клиентами
     broadcast_task_update({
         "type": "task_update",
         "action": "completed",
-        "task_id": completed_task.id
+        "task_id": completed_task.id,
+        "task": TaskResponse.model_validate(completed_task).model_dump(mode="json")
     })
     return TaskResponse.model_validate(completed_task)
 
@@ -442,11 +452,12 @@ def uncomplete_task(
             detail=f"Task with id {task_id} not found",
         )
     logger.info("HTTP uncomplete: task_id=%s", uncompleted_task.id)
-    # Для легких операций передаем только task_id, без полной задачи
+    # Отправляем полную задачу для синхронизации с мобильными клиентами
     broadcast_task_update({
         "type": "task_update",
         "action": "uncompleted",
-        "task_id": uncompleted_task.id
+        "task_id": uncompleted_task.id,
+        "task": TaskResponse.model_validate(uncompleted_task).model_dump(mode="json")
     })
     return TaskResponse.model_validate(uncompleted_task)
 

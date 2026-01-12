@@ -8,6 +8,7 @@ import com.homeplanner.api.UsersServerApi
 import com.homeplanner.database.AppDatabase
 import com.homeplanner.repository.OfflineRepository
 import com.homeplanner.sync.SyncService
+import com.homeplanner.sync.WebSocketService
 import com.homeplanner.utils.TaskDateCalculator
 import com.homeplanner.viewmodel.TaskViewModel
 import com.homeplanner.viewmodel.SettingsViewModel
@@ -60,6 +61,7 @@ val appModule = module {
 
     // Sync
     single { SyncService(get(), get(), androidContext()) }
+    single { WebSocketService(androidContext(), get(), get()) }
 
     // ViewModel
     viewModel { TaskViewModel(androidContext() as Application, get(), get(), get(), get()) }
@@ -90,6 +92,10 @@ class Application : android.app.Application() {
         // Initialize DI container
         initializeDependencies()
 
+        // Schedule day change scheduler for offline task recalculation
+        val dayChangeScheduler = com.homeplanner.services.DayChangeScheduler(this)
+        dayChangeScheduler.scheduleDailyRecalculation()
+
         // Create Business Logic + Data Layer components
         createTaskViewModel()
 
@@ -112,8 +118,24 @@ class Application : android.app.Application() {
     }
 
     private fun createTaskSyncManager() {
-        // TODO: Создание TaskSyncManager с зависимостями
-        // Получить serverApi, offlineRepository, syncService, taskValidationService из DI
+        // Получить зависимости из DI
+        val koin = GlobalContext.get()!!
+        val serverApi = koin.get<ServerApi>()
+        val offlineRepository = koin.get<OfflineRepository>()
+        val syncService = koin.get<SyncService>()
+
+        // Создать TaskSyncManager
+        val taskSyncManager = com.homeplanner.services.TaskSyncManager(
+            serverApi = serverApi,
+            offlineRepository = offlineRepository,
+            syncService = syncService,
+            taskValidationService = com.homeplanner.services.TaskValidationService(),
+            webSocketService = koin.get<WebSocketService>()
+        )
+
+        // Запустить наблюдение за запросами синхронизации
+        taskSyncManager.observeSyncRequests()
+        android.util.Log.d("Application", "TaskSyncManager created and sync observation started")
 
         // Perform initial cache synchronization to load users
         android.util.Log.d("Application", "createTaskSyncManager: launching performInitialCacheSync")

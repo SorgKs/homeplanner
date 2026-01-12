@@ -2,6 +2,7 @@
 
 import { allTasks, groups, adminMode, showToast } from './utils.js';
 import { formatDateTime } from './utils.js';
+import { tasksAPI } from './api.js';
 
 export async function viewTaskHistory(taskId) {
     try {

@@ -2,10 +2,11 @@
 console.log('utils.js loading...');
 
 import { timeAPI, tasksAPI, groupsAPI, usersAPI } from './api.js';
-import { handleUserSubmit, renderUsersList } from './user_management.js';
+import { handleUserSubmit, renderUsersList, showUserPickScreen } from './user_management.js';
 import { updateAdminNavigation, updateTimePanelVisibility, filterAndRenderTasks } from './filters.js';
 import { connectWebSocket } from './websocket.js';
 import { toggleUserFilterControls } from './app.js';
+import { renderHistoryView } from './history.js';
 
 // Global variables
 export let allTasks = []; // Все задачи (для текущего вида)
@@ -30,6 +31,10 @@ export let searchQuery = '';
 export let filterState = null;
 export let currentView = 'today'; // 'today', 'all', 'history', 'settings', 'users'
 export let adminMode = false; // Режим администратора
+
+export function setAdminMode(mode) {
+    adminMode = mode;
+}
 export let ws = null; // WebSocket connection
 export function setWs(newWs) {
     ws = newWs;
@@ -40,7 +45,13 @@ export function setWsReconnectTimer(timer) {
 }
 export let timeControlState = null; // Состояние панели управления временем
 export let users = []; // Пользователи для назначения
+export function setUsers(newUsers) {
+    users = newUsers;
+}
 export let selectedUserId = null; // ID выбранного пользователя для фильтра (для "Сегодня" - из cookie, для "Все задачи" - из UI)
+export function setSelectedUserId(id) {
+    selectedUserId = id;
+}
 export let allTasksUserFilterId = null; // ID пользователя для фильтра во вкладке "Все задачи" (опционально)
 export let appInitialized = false; // Флаг инициализации интерфейса
 
@@ -527,6 +538,15 @@ export async function toggleTaskComplete(id, completed) {
             return;
         }
 
+        console.log('Начинаем toggleTaskComplete:', {
+            id,
+            completed,
+            task_type: task.task_type,
+            is_completed: task.is_completed,
+            completed_field: task.completed,
+            enabled: task.enabled,
+        });
+
         if (completed) {
             console.log('Подтверждаем задачу:', {
                 id,
@@ -537,6 +557,13 @@ export async function toggleTaskComplete(id, completed) {
             await tasksAPI.complete(id);
             showToast('Задача отмечена как выполненная', 'success');
         } else {
+            console.log('Отменяем подтверждение задачи:', {
+                id,
+                task_type: task.task_type,
+                reminder_time: task.reminder_time,
+                completed_field: task.completed,
+                enabled: task.enabled,
+            });
             // Сбрасываем статус подтверждения через API /uncomplete
             await tasksAPI.uncomplete(id);
             showToast('Статус подтверждения сброшен', 'success');
@@ -546,14 +573,17 @@ export async function toggleTaskComplete(id, completed) {
         await loadData();
         const updatedTask = allTasks.find(t => t.id === id);
         if (updatedTask) {
-            console.log('Задача после подтверждения:', {
+            console.log('Задача после обновления:', {
                 id: updatedTask.id,
                 title: updatedTask.title,
                 task_type: updatedTask.task_type,
                 completed: updatedTask.completed,
-                active: updatedTask.active,
+                enabled: updatedTask.enabled,
+                is_completed: updatedTask.is_completed,
                 reminder_time: updatedTask.reminder_time,
             });
+        } else {
+            console.error('Задача не найдена после обновления:', id);
         }
     } catch (error) {
         console.error('Error toggling task complete:', error);
@@ -609,19 +639,9 @@ export async function loadData() {
         // Map tasks and remove duplicates by ID (keep first occurrence)
         const tasksMap = new Map();
         tasks.forEach(t => {
-            // Определяем статус выполнения: задача выполнена если:
-            // 1. Для разовых задач: не включена (enabled = false)
-            // 2. Для повторяющихся и интервальных: completed = true
+            // Определяем статус выполнения: задача выполнена если completed = true
             // Галка подтверждения НЕ зависит от reminder_time
-            let isCompleted = false;
-
-            // Для разовых задач: выполнена если не включена
-            if (t.task_type === 'one_time') {
-                isCompleted = !t.enabled;
-            } else {
-                // Для повторяющихся и интервальных задач: выполнена если completed = true
-                isCompleted = t.completed === true;
-            }
+            let isCompleted = t.completed === true;
 
             const mappedTask = {
                 ...t,
@@ -741,6 +761,17 @@ export function updateAssigneeSelect(selectedIds = []) {
 
 export function setAssigneeSelection(selectedIds) {
     updateAssigneeSelect(selectedIds);
+}
+
+function applyCurrentViewData() {
+    if (currentView === 'today') {
+        allTasks = [...todayTasksCache];
+    } else if (currentView === 'all') {
+        allTasks = [...allTasksCache];
+    } else {
+        allTasks = [...allTasksCache];
+    }
+    filterAndRenderTasks();
 }
 
 export function resetUserForm() {
@@ -960,10 +991,7 @@ export function renderUsersView() {
     renderUsersList();
 }
 
-export async function renderHistoryView() {
-    // Placeholder - implement in app.js
-    console.log('renderHistoryView called');
-}
+
 
 export function formatDatetimeLocal(isoString) {
     if (!isoString) return '';
@@ -1311,3 +1339,33 @@ export function setupEventListeners() {
     resetUserForm();
     updateAdminNavigation();
 }
+
+export function toggleAdminMode() {
+    setAdminMode(!adminMode);
+    const adminBtn = document.getElementById('toggle-admin-btn');
+    const adminText = document.getElementById('admin-mode-text');
+
+    if (adminMode) {
+        adminBtn.classList.add('active');
+        adminText.textContent = 'Выйти из админ';
+    } else {
+        adminBtn.classList.remove('active');
+        adminText.textContent = 'Админ режим';
+    }
+
+    // Re-render current view to show/hide admin features
+    if (currentView === 'history') {
+        renderHistoryView();
+    } else {
+        filterAndRenderTasks();
+    }
+
+    updateTimePanelVisibility();
+    updateAdminNavigation();
+    if (adminMode) {
+        fetchAndRenderTimeState(false);
+    }
+}
+
+// Make it global for onclick
+window.toggleAdminMode = toggleAdminMode;

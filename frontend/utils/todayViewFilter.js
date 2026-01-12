@@ -38,15 +38,12 @@ function shouldBeVisibleInTodayView(task, currentDate) {
     const isDueToday = taskDateLocal.getTime() === today.getTime();
     const isDueTodayOrOverdue = taskDateLocal.getTime() <= today.getTime();
 
-    if (taskType === 'one_time') {
-        if (task.enabled === false) {
-            return isDueToday;
-        }
+    if (task.completed) {
         return isDueTodayOrOverdue;
     }
 
-    if (task.completed) {
-        return true;
+    if (taskType === 'one_time') {
+        return isDueTodayOrOverdue && task.enabled !== false;
     }
 
     return task.enabled !== false && isDueTodayOrOverdue;

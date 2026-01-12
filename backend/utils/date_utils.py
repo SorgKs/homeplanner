@@ -50,47 +50,53 @@ def get_last_update(db: Session) -> datetime | None:
     return None
 
 
-def set_last_update(db: Session, timestamp: datetime, commit: bool = False) -> None:
+def set_last_update(db: Session, timestamp: datetime | None = None, commit: bool = False) -> None:
     """Set last task update timestamp in metadata.
-    
+
     Args:
         db: Database session.
-        timestamp: Timestamp to set.
+        timestamp: Timestamp to set (if None, uses real current time, not virtual).
         commit: If True, commit the transaction. If False, caller should commit.
     """
     from backend.models.app_metadata import AppMetadata
-    
+
+    if timestamp is None:
+        from backend.services.time_manager import TimeManager
+        timestamp = TimeManager.get_real_time()
+
     metadata = db.query(AppMetadata).filter(AppMetadata.key == LAST_UPDATE_KEY).first()
     if metadata:
         metadata.value = timestamp
     else:
         metadata = AppMetadata(key=LAST_UPDATE_KEY, value=timestamp)
         db.add(metadata)
-    
+
     if commit:
         db.commit()
 
 
 def is_new_day(db: Session) -> bool:
     """Check if a new day has started since last update.
-    
-    Uses day_start_hour from config to determine day boundaries.
-    
+
+    Uses real time to determine day boundaries, independent of virtual time overrides.
+
     Args:
         db: Database session.
-        
+
     Returns:
         True if new day has started, False otherwise.
     """
+    from backend.services.time_manager import TimeManager
+
     last_update = get_last_update(db)
     if last_update is None:
         # First time - consider it a new day
         return True
-    
-    now = get_current_time()
+
+    now = TimeManager.get_real_time()
     last_update_day_start = get_day_start(last_update)
     current_day_start = get_day_start(now)
-    
+
     return last_update_day_start < current_day_start
 
 

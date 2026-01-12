@@ -20,6 +20,7 @@ fun UserSelectionSection(
     onClearUser: () -> Unit,
     onRefreshUsers: () -> Unit
 ) {
+    android.util.Log.d("UserSelectionSection", "UserSelectionSection: users.size=${users.size}, isLoading=$isLoading, selectedUser=${selectedUser?.name}")
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(

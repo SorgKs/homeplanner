@@ -15,10 +15,38 @@ from common.versioning import compose_component_version
 from backend.config import get_settings
 from backend.database import engine, init_db
 from backend.logging_config import setup_logging
-from backend.models import DebugLog, Event, Group, Task, TaskHistory, User  # noqa: F401
-from backend.routers import events, groups, task_history, tasks, time_control, users
+from backend.models import AppMetadata, Event, Group, Task, TaskHistory, User  # noqa: F401
+from backend.routers import app_info, events, groups, task_history, tasks, time_control, users
 from backend.routers import download
-from backend.routers import realtime, debug_logs
+from backend.routers import realtime
+
+# Temporary debug router for debugging
+import logging
+from fastapi import APIRouter, Request
+from backend.database import get_db
+from sqlalchemy.orm import Session
+from fastapi import Depends
+
+debug_router = APIRouter()
+debug_logger = logging.getLogger("backend.debug.temp")
+
+@debug_router.post("/debug_logs")
+async def debug_logs_endpoint(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """Temporary endpoint for debug logs to add logging."""
+    debug_logger.info("Temporary debug_logs endpoint called")
+    headers = dict(request.headers)
+    debug_logger.info("Headers: %s", headers)
+    body = await request.body()
+    debug_logger.info("Body length: %d", len(body))
+    # Log chunk_id and device_id if present
+    chunk_id = headers.get("x-chunk-id")
+    device_id = headers.get("x-device-id")
+    debug_logger.info("Chunk-Id: %s, Device-Id: %s", chunk_id, device_id)
+    # Return success to avoid errors
+    return {"status": "received", "chunk_id": chunk_id, "device_id": device_id}
 
 # System logger for application-level messages
 system_logger = logging.getLogger("homeplanner.system")
@@ -50,8 +78,18 @@ async def lifespan(app: FastAPI):
     """Lifespan context manager for startup and shutdown events."""
     # Startup
     init_db()
+
+    # Start day change scheduler for automatic task recalculation
+    from backend.services.day_change_scheduler import DayChangeScheduler
+    from backend.database import SessionLocal
+    from backend.routers.realtime import manager as ws_manager
+    day_scheduler = DayChangeScheduler(SessionLocal, ws_manager)
+    await day_scheduler.start()
+
     yield
+
     # Shutdown
+    await day_scheduler.stop()
     engine.dispose()
 
 
@@ -68,9 +106,12 @@ def create_app() -> FastAPI:
         FastAPI app with separate router sets for WebSocket and HTTP.
     """
     settings = get_settings()
-    
+
     # Configure logging to write to both console and file
     setup_logging(debug=settings.debug)
+
+    # Test ERROR logging
+    system_logger.error("Test ERROR log in main.py to check if ERROR messages are written")
 
     app = FastAPI(
         title="HomePlanner API",
@@ -78,6 +119,16 @@ def create_app() -> FastAPI:
         version=compose_component_version("backend"),
         lifespan=lifespan,
     )
+
+    # Add global exception handler to log unhandled exceptions
+    from fastapi import Request
+    from starlette.exceptions import HTTPException as StarletteHTTPException
+
+    @app.exception_handler(Exception)
+    async def global_exception_handler(request: Request, exc: Exception):
+        system_logger.error("Unhandled exception in FastAPI app: %s", str(exc), exc_info=True)
+        # Re-raise to let FastAPI handle it (return 500)
+        raise exc
 
     # CORS middleware
     app.add_middleware(
@@ -87,6 +138,48 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # Cache control middleware for frontend files
+    from starlette.middleware.base import BaseHTTPMiddleware
+    from starlette.responses import Response
+
+    class NoCacheMiddleware(BaseHTTPMiddleware):
+        async def dispatch(self, request, call_next):
+            response = await call_next(request)
+            if request.url.path.endswith('.js'):
+                response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+                response.headers['Pragma'] = 'no-cache'
+                response.headers['Expires'] = '0'
+            return response
+
+    app.add_middleware(NoCacheMiddleware)
+
+    # Task recalculation middleware - checks for new day on every HTTP request
+    from starlette.middleware.base import BaseHTTPMiddleware
+    from sqlalchemy.orm import Session
+    from backend.database import SessionLocal
+    from backend.utils.date_utils import is_new_day
+    from backend.services.task_service import TaskService
+
+    class TaskRecalculationMiddleware(BaseHTTPMiddleware):
+        async def dispatch(self, request, call_next):
+            # Skip middleware for static files and WebSocket requests
+            if request.url.path.startswith("/common/config") or request.url.path.startswith("/"):
+                # But only if it's not an API call - check if path starts with /api/
+                if not request.url.path.startswith("/api/"):
+                    return await call_next(request)
+
+            # Check for new day and recalculate tasks if needed
+            db = SessionLocal()
+            try:
+                TaskService.check_new_day(db)
+            finally:
+                db.close()
+
+            # Continue with request processing
+            return await call_next(request)
+
+    app.add_middleware(TaskRecalculationMiddleware)
 
     # ===== WebSocket routers (ONLY WebSocket, separate set) =====
     # Create separate router ONLY for WebSocket routes (no HTTP routes)
@@ -136,9 +229,12 @@ def create_app() -> FastAPI:
         app.include_router(users.router, prefix=f"{version_path}/users", tags=["users"])
         app.include_router(task_history.router, prefix=version_path, tags=["task_history"])
         app.include_router(time_control.router, prefix=f"{version_path}/time", tags=["time"])
-        app.include_router(debug_logs.router, prefix=version_path, tags=["debug-logs"])
+        app.include_router(debug_router, prefix=version_path, tags=["debug"])
 
     app.include_router(download.router, prefix="/download", tags=["download"])
+
+    # Client configuration router
+    app.include_router(app_info.router, prefix=api_version_path, tags=["client-config"])
     
     # HTTP endpoint from realtime (separate from WebSocket route)
     http_realtime_router = APIRouter()

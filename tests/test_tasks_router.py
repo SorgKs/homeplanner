@@ -202,7 +202,7 @@ class TestTasksRouter:
     def test_get_tasks_active_only(self, client: TestClient) -> None:
         """Test getting only active tasks via API."""
         today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
-        
+
         task1_data = {
             "title": "Active Task",
             "task_type": TaskType.ONE_TIME.value,
@@ -213,17 +213,17 @@ class TestTasksRouter:
             "task_type": TaskType.ONE_TIME.value,
             "reminder_time": today.isoformat(),
         }
-        
+
         create_response1 = client.post(api_path("/tasks/"), json=task1_data)
         create_response2 = client.post(api_path("/tasks/"), json=task2_data)
-        
+
         # Update task2 to be inactive
         task2_id = create_response2.json()["id"]
         current = client.get(api_path(f"/tasks/{task2_id}")).json()
-        client.put(api_path(f"/tasks/{task2_id}"), json={"active": False})
-        
-        response = client.get(api_path("/tasks/") + "?active_only=true")
-        
+        client.put(api_path(f"/tasks/{task2_id}"), json={"enabled": False})
+
+        response = client.get(api_path("/tasks/") + "?enabled_only=true")
+
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
@@ -377,17 +377,17 @@ class TestTasksRouter:
             "task_type": TaskType.ONE_TIME.value,
             "reminder_time": today.isoformat(),
         }
-        
+
         create_response = client.post(api_path("/tasks/"), json=task_data)
         task_id = create_response.json()["id"]
-        
+
         response = client.post(api_path(f"/tasks/{task_id}/complete"))
-        
+
         assert response.status_code == 200
         data = response.json()
-        # For one-time tasks: active -> False, completed -> True, reminder_time unchanged
+        # For one-time tasks: enabled -> False, completed -> True, reminder_time unchanged
         assert data["completed"] is True
-        assert data["active"] is False
+        assert data["enabled"] is False
 
     def test_complete_task_not_found(self, client: TestClient) -> None:
         """Test completing a non-existent task via API."""

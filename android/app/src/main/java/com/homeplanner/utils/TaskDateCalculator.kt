@@ -3,6 +3,7 @@ package com.homeplanner.utils
 import com.homeplanner.model.Task
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.time.LocalDate
 
 object TaskDateCalculator {
 
@@ -74,5 +75,26 @@ object TaskDateCalculator {
         } else {
             time
         }
+    }
+
+    fun isToday(dateTime: LocalDateTime): Boolean {
+        val today = LocalDate.now()
+        return dateTime.toLocalDate() == today
+    }
+
+    fun isTomorrow(dateTime: LocalDateTime): Boolean {
+        val tomorrow = LocalDate.now().plusDays(1)
+        return dateTime.toLocalDate() == tomorrow
+    }
+
+    fun getCurrentDayStart(dayStartHour: Int): LocalDateTime {
+        val now = LocalDateTime.now()
+        return getDayStart(now, dayStartHour)
+    }
+
+    fun isWithinDayRange(dateTime: LocalDateTime, dayStartHour: Int): Boolean {
+        val dayStart = getDayStart(dateTime, dayStartHour)
+        val dayEnd = dayStart.plusDays(1)
+        return dateTime.isAfter(dayStart) && dateTime.isBefore(dayEnd)
     }
 }

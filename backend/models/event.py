@@ -1,12 +1,12 @@
 """Event model for one-time events."""
 
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from backend.database import Base
-from backend.services.time_manager import get_current_time
 
 if TYPE_CHECKING:
     from backend.models.group import Group
@@ -25,8 +25,8 @@ class Event(Base):
     reminder_time = Column(DateTime, nullable=True, index=True)
     is_completed = Column(Boolean, default=False, nullable=False)
     group_id = Column(Integer, ForeignKey("groups.id"), nullable=True, index=True)
-    created_at = Column(DateTime, default=get_current_time, nullable=False)
-    updated_at = Column(DateTime, default=get_current_time, onupdate=get_current_time, nullable=False)
+    created_at = Column(DateTime, default=datetime.now, nullable=False)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
 
     # Relationships
     group = relationship("Group", back_populates="events")

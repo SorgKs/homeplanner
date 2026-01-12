@@ -51,7 +51,7 @@ function testOneTimeTasksVisibility() {
     const overdueTask = createTask('one_time', overdue);
     const todayTask = createTask('one_time', today);
     const tomorrowTask = createTask('one_time', tomorrow);
-    const completedTask = createTask('one_time', today, true, false);
+    const completedTask = createTask('one_time', today, true, true);
 
     assert(shouldBeVisibleInTodayView(overdueTask, currentDate), 'Overdue one_time task should be visible');
     assert(shouldBeVisibleInTodayView(todayTask, currentDate), 'Today one_time task should be visible');

@@ -23,7 +23,14 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setupComposeContent()
+        android.util.Log.d("MainActivity", "MainActivity onCreate called")
+        try {
+            setupComposeContent()
+            android.util.Log.d("MainActivity", "setupComposeContent completed")
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Error in onCreate", e)
+            throw e
+        }
     }
 
     override fun onResume() {
@@ -51,10 +58,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-
-
-
-
 @Composable
 fun TasksScreen(state: TaskScreenState, navController: androidx.navigation.NavHostController) {
     val viewModel: TaskViewModel = koinViewModel()
@@ -68,7 +71,9 @@ fun TasksScreen(state: TaskScreenState, navController: androidx.navigation.NavHo
         MainScreen(
             state = filteredState,
             onTaskClick = { /* TODO: Navigate to task details */ },
-            onTaskComplete = { /* TODO: Handle task completion */ },
+            onTaskComplete = { taskId, isCompleted ->
+                if (isCompleted) viewModel.uncompleteTask(taskId) else viewModel.completeTask(taskId)
+            },
             onTaskDelete = { /* TODO: Handle task deletion */ },
             onCreateTask = { /* TODO: Show create dialog */ },
             navController = navController

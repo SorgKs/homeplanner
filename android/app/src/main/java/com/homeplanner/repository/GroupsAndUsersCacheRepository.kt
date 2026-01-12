@@ -26,37 +26,49 @@ class GroupsAndUsersCacheRepository(
     suspend fun loadUsersFromCache(): List<com.homeplanner.model.User> {
         return try {
             val json = prefs.getString("cached_users", null)
-            if (json.isNullOrEmpty()) return emptyList()
+            android.util.Log.d(TAG, "loadUsersFromCache: json from prefs = '$json'")
+            if (json.isNullOrEmpty()) {
+                android.util.Log.d(TAG, "loadUsersFromCache: json is null or empty, returning empty list")
+                return emptyList()
+            }
             val jsonArray = org.json.JSONArray(json)
+            android.util.Log.d(TAG, "loadUsersFromCache: parsed jsonArray length = ${jsonArray.length()}")
             val users = mutableListOf<com.homeplanner.model.User>()
             for (i in 0 until jsonArray.length()) {
                 val obj = jsonArray.getJSONObject(i)
-                users.add(com.homeplanner.model.User(
+                val user = com.homeplanner.model.User(
                     id = obj.getInt("id"),
                     name = obj.getString("name")
-                ))
+                )
+                android.util.Log.d(TAG, "loadUsersFromCache: loaded user id=${user.id}, name=${user.name}")
+                users.add(user)
             }
+            android.util.Log.d(TAG, "loadUsersFromCache: total users loaded = ${users.size}")
             users
         } catch (e: Exception) {
-            Log.e(TAG, "Error loading users from cache", e)
+            android.util.Log.e(TAG, "Error loading users from cache", e)
             emptyList()
         }
     }
 
     suspend fun saveUsersToCache(users: List<com.homeplanner.model.User>) {
         try {
+            android.util.Log.d(TAG, "saveUsersToCache: saving ${users.size} users")
             val jsonArray = org.json.JSONArray()
             users.forEach { user ->
+                android.util.Log.d(TAG, "saveUsersToCache: saving user id=${user.id}, name=${user.name}")
                 val obj = org.json.JSONObject().apply {
                     put("id", user.id)
                     put("name", user.name)
                 }
                 jsonArray.put(obj)
             }
-            prefs.edit().putString("cached_users", jsonArray.toString()).apply()
-            // BinaryLogger.getInstance()?.log(408u, listOf<Any>(users.size, 20), 20) // Можно добавить если нужно
+            val jsonString = jsonArray.toString()
+            android.util.Log.d(TAG, "saveUsersToCache: json to save = '$jsonString'")
+            prefs.edit().putString("cached_users", jsonString).apply()
+            android.util.Log.d(TAG, "saveUsersToCache: saved ${users.size} users to prefs")
         } catch (e: Exception) {
-            Log.e(TAG, "Error saving users to cache", e)
+            android.util.Log.e(TAG, "Error saving users to cache", e)
         }
     }
 

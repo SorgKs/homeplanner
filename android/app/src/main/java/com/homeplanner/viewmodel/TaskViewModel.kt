@@ -146,6 +146,70 @@ class TaskViewModel(
         }
     }
 
+    /**
+     * Завершает задачу локально и добавляет операцию в очередь синхронизации.
+     * Обновляет UI немедленно через оптимистичное обновление.
+     */
+    fun completeTask(taskId: Int) {
+        android.util.Log.d("TaskViewModel", "completeTask: called with taskId=$taskId")
+        viewModelScope.launch {
+            try {
+                // Выполняем завершение задачи через LocalApi (оптимистичное обновление)
+                val result = localApi.completeTaskLocal(taskId)
+                result.onSuccess { updatedTask ->
+                    android.util.Log.i("TaskViewModel", "completeTask: successfully completed task $taskId locally")
+
+                    // Обновляем состояние UI с новой задачей
+                    val currentTasks = _state.value.tasks
+                    val updatedTasks = currentTasks.map { task ->
+                        if (task.id == taskId) updatedTask else task
+                    }
+                    updateState(_state.value.copy(tasks = updatedTasks))
+
+                    android.util.Log.d("TaskViewModel", "completeTask: UI state updated with completed task")
+                }.onFailure { error ->
+                    android.util.Log.e("TaskViewModel", "completeTask: failed to complete task $taskId", error)
+                    handleError(error)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("TaskViewModel", "completeTask: exception", e)
+                handleError(e)
+            }
+        }
+    }
+
+    /**
+     * Отменяет завершение задачи локально и добавляет операцию в очередь синхронизации.
+     * Обновляет UI немедленно через оптимистичное обновление.
+     */
+    fun uncompleteTask(taskId: Int) {
+        android.util.Log.d("TaskViewModel", "uncompleteTask: called with taskId=$taskId")
+        viewModelScope.launch {
+            try {
+                // Выполняем отмену завершения задачи через LocalApi (оптимистичное обновление)
+                val result = localApi.uncompleteTaskLocal(taskId)
+                result.onSuccess { updatedTask ->
+                    android.util.Log.i("TaskViewModel", "uncompleteTask: successfully uncompleted task $taskId locally")
+
+                    // Обновляем состояние UI с новой задачей
+                    val currentTasks = _state.value.tasks
+                    val updatedTasks = currentTasks.map { task ->
+                        if (task.id == taskId) updatedTask else task
+                    }
+                    updateState(_state.value.copy(tasks = updatedTasks))
+
+                    android.util.Log.d("TaskViewModel", "uncompleteTask: UI state updated with uncompleted task")
+                }.onFailure { error ->
+                    android.util.Log.e("TaskViewModel", "uncompleteTask: failed to uncomplete task $taskId", error)
+                    handleError(error)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("TaskViewModel", "uncompleteTask: exception", e)
+                handleError(e)
+            }
+        }
+    }
+
     private suspend fun loadInitialData() {
         android.util.Log.d("TaskViewModel", "loadInitialData: started")
         try {

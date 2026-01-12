@@ -14,6 +14,9 @@ class OfflineRepository(
     private val db: AppDatabase,
     private val context: Context
 ) {
+    companion object {
+        private const val DAY_START_HOUR = 4 // TODO: Получать из настроек
+    }
     private val taskCacheRepository = TaskCacheRepository(db)
     private val syncQueueRepository = SyncQueueRepository(db)
     private val storageMetadataManager = StorageMetadataManager(db, context)
@@ -32,9 +35,15 @@ class OfflineRepository(
         return result
     }
 
-    suspend fun loadTasksFromCache(): List<Task> = taskCacheRepository.loadTasksFromCache()
+    suspend fun loadTasksFromCache(): List<Task> {
+        checkAndRecalculateIfNewDay(DAY_START_HOUR)
+        return taskCacheRepository.loadTasksFromCache()
+    }
 
-    suspend fun getTaskFromCache(id: Int): Task? = taskCacheRepository.getTaskFromCache(id)
+    suspend fun getTaskFromCache(id: Int): Task? {
+        checkAndRecalculateIfNewDay(DAY_START_HOUR)
+        return taskCacheRepository.getTaskFromCache(id)
+    }
 
     suspend fun deleteTaskFromCache(id: Int) {
         taskCacheRepository.deleteTaskFromCache(id)
@@ -110,10 +119,23 @@ class OfflineRepository(
     suspend fun updateRecurringTasksForNewDay(dayStartHour: Int): Boolean =
         recurringTaskUpdater.updateRecurringTasksForNewDay(dayStartHour)
 
+    /**
+     * Проверяет новый день и пересчитывает задачи если необходимо.
+     * Вызывается при любых обращениях к локальному хранилищу.
+     */
+    suspend fun checkAndRecalculateIfNewDay(dayStartHour: Int) {
+        val updated = updateRecurringTasksForNewDay(dayStartHour)
+        if (updated) {
+            android.util.Log.i("OfflineRepository", "Tasks recalculated for new day")
+        }
+    }
+
     // ========== Группы и пользователи ==========
 
-    suspend fun loadGroupsFromCache(): List<com.homeplanner.model.Group> =
-        groupsAndUsersCacheRepository.loadGroupsFromCache()
+    suspend fun loadGroupsFromCache(): List<com.homeplanner.model.Group> {
+        checkAndRecalculateIfNewDay(DAY_START_HOUR)
+        return groupsAndUsersCacheRepository.loadGroupsFromCache()
+    }
 
     suspend fun saveGroupsToCache(groups: List<com.homeplanner.model.Group>) =
         groupsAndUsersCacheRepository.saveGroupsToCache(groups)
@@ -121,8 +143,10 @@ class OfflineRepository(
     suspend fun deleteGroupFromCache(groupId: Int) =
         groupsAndUsersCacheRepository.deleteGroupFromCache(groupId)
 
-    suspend fun loadUsersFromCache(): List<com.homeplanner.model.User> =
-        groupsAndUsersCacheRepository.loadUsersFromCache()
+    suspend fun loadUsersFromCache(): List<com.homeplanner.model.User> {
+        checkAndRecalculateIfNewDay(DAY_START_HOUR)
+        return groupsAndUsersCacheRepository.loadUsersFromCache()
+    }
 
     suspend fun saveUsersToCache(users: List<com.homeplanner.model.User>) =
         groupsAndUsersCacheRepository.saveUsersToCache(users)

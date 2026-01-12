@@ -156,7 +156,7 @@ fun loadJsonFile(file: File, fallback: Map<String, Int>): Map<String, Int> {
 }
 
 val projectVersion = loadProjectVersionFromPyproject(pyprojectFile, mapOf("major" to 0, "minor" to 0))
-val androidVersion = loadJsonFile(androidVersionFile, mapOf("patch" to 0))
+var androidVersion = loadJsonFile(androidVersionFile, mapOf("patch" to 0))
 
 val major = projectVersion["major"] ?: 0
 val minor = projectVersion["minor"] ?: 0

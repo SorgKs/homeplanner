@@ -9,7 +9,7 @@
     <uses-permission android:name="android.permission.CAMERA" />
 
     <application
-        android:name=".Application"
+        android:name="com.homeplanner.Application"
         android:label="HomePlanner"
         android:icon="@android:drawable/sym_def_app_icon"
         android:roundIcon="@android:drawable/sym_def_app_icon"
@@ -43,6 +43,12 @@
         <!-- Receiver that triggers on scheduled alarms and shows full-screen notification -->
         <receiver
             android:name=".ReminderReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
+        <!-- Receiver for day change task recalculation -->
+        <receiver
+            android:name=".services.DayChangeReceiver"
             android:enabled="true"
             android:exported="false" />
     </application>

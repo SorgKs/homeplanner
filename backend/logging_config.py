@@ -64,7 +64,7 @@ def setup_logging(log_dir: Path | None = None, debug: bool = False) -> None:
         backupCount=30,
         encoding="utf-8"
     )
-    file_handler.setLevel(log_level)
+    file_handler.setLevel(logging.DEBUG)  # Always log DEBUG and above to main log
     file_formatter = logging.Formatter(
         "%(asctime)s %(levelname)-5s %(name)s %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S"
@@ -109,3 +109,9 @@ def setup_logging(log_dir: Path | None = None, debug: bool = False) -> None:
 
     # Log that logging is configured
     logger.info(f"Logging configured: level={logging.getLevelName(log_level)}, log_dir={log_dir}")
+
+    # Diagnostic logs to test levels
+    logger.debug("Diagnostic: DEBUG level test")
+    logger.info("Diagnostic: INFO level test")
+    logger.warning("Diagnostic: WARNING level test")
+    logger.error("Diagnostic: ERROR level test")

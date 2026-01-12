@@ -27,6 +27,7 @@ class LocalApi(
 ) {
     companion object {
         private const val TAG = "LocalApi"
+        private const val DAY_START_HOUR = 4 // TODO: Получать из настроек, аналогично бекенду
     }
     
     /**
@@ -36,6 +37,10 @@ class LocalApi(
      * @return Список задач из кэша
      */
     suspend fun getTasksLocal(activeOnly: Boolean = true): Result<List<Task>> = runCatching {
+        android.util.Log.d(TAG, "getTasksLocal: checking for day change and recalculating tasks if needed")
+        // Пересчет задач при наступлении нового дня (оффлайн)
+        updateRecurringTasksIfNeeded(DAY_START_HOUR)
+
         android.util.Log.d(TAG, "getTasksLocal: loading tasks from cache")
         val cachedTasks = offlineRepository.loadTasksFromCache()
         android.util.Log.i(TAG, "getTasksLocal: loaded ${cachedTasks.size} tasks from cache")
@@ -210,7 +215,9 @@ class LocalApi(
     }
 
     private suspend fun addToSyncQueue(action: String, entityType: String, entityId: Int?, entity: Any?) {
+        android.util.Log.d(TAG, "addToSyncQueue: adding $action operation for $entityType id=$entityId")
         offlineRepository.addToSyncQueue(action, entityType, entityId, entity)
         offlineRepository.requestSync = true
+        android.util.Log.d(TAG, "addToSyncQueue: sync request flag set to true")
     }
 }

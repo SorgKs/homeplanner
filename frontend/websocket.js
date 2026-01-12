@@ -123,7 +123,12 @@ export function connectWebSocket() {
                 console.log('[WS<-]', ev.data);
                 const msg = JSON.parse(ev.data);
                 if (msg.type === 'task_update') {
+                    console.log('[WS] Processing task_update:', msg.action, msg.task_id, !!msg.task);
                     applyTaskEventFromWs(msg.action, msg.task || null, msg.task_id || null);
+                } else if (msg.type === 'day_changed') {
+                    console.log('[WS] Day changed detected:', msg.new_day);
+                    showToast(`Наступил новый день: ${msg.new_day}`, 'info');
+                    loadData();
                 }
             } catch (e) {
                 console.error('[WS] parse error', e);

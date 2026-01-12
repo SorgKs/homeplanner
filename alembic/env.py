@@ -11,7 +11,6 @@ from backend.database import Base
 
 # Import all models to ensure they are registered
 from backend.models.app_metadata import AppMetadata  # noqa: F401
-from backend.models.debug_log import DebugLog  # noqa: F401
 from backend.models.event import Event  # noqa: F401
 from backend.models.group import Group  # noqa: F401
 from backend.models.task import Task  # noqa: F401

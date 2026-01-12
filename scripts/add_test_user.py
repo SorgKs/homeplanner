@@ -11,12 +11,12 @@ from backend.database import SessionLocal
 from backend.services.user_service import UserService
 from backend.schemas.user import UserCreate
 
-def main():
+def main(name, email):
     db = SessionLocal()
     try:
         user_data = UserCreate(
-            name="Test User",
-            email="test@example.com",
+            name=name,
+            email=email,
             role="regular",
             status="active"
         )
@@ -26,4 +26,9 @@ def main():
         db.close()
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) != 3:
+        print("Usage: python add_test_user.py <name> <email>")
+        sys.exit(1)
+    name = sys.argv[1]
+    email = sys.argv[2]
+    main(name, email)

@@ -17,7 +17,7 @@ import com.homeplanner.viewmodel.TaskScreenState
 fun MainScreen(
     state: TaskScreenState,
     onTaskClick: (Task) -> Unit,
-    onTaskComplete: (Int) -> Unit,
+    onTaskComplete: (Int, Boolean) -> Unit,
     onTaskDelete: (Int) -> Unit,
     onCreateTask: () -> Unit,
     navController: NavHostController = rememberNavController()

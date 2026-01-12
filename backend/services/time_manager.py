@@ -1,93 +1,72 @@
-"""Utility for controlling current time with optional override."""
-
-from __future__ import annotations
+"""Time management service."""
 
 from datetime import datetime, timedelta
-from threading import Lock
+from typing import Optional
 
 
 class TimeManager:
-    """Manage virtual current time for debugging/testing."""
+    """Manages virtual time for time control functionality."""
 
-    _offset: timedelta | None = None
-    _lock = Lock()
+    _virtual_time: Optional[datetime] = None
+    _override_enabled: bool = False
 
     @classmethod
     def get_current_time(cls) -> datetime:
-        """Return the effective current time respecting override offset."""
-        real_now = datetime.now()
-        with cls._lock:
-            if cls._offset is None:
-                return real_now
-            return real_now + cls._offset
+        """Get the current time (virtual if override is enabled, otherwise real)."""
+        if cls._override_enabled and cls._virtual_time is not None:
+            return cls._virtual_time
+        return datetime.now()
+
+    @classmethod
+    def get_real_time(cls) -> datetime:
+        """Get the real current time."""
+        return datetime.now()
+
+    @classmethod
+    def is_override_enabled(cls) -> bool:
+        """Check if virtual time override is enabled."""
+        return cls._override_enabled
+
+    @classmethod
+    def get_virtual_time(cls) -> Optional[datetime]:
+        """Get the current virtual time."""
+        return cls._virtual_time
+
+    @classmethod
+    def shift_time(cls, days: int = 0, hours: int = 0, minutes: int = 0) -> None:
+        """Shift virtual time by the specified amount."""
+        if not cls._override_enabled:
+            cls._override_enabled = True
+            cls._virtual_time = datetime.now()
+
+        if cls._virtual_time is None:
+            cls._virtual_time = datetime.now()
+
+        cls._virtual_time += timedelta(days=days, hours=hours, minutes=minutes)
+
+    @classmethod
+    def set_time(cls, target_datetime: datetime) -> None:
+        """Set virtual time to a specific datetime."""
+        cls._override_enabled = True
+        cls._virtual_time = target_datetime
+
+    @classmethod
+    def reset_time(cls) -> None:
+        """Reset to real time."""
+        cls._override_enabled = False
+        cls._virtual_time = None
 
     @classmethod
     def get_state(cls) -> dict:
-        """Get current override state details."""
-        real_now = datetime.now()
-        with cls._lock:
-            offset = cls._offset
-        virtual_now = real_now if offset is None else real_now + offset
+        """Get the current time control state."""
         return {
-            "real_now": real_now,
-            "virtual_now": virtual_now,
-            "override_enabled": offset is not None,
-            "offset_seconds": offset.total_seconds() if offset is not None else None,
+            "override_enabled": cls._override_enabled,
+            "virtual_now": cls._virtual_time.isoformat() if cls._virtual_time else None,
+            "real_now": cls.get_real_time().isoformat(),
         }
 
-    @classmethod
-    def set_override(cls, target_time: datetime) -> datetime:
-        """Set absolute virtual time."""
-        # Normalize to minute precision (drop seconds and microseconds)
-        target_time = target_time.replace(second=0, microsecond=0)
-        real_now = datetime.now()
-        with cls._lock:
-            cls._offset = target_time - real_now
-        return cls.get_current_time()
 
-    @classmethod
-    def shift(cls, delta: timedelta) -> datetime:
-        """Shift current virtual time by delta."""
-        with cls._lock:
-            base = cls._offset or timedelta()
-            cls._offset = base + delta
-        return cls.get_current_time()
-
-    @classmethod
-    def clear_override(cls) -> None:
-        """Reset to real system time."""
-        with cls._lock:
-            cls._offset = None
-
-
+# Backward compatibility
 def get_current_time() -> datetime:
-    """Convenience function."""
+    """Get the current time (virtual if override is enabled, otherwise real)."""
     return TimeManager.get_current_time()
-
-
-def shift_time(delta: timedelta) -> datetime:
-    """Shift virtual time by delta and return new time."""
-    return TimeManager.shift(delta)
-
-
-def set_current_time(target_time: datetime) -> datetime:
-    """Set virtual time to target."""
-    return TimeManager.set_override(target_time)
-
-
-def reset_time_override() -> None:
-    """Disable time override."""
-    TimeManager.clear_override()
-
-
-def get_time_state() -> dict:
-    """Expose current state for API."""
-    state = TimeManager.get_state()
-    return {
-        "real_now": state["real_now"],
-        "virtual_now": state["virtual_now"],
-        "override_enabled": state["override_enabled"],
-        "offset_seconds": state["offset_seconds"],
-    }
-
-

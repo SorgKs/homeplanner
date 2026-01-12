@@ -7,7 +7,6 @@ import com.homeplanner.*
 import com.homeplanner.api.LocalApi
 import com.homeplanner.api.UsersServerApi
 import com.homeplanner.database.AppDatabase
-import com.homeplanner.debug.BinaryLogger
 import com.homeplanner.model.User
 import com.homeplanner.repository.OfflineRepository
 import com.homeplanner.repository.TaskCacheRepository
@@ -56,9 +55,13 @@ class SettingsViewModel(
         // Refresh from server when network config changes
         viewModelScope.launch {
             networkSettings.configFlow.collect { config ->
+                android.util.Log.d("SettingsViewModel", "network config changed: config=$config")
                 updateState(_state.value.copy(networkConfig = config))
                 if (config != null) {
+                    android.util.Log.d("SettingsViewModel", "network config not null, calling refreshUsersFromServer")
                     refreshUsersFromServer()
+                } else {
+                    android.util.Log.d("SettingsViewModel", "network config is null, not refreshing users")
                 }
             }
         }
@@ -69,9 +72,13 @@ class SettingsViewModel(
     }
 
     private suspend fun loadUsersFromCache() {
+        android.util.Log.d("SettingsViewModel", "loadUsersFromCache: started")
         try {
             val result = localApi.getUsersLocal()
-            updateState(_state.value.copy(users = result.getOrDefault(emptyList())))
+            val users = result.getOrDefault(emptyList())
+            android.util.Log.d("SettingsViewModel", "loadUsersFromCache: loaded ${users.size} users: ${users.map { "${it.name}(${it.id})" }}")
+            updateState(_state.value.copy(users = users))
+            android.util.Log.d("SettingsViewModel", "loadUsersFromCache: state updated successfully")
         } catch (e: Exception) {
             android.util.Log.e("SettingsViewModel", "Error loading users from cache", e)
         }
@@ -82,8 +89,8 @@ class SettingsViewModel(
             val tasksCount = withContext(Dispatchers.IO) {
                 taskCacheRepository.getCachedTasksCount()
             }
-            val debugCount = BinaryLogger.getStorage()?.getChunksStats()?.first ?: 0
-            updateState(_state.value.copy(tasksCount = tasksCount, debugMessagesCount = debugCount))
+            // BinaryLogger removed, set debug count to 0
+            updateState(_state.value.copy(tasksCount = tasksCount, debugMessagesCount = 0))
         } catch (e: Exception) {
             android.util.Log.e("SettingsViewModel", "Error loading debug stats", e)
         }
@@ -99,7 +106,7 @@ class SettingsViewModel(
                     loadUsersFromCache()
                 }
             } catch (e: Exception) {
-                android.util.Log.e("SettingsViewModel", "Error refreshing users", e)
+                android.util.Log.e("SettingsViewModel", "Error refreshing users from server", e)
             } finally {
                 updateState(_state.value.copy(isUsersLoading = false))
             }
@@ -107,28 +114,29 @@ class SettingsViewModel(
     }
 
     private suspend fun refreshUsersFromServerInternal(networkConfig: NetworkConfig) {
+        android.util.Log.d("SettingsViewModel", "refreshUsersFromServerInternal: started with config=$networkConfig")
         val apiBaseUrl = networkConfig.toApiBaseUrl()
         val api = UsersServerApi(baseUrl = apiBaseUrl)
 
         // syncCacheWithServer: вызов загрузки пользователей с сервера
-        BinaryLogger.getInstance()?.log(400u, emptyList<Any>(), 47)
         val fetchedSummaries = withContext(Dispatchers.IO) {
             api.getUsers()
         }
+        android.util.Log.d("SettingsViewModel", "refreshUsersFromServerInternal: fetched ${fetchedSummaries.size} summaries from server")
         // syncCacheWithServer: получен ответ от сервера с пользователями
-        BinaryLogger.getInstance()?.log(401u, listOf<Any>(fetchedSummaries.size), 47)
 
         val fetchedUsers = fetchedSummaries.map { summary ->
             User(id = summary.id, name = summary.name)
         }
+        android.util.Log.d("SettingsViewModel", "refreshUsersFromServerInternal: mapped to ${fetchedUsers.size} users")
 
         val db = AppDatabase.getDatabase(getApplication())
         val offlineRepository = OfflineRepository(db, getApplication())
         withContext(Dispatchers.IO) {
             offlineRepository.saveUsersToCache(fetchedUsers)
         }
+        android.util.Log.d("SettingsViewModel", "refreshUsersFromServerInternal: saved users to cache")
         // syncCacheWithServer: пользователи сохранены в локальный кеш
-        BinaryLogger.getInstance()?.log(402u, listOf<Any>(fetchedUsers.size), 47)
     }
 
     fun clearSelectedUser() {

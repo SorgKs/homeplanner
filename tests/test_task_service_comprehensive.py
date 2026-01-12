@@ -533,24 +533,26 @@ class TestTaskServiceComprehensive:
 
     def test_is_new_day_logic(self, db_session: Session) -> None:
         """Test new day detection logic."""
+        from backend.utils.date_utils import is_new_day, set_last_update
+
         # Test with no last update
-        is_new = TaskService._is_new_day(db_session)
+        is_new = is_new_day(db_session)
         assert is_new is True
-        
+
         # Set last update to yesterday
         yesterday = datetime.now() - timedelta(days=1)
-        TaskService._set_last_update(db_session, yesterday, commit=True)
-        
+        set_last_update(db_session, yesterday, commit=True)
+
         # Should be new day
-        is_new = TaskService._is_new_day(db_session)
+        is_new = is_new_day(db_session)
         assert is_new is True
-        
+
         # Set last update to today (before day_start_hour)
         today_morning = datetime.now().replace(hour=5, minute=0, second=0, microsecond=0)
-        TaskService._set_last_update(db_session, today_morning, commit=True)
-        
+        set_last_update(db_session, today_morning, commit=True)
+
         # Should still be new day if current time is after day_start_hour
-        is_new = TaskService._is_new_day(db_session)
+        is_new = is_new_day(db_session)
         # This depends on current time, so we just check it doesn't crash
         assert isinstance(is_new, bool)
 

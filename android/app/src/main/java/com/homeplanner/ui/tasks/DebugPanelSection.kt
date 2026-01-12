@@ -6,7 +6,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.homeplanner.viewmodel.SettingsState
-import com.homeplanner.debug.ChunkSender
 
 @Composable
 fun DebugPanelSection(state: SettingsState) {
@@ -36,17 +35,10 @@ fun DebugPanelSection(state: SettingsState) {
                 text = "Отладочных сообщений: ${state.debugMessagesCount}",
                 style = MaterialTheme.typography.bodySmall
             )
-            val chunkSenderStatus = com.homeplanner.debug.ChunkSender.getStatus()
             Text(
-                text = "ChunkSender: running=${chunkSenderStatus.first}, lastResult=${chunkSenderStatus.second}, lastChunk=${chunkSenderStatus.third}",
+                text = "BinaryLogger удален",
                 style = MaterialTheme.typography.bodySmall
             )
-            Button(
-                onClick = { ChunkSender.forceSendNextChunk() },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Принудительно отправить чанк")
-            }
         }
     }
 }

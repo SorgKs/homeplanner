@@ -24,12 +24,16 @@ def main():
     if java_home:
         env['JAVA_HOME'] = java_home
         print(f"Using JAVA_HOME: {java_home}")
-    
+    else:
+        print("JAVA_HOME not set in local.properties")
+
     # Run Gradle install
-    gradlew = os.path.join(android_dir, "gradlew.bat")
+    gradlew = os.path.join(android_dir, "gradlew")
+    print(f"Looking for gradlew at: {gradlew}")
     if not os.path.exists(gradlew):
         print(f"Error: {gradlew} not found")
         sys.exit(1)
+    print("gradlew found")
     
     print("Installing Android app on connected device...")
     result = subprocess.run([gradlew, ":app:installRelease"], env=env)

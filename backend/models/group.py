@@ -1,12 +1,12 @@
 """Group model for organizing tasks."""
 
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Column, DateTime, Integer, String
 from sqlalchemy.orm import relationship
 
 from backend.database import Base
-from backend.services.time_manager import get_current_time
 
 if TYPE_CHECKING:
     from backend.models.event import Event
@@ -21,8 +21,8 @@ class Group(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False, unique=True, index=True)
     description = Column(String(500), nullable=True)
-    created_at = Column(DateTime, default=get_current_time, nullable=False)
-    updated_at = Column(DateTime, default=get_current_time, onupdate=get_current_time, nullable=False)
+    created_at = Column(DateTime, default=datetime.now, nullable=False)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
 
     # Relationships
     events = relationship("Event", back_populates="group", cascade="all, delete-orphan")

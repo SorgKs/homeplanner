@@ -493,19 +493,6 @@ function mapTaskResponse(task) {
     };
 }
 
-function applyCurrentViewData() {
-    if (currentView === 'today') {
-        allTasks = [...todayTasksCache];
-    } else if (currentView === 'all') {
-        allTasks = [...allTasksCache];
-    } else {
-        allTasks = [...allTasksCache];
-    }
-    filterAndRenderTasks();
-}
-
-
-
 /**
  * Update group select in task modal.
  */
@@ -589,91 +576,6 @@ function setAssigneeSelection(selectedIds) {
 
 
 
-/**
- * Switch between views.
- */
-async function switchView(view) {
-    if (view === 'users' && !adminMode) {
-        view = 'today';
-    }
-    currentView = view;
-    const todayBtn = document.getElementById('view-today-btn');
-    const allBtn = document.getElementById('view-all-btn');
-    const historyBtn = document.getElementById('view-history-btn');
-    const settingsBtn = document.getElementById('view-settings-btn');
-    const usersBtn = document.getElementById('view-users-btn');
-    const historyFilters = document.getElementById('history-filters-section');
-    const tasksFilters = document.getElementById('tasks-filters-section');
-    const settingsView = document.getElementById('settings-view');
-    const tasksList = document.getElementById('tasks-list');
-    const usersView = document.getElementById('users-view');
-    
-    // Update button states
-    todayBtn.classList.remove('active');
-    allBtn.classList.remove('active');
-    historyBtn.classList.remove('active');
-    if (settingsBtn) settingsBtn.classList.remove('active');
-    if (usersBtn) usersBtn.classList.remove('active');
-    if (usersView) usersView.style.display = 'none';
-    
-    if (view === 'today') {
-        todayBtn.classList.add('active');
-        historyFilters.style.display = 'none';
-        tasksFilters.style.display = 'block';
-        // скрыть элементы фильтра пользователя в этом виде
-        toggleUserFilterControls(false);
-        if (settingsView) settingsView.style.display = 'none';
-        if (tasksList) tasksList.style.display = 'block';
-        await loadData();
-        return;
-    } else if (view === 'all') {
-        allBtn.classList.add('active');
-        historyFilters.style.display = 'none';
-        tasksFilters.style.display = 'block';
-        // показать элементы фильтра пользователя только в этом виде
-        toggleUserFilterControls(true);
-        // Сбрасываем фильтр пользователя для "Все задачи" при переключении (показываем все задачи)
-        const userFilterSelect = document.getElementById('user-filter');
-        if (userFilterSelect) {
-            userFilterSelect.value = '';
-            allTasksUserFilterId = null;
-        }
-        if (settingsView) settingsView.style.display = 'none';
-        if (tasksList) tasksList.style.display = 'block';
-        applyCurrentViewData();
-        return;
-    } else if (view === 'history') {
-        historyBtn.classList.add('active');
-        historyFilters.style.display = 'block';
-        tasksFilters.style.display = 'none';
-        toggleUserFilterControls(false);
-        if (settingsView) settingsView.style.display = 'none';
-        if (tasksList) tasksList.style.display = 'block';
-        renderHistoryView();
-        return;
-    } else if (view === 'settings') {
-        if (settingsBtn) settingsBtn.classList.add('active');
-        historyFilters.style.display = 'none';
-        tasksFilters.style.display = 'none';
-        toggleUserFilterControls(false);
-        if (tasksList) tasksList.style.display = 'none';
-        if (settingsView) settingsView.style.display = 'block';
-        return;
-    } else if (view === 'users') {
-        if (usersBtn) usersBtn.classList.add('active');
-        historyFilters.style.display = 'none';
-        tasksFilters.style.display = 'none';
-        toggleUserFilterControls(false);
-        if (tasksList) tasksList.style.display = 'none';
-        if (settingsView) settingsView.style.display = 'none';
-        if (usersView) usersView.style.display = 'block';
-        renderUsersView();
-        return;
-    }
-    
-    filterAndRenderTasks();
-}
-
 export function toggleUserFilterControls(visible) {
     const select = document.getElementById('user-filter');
     const resetBtn = document.getElementById('user-reset-btn');
@@ -687,7 +589,7 @@ function toggleAdminMode() {
     adminMode = !adminMode;
     const adminBtn = document.getElementById('toggle-admin-btn');
     const adminText = document.getElementById('admin-mode-text');
-    
+
     if (adminMode) {
         adminBtn.classList.add('active');
         adminText.textContent = 'Выйти из админ';
@@ -695,7 +597,7 @@ function toggleAdminMode() {
         adminBtn.classList.remove('active');
         adminText.textContent = 'Админ режим';
     }
-    
+
     // Re-render current view to show/hide admin features
     if (currentView === 'history') {
         renderHistoryView();
@@ -772,8 +674,13 @@ function filterAndRenderTasks() {
         return matchesSearch && matchesFilter && matchesUser;
     });
 
-    // Sort by due date
+    // Sort by enabled first, then by due date
     filteredTasks.sort((a, b) => {
+        // Сначала по enabled: включенные (is_enabled) выше
+        if (a.is_enabled !== b.is_enabled) {
+            return b.is_enabled - a.is_enabled; // true (1) перед false (0)
+        }
+        // Потом по времени
         const aTime = a.due_date ? new Date(a.due_date).getTime() : Number.MAX_SAFE_INTEGER;
         const bTime = b.due_date ? new Date(b.due_date).getTime() : Number.MAX_SAFE_INTEGER;
         return aTime - bTime;
@@ -1026,124 +933,18 @@ function renderTodayTaskItem(task, group, category) {
 }
 
 /**
- * Render all tasks view - grouped with details.
+ * Render all tasks view - flat list with details.
  */
 function renderAllTasksView() {
     const container = document.getElementById('tasks-list');
 
-    // Разделяем включенные и отключенные, далее группируем каждый набор по группам
-    const activeTasks = filteredTasks.filter(t => t.is_enabled);
-    const inactiveTasks = filteredTasks.filter(t => !t.is_enabled);
-    const headerRow = renderAllTasksHeader();
-
-    const activeByGroup = {};
-    const activeWithoutGroup = [];
-    activeTasks.forEach(task => {
-        const groupId = task.group_id;
-        if (groupId) {
-            if (!activeByGroup[groupId]) activeByGroup[groupId] = [];
-            activeByGroup[groupId].push(task);
-        } else {
-            activeWithoutGroup.push(task);
-        }
-    });
-
-    const inactiveByGroup = {};
-    const inactiveWithoutGroup = [];
-    inactiveTasks.forEach(task => {
-        const groupId = task.group_id;
-        if (groupId) {
-            if (!inactiveByGroup[groupId]) inactiveByGroup[groupId] = [];
-            inactiveByGroup[groupId].push(task);
-        } else {
-            inactiveWithoutGroup.push(task);
-        }
-    });
-
     const now = new Date();
-    let html = '';
 
-    // Сначала активные задачи по группам
-    groups.forEach(group => {
-        if (activeByGroup[group.id] && activeByGroup[group.id].length > 0) {
-            html += `
-                <div class="task-group">
-                    <div class="task-group-bar">
-                        <div class="task-group-caption">
-                            <span class="task-group-title-text">${escapeHtml(group.name)}</span>
-                            ${group.description ? `<span class="task-group-desc">${escapeHtml(group.description)}</span>` : ''}
-                        </div>
-                        <div class="task-group-actions">
-                            <button class="btn btn-secondary btn-sm" onclick="editGroup(${group.id})" title="Редактировать">✎</button>
-                            <button class="btn btn-danger btn-sm" onclick="deleteGroup(${group.id})" title="Удалить">✕</button>
-                        </div>
-                    </div>
-                <div class="task-group-items task-table">
-                    ${headerRow}
-                        ${activeByGroup[group.id].map(task => renderAllTasksCard(task, now)).join('')}
-                    </div>
-                </div>
-            `;
-        }
-    });
-
-    // Активные задачи без группы
-    if (activeWithoutGroup.length > 0) {
-        html += `
-            <div class="task-group">
-                <div class="task-group-bar">
-                    <div class="task-group-caption">
-                        <span class="task-group-title-text">Без группы</span>
-                    </div>
-                </div>
-                <div class="task-group-items task-table">
-                    ${headerRow}
-                    ${activeWithoutGroup.map(task => renderAllTasksCard(task, now)).join('')}
-                </div>
-            </div>
-        `;
-    }
-
-    // Блок неактивных задач в конце
-    if (inactiveTasks.length > 0) {
-        html += `
-            <div class="task-group">
-                <div class="task-group-bar">
-                    <div class="task-group-caption">
-                        <span class="task-group-title-text">Отключенные</span>
-                    </div>
-                </div>
-                <div class="task-group-items task-table">
-                    ${headerRow}
-        `;
-
-        // Неактивные по группам
-        groups.forEach(group => {
-            if (inactiveByGroup[group.id] && inactiveByGroup[group.id].length > 0) {
-                html += `
-                    <div class="task-subgroup">
-                        <div class="task-subgroup-title" style="margin: 8px 0; color: var(--text-secondary); font-weight: 600;">${escapeHtml(group.name)}</div>
-                        ${inactiveByGroup[group.id].map(task => renderAllTasksCard(task, now)).join('')}
-                    </div>
-                `;
-            }
-        });
-
-        // Неактивные без группы
-        if (inactiveWithoutGroup.length > 0) {
-            html += `
-                <div class="task-subgroup">
-                    <div class="task-subgroup-title" style="margin: 8px 0; color: var(--text-secondary); font-weight: 600;">Без группы</div>
-                    ${inactiveWithoutGroup.map(task => renderAllTasksCard(task, now)).join('')}
-                </div>
-            `;
-        }
-
-        html += `
-                </div>
-            </div>
-        `;
-    }
+    const html = `
+        <div class="task-table">
+            ${filteredTasks.map(task => renderAllTasksCard(task, now)).join('')}
+        </div>
+    `;
 
     container.innerHTML = html;
 }
@@ -1154,9 +955,9 @@ function renderAllTasksView() {
 function renderAllTasksHeader() {
     return `
         <div class="task-table-header">
-            <div class="task-row-cell task-row-date">Время</div>
             <div class="task-row-cell task-row-title">Задача</div>
             <div class="task-row-cell task-row-config">Формула</div>
+            <div class="task-row-cell task-row-date">Дата</div>
             <div class="task-row-cell task-row-actions">Действия</div>
         </div>
     `;
@@ -1191,7 +992,6 @@ function renderAllTasksCard(task, now) {
         !isCompleted && isEnabled && category === 'overdue' ? 'overdue' : '',
         !isCompleted && isEnabled && category === 'current' ? 'current' : '',
         !isCompleted && isEnabled && category === 'planned' ? 'planned' : '',
-        !isEnabled ? 'inactive' : '',
     ].filter(Boolean).join(' ');
 
     return `
@@ -1201,16 +1001,11 @@ function renderAllTasksCard(task, now) {
                        ${isCompleted ? 'checked' : ''}
                        onchange="toggleTaskComplete(${task.id}, this.checked)"
                        class="task-row-checkbox"
-                       title="${isCompleted ? 'Отметить как невыполненную' : 'Отметить как выполненную'}">
+            >
                 <span class="task-row-title-text">${escapeHtml(task.title)}</span>
             </label>
             <div class="task-row-cell task-row-config">${escapeHtml(configText)}</div>
-            <div class="task-row-cell task-row-users">${assigneesHtml}</div>
             <div class="task-row-cell task-row-date">${dueDateText}</div>
-            <div class="task-row-cell task-row-status">
-                <span class="status-indicator ${isCompleted ? 'status-completed' : isEnabled ? 'status-active' : 'status-inactive'}"></span>
-                <span>${statusText}</span>
-            </div>
             <div class="task-row-cell task-row-actions">
                 <button class="btn btn-secondary btn-icon" onclick="editTask(${task.id})" title="Редактировать">✎</button>
                 <button class="btn btn-danger btn-icon" onclick="deleteTask(${task.id})" title="Удалить">✕</button>
