@@ -11,7 +11,7 @@ data class NetworkConfig(
     val useHttps: Boolean = true
 ) {
     /**
-     * Convert to API base URL (e.g., "https://192.168.1.2:8000/api/v0.2")
+     * Convert to API base URL (e.g., "https://192.168.1.2:8000/api/v0.3")
      */
     fun toApiBaseUrl(): String {
         // Валидация перед созданием URL
@@ -30,7 +30,7 @@ data class NetworkConfig(
     }
     
     /**
-     * Convert to WebSocket URL (e.g., "wss://192.168.1.2:8000/api/v0.2/tasks/stream")
+     * Convert to WebSocket URL (e.g., "wss://192.168.1.2:8000/api/v0.3/tasks/stream")
      */
     fun toWebSocketUrl(): String {
         val protocol = if (useHttps) "wss" else "ws"
@@ -41,8 +41,8 @@ data class NetworkConfig(
         /**
          * Parse NetworkConfig from URL string.
          * Supports formats like:
-         * - "http://192.168.1.2:8000/api/v0.2"
-         * - "https://example.com:443/api/v0.2"
+         * - "http://192.168.1.2:8000/api/v0.3"
+         * - "https://example.com:443/api/v0.3"
          */
         fun parseFromUrl(url: String): NetworkConfig? {
             return try {

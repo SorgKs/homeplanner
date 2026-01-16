@@ -84,7 +84,7 @@ class CacheSyncService(
                     try {
                         android.util.Log.d(TAG, "syncCacheWithServer: loading tasks from server for full sync")
                         android.util.Log.d(TAG, "syncCacheWithServer: calling getTasksServer(enabledOnly = false)")
-                        val serverTasks = serverApi.getTasksServer(enabledOnly = true).getOrThrow()
+                        val serverTasks = serverApi.getTasksServer(enabledOnly = false).getOrThrow()
                         android.util.Log.d(TAG, "syncCacheWithServer: loaded ${serverTasks.size} tasks from server")
                         val cachedTasks = repository.loadTasksFromCache()
                         android.util.Log.d(TAG, "Cached tasks: ${cachedTasks.size}, server tasks: ${serverTasks.size}")
@@ -93,9 +93,14 @@ class CacheSyncService(
                         android.util.Log.d(TAG, "Cached hash: $cachedHash, server hash: $serverHash")
 
                         if (cachedHash != serverHash) {
-                            repository.saveTasksToCache(serverTasks)
-                            android.util.Log.d(TAG, "Full sync: hashes differ, cache updated with ${serverTasks.size} tasks")
-                            true
+                            val saveResult = repository.saveTasksToCache(serverTasks)
+                            if (saveResult.isSuccess) {
+                                android.util.Log.d(TAG, "Full sync: hashes differ, cache updated with ${serverTasks.size} tasks")
+                                true
+                            } else {
+                                android.util.Log.e(TAG, "Full sync: failed to save tasks to cache: ${saveResult.exceptionOrNull()?.message}")
+                                false
+                            }
                         } else {
                             // syncCacheWithServer: хеши совпадают, кэш не обновлен
                             android.util.Log.d(TAG, "Full sync: hashes match, no cache update needed")

@@ -1,0 +1,450 @@
+2026-01-15 08:10:01 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-15 08:10:01 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-15 08:10:48 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-15 08:10:48 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-15 08:10:49 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-15 08:10:49 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-15 08:10:49 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-15 21:00:08 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-15 21:00:08 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-15 21:00:08 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-15 21:00:13 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-15 21:00:13 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-15 21:00:13 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-15 21:00:18 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-15 21:00:18 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-15 21:00:18 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-15 21:00:21 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-15 21:00:21 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-15 21:00:21 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-15 21:00:25 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-15 21:00:25 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-15 21:00:25 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-15 21:00:29 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-15 21:00:29 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-15 21:00:29 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-15 21:00:33 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-15 21:00:33 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-15 21:00:33 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-15 21:00:36 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-15 21:00:36 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-15 21:00:36 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-15 21:00:40 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-15 21:00:40 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-15 21:00:40 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-15 21:00:43 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-15 21:00:43 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-15 21:00:43 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-15 21:01:38 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-15 21:01:38 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-15 21:01:39 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-15 21:01:39 ERROR homeplanner.system Unhandled exception in FastAPI app: TaskService.get_all_tasks() got an unexpected keyword argument 'active_only'
+  + Exception Group Traceback (most recent call last):
+  |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/_utils.py", line 79, in collapse_excgroups
+  |     yield
+  |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 192, in __call__
+  |     async with anyio.create_task_group() as task_group:
+  |                ~~~~~~~~~~~~~~~~~~~~~~~^^
+  |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/anyio/_backends/_asyncio.py", line 783, in __aexit__
+  |     raise BaseExceptionGroup(
+  |         "unhandled errors in a TaskGroup", self._exceptions
+  |     ) from None
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    |     await self.app(scope, receive, _send)
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 191, in __call__
+    |     with recv_stream, send_stream, collapse_excgroups():
+    |                                    ~~~~~~~~~~~~~~~~~~^^
+    |   File "/usr/lib64/python3.14/contextlib.py", line 162, in __exit__
+    |     self.gen.throw(value)
+    |     ~~~~~~~~~~~~~~^^^^^^^
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    |     raise exc
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/mnt/ZFS/Dev/HomePlanner/backend/main.py", line 180, in dispatch
+    |     return await call_next(request)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 191, in __call__
+    |     with recv_stream, send_stream, collapse_excgroups():
+    |                                    ~~~~~~~~~~~~~~~~~~^^
+    |   File "/usr/lib64/python3.14/contextlib.py", line 162, in __exit__
+    |     self.gen.throw(value)
+    |     ~~~~~~~~~~~~~~^^^^^^^
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    |     raise exc
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/mnt/ZFS/Dev/HomePlanner/backend/main.py", line 148, in dispatch
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/cors.py", line 85, in __call__
+    |     await self.app(scope, receive, send)
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     raise exc
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    |     await self.app(scope, receive, send)
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/routing.py", line 716, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/routing.py", line 736, in app
+    |     await route.handle(scope, receive, send)
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/routing.py", line 290, in handle
+    |     await self.app(scope, receive, send)
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/fastapi/routing.py", line 115, in app
+    |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     raise exc
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/fastapi/routing.py", line 101, in app
+    |     response = await f(request)
+    |                ^^^^^^^^^^^^^^^^
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/fastapi/routing.py", line 355, in app
+    |     raw_response = await run_endpoint_function(
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |     ...<3 lines>...
+    |     )
+    |     ^
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/fastapi/routing.py", line 245, in run_endpoint_function
+    |     return await run_in_threadpool(dependant.call, **values)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/concurrency.py", line 32, in run_in_threadpool
+    |     return await anyio.to_thread.run_sync(func)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/anyio/to_thread.py", line 63, in run_sync
+    |     return await get_async_backend().run_sync_in_worker_thread(
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |         func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |     )
+    |     ^
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/anyio/_backends/_asyncio.py", line 2502, in run_sync_in_worker_thread
+    |     return await future
+    |            ^^^^^^^^^^^^
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/anyio/_backends/_asyncio.py", line 986, in run
+    |     result = context.run(func, *args)
+    |   File "/mnt/ZFS/Dev/HomePlanner/backend/routers/tasks.py", line 216, in sync_task_queue
+    |     TaskService.get_all_tasks(db, active_only=False)
+    |     ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+    | TypeError: TaskService.get_all_tasks() got an unexpected keyword argument 'active_only'
+    +------------------------------------
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib64/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/main.py", line 180, in dispatch
+    return await call_next(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib64/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/main.py", line 148, in dispatch
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/cors.py", line 85, in __call__
+    await self.app(scope, receive, send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/fastapi/routing.py", line 115, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/fastapi/routing.py", line 101, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/fastapi/routing.py", line 355, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/fastapi/routing.py", line 245, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/anyio/to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/anyio/_backends/_asyncio.py", line 2502, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/anyio/_backends/_asyncio.py", line 986, in run
+    result = context.run(func, *args)
+  File "/mnt/ZFS/Dev/HomePlanner/backend/routers/tasks.py", line 216, in sync_task_queue
+    TaskService.get_all_tasks(db, active_only=False)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: TaskService.get_all_tasks() got an unexpected keyword argument 'active_only'
+2026-01-15 21:01:39 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-15 21:01:40 ERROR homeplanner.system Unhandled exception in FastAPI app: TaskService.get_all_tasks() got an unexpected keyword argument 'active_only'
+  + Exception Group Traceback (most recent call last):
+  |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/_utils.py", line 79, in collapse_excgroups
+  |     yield
+  |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 192, in __call__
+  |     async with anyio.create_task_group() as task_group:
+  |                ~~~~~~~~~~~~~~~~~~~~~~~^^
+  |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/anyio/_backends/_asyncio.py", line 783, in __aexit__
+  |     raise BaseExceptionGroup(
+  |         "unhandled errors in a TaskGroup", self._exceptions
+  |     ) from None
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    |     await self.app(scope, receive, _send)
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 191, in __call__
+    |     with recv_stream, send_stream, collapse_excgroups():
+    |                                    ~~~~~~~~~~~~~~~~~~^^
+    |   File "/usr/lib64/python3.14/contextlib.py", line 162, in __exit__
+    |     self.gen.throw(value)
+    |     ~~~~~~~~~~~~~~^^^^^^^
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    |     raise exc
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/mnt/ZFS/Dev/HomePlanner/backend/main.py", line 180, in dispatch
+    |     return await call_next(request)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 191, in __call__
+    |     with recv_stream, send_stream, collapse_excgroups():
+    |                                    ~~~~~~~~~~~~~~~~~~^^
+    |   File "/usr/lib64/python3.14/contextlib.py", line 162, in __exit__
+    |     self.gen.throw(value)
+    |     ~~~~~~~~~~~~~~^^^^^^^
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    |     raise exc
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/mnt/ZFS/Dev/HomePlanner/backend/main.py", line 148, in dispatch
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/cors.py", line 85, in __call__
+    |     await self.app(scope, receive, send)
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     raise exc
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    |     await self.app(scope, receive, send)
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/routing.py", line 716, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/routing.py", line 736, in app
+    |     await route.handle(scope, receive, send)
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/routing.py", line 290, in handle
+    |     await self.app(scope, receive, send)
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/fastapi/routing.py", line 115, in app
+    |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     raise exc
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/fastapi/routing.py", line 101, in app
+    |     response = await f(request)
+    |                ^^^^^^^^^^^^^^^^
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/fastapi/routing.py", line 355, in app
+    |     raw_response = await run_endpoint_function(
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |     ...<3 lines>...
+    |     )
+    |     ^
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/fastapi/routing.py", line 245, in run_endpoint_function
+    |     return await run_in_threadpool(dependant.call, **values)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/concurrency.py", line 32, in run_in_threadpool
+    |     return await anyio.to_thread.run_sync(func)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/anyio/to_thread.py", line 63, in run_sync
+    |     return await get_async_backend().run_sync_in_worker_thread(
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |         func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |     )
+    |     ^
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/anyio/_backends/_asyncio.py", line 2502, in run_sync_in_worker_thread
+    |     return await future
+    |            ^^^^^^^^^^^^
+    |   File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/anyio/_backends/_asyncio.py", line 986, in run
+    |     result = context.run(func, *args)
+    |   File "/mnt/ZFS/Dev/HomePlanner/backend/routers/tasks.py", line 216, in sync_task_queue
+    |     TaskService.get_all_tasks(db, active_only=False)
+    |     ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+    | TypeError: TaskService.get_all_tasks() got an unexpected keyword argument 'active_only'
+    +------------------------------------
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib64/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/main.py", line 180, in dispatch
+    return await call_next(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib64/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/main.py", line 148, in dispatch
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/cors.py", line 85, in __call__
+    await self.app(scope, receive, send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/fastapi/routing.py", line 115, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/fastapi/routing.py", line 101, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/fastapi/routing.py", line 355, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/fastapi/routing.py", line 245, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/anyio/to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/anyio/_backends/_asyncio.py", line 2502, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/anyio/_backends/_asyncio.py", line 986, in run
+    result = context.run(func, *args)
+  File "/mnt/ZFS/Dev/HomePlanner/backend/routers/tasks.py", line 216, in sync_task_queue
+    TaskService.get_all_tasks(db, active_only=False)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: TaskService.get_all_tasks() got an unexpected keyword argument 'active_only'
+2026-01-15 21:02:08 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-15 21:02:08 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-15 21:02:09 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-15 21:02:14 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-15 21:02:14 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-15 21:02:15 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-15 21:02:15 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written

@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "network_settings")
@@ -65,6 +66,22 @@ class NetworkSettings(private val context: Context) {
             prefs.remove(Keys.API_VERSION)
             prefs.remove(Keys.USE_HTTPS)
         }
+    }
+
+    /**
+     * Get current API base URL from settings.
+     * Returns null if settings are not configured.
+     */
+    suspend fun getApiBaseUrl(): String? {
+        return configFlow.first()?.toApiBaseUrl()
+    }
+
+    /**
+     * Get current WebSocket URL from settings.
+     * Returns null if settings are not configured.
+     */
+    suspend fun getWebSocketUrl(): String? {
+        return configFlow.first()?.toWebSocketUrl()
     }
     
     /**

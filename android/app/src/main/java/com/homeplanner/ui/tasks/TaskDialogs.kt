@@ -75,6 +75,7 @@ fun CreateTaskDialog(
                             enabled = true,
                             completed = false,
                             assignedUserIds = emptyList(),
+                            alarm = false,
                             updatedAt = System.currentTimeMillis(),
                             lastAccessed = System.currentTimeMillis(),
                             lastShownAt = null,

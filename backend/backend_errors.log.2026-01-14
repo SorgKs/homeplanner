@@ -1,0 +1,1949 @@
+2026-01-14 00:35:27 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-14 00:35:27 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-14 00:35:28 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-14 00:35:28 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-14 00:35:28 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-14 00:38:14 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-14 00:38:14 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-14 00:38:14 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-14 00:39:01 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-14 00:39:01 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-14 00:39:02 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-14 00:39:02 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-14 00:39:02 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-14 00:43:26 ERROR homeplanner.tasks get_tasks: [SERVER ERROR] Exception occurred: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks ORDER BY tasks.reminder_time]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.OperationalError: no such column: tasks.alarm
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/backend/routers/tasks.py", line 130, in get_tasks
+    tasks = TaskService.get_all_tasks(db, enabled_only=enabled_only)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 262, in get_all_tasks
+    return query.order_by(Task.reminder_time).all()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2704, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2857, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+           ^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2355, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks ORDER BY tasks.reminder_time]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-01-14 00:43:26 ERROR homeplanner.system Unhandled exception in FastAPI app: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks ORDER BY tasks.reminder_time]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.OperationalError: no such column: tasks.alarm
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ^^^^^^^^^^^^^^^^^^^^
+  File "/home/sorg/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/main.py", line 180, in dispatch
+    return await call_next(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ^^^^^^^^^^^^^^^^^^^^
+  File "/home/sorg/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/main.py", line 148, in dispatch
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/cors.py", line 85, in __call__
+    await self.app(scope, receive, send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 125, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 111, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 391, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 292, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/concurrency.py", line 38, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/anyio/to_thread.py", line 56, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 2485, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/routers/tasks.py", line 130, in get_tasks
+    tasks = TaskService.get_all_tasks(db, enabled_only=enabled_only)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 262, in get_all_tasks
+    return query.order_by(Task.reminder_time).all()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2704, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2857, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+           ^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2355, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks ORDER BY tasks.reminder_time]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-01-14 00:44:43 ERROR homeplanner.users Error querying users: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)]
+[parameters: (1, 2, 3)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.OperationalError: no such column: tasks.alarm
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/user_service.py", line 37, in get_all_users
+    users = db.query(User).order_by(User.name).all()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2704, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/result.py", line 1774, in all
+    return self._allrows()
+           ^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/result.py", line 548, in _allrows
+    rows = self._fetchall_impl()
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/result.py", line 1681, in _fetchall_impl
+    return self._real_result._fetchall_impl()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/result.py", line 2275, in _fetchall_impl
+    return list(self.iterator)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/loading.py", line 247, in chunks
+    post_load.invoke(context, path)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/loading.py", line 1564, in invoke
+    loader(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/strategies.py", line 3338, in _load_for_path
+    self._load_via_parent(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/strategies.py", line 3414, in _load_via_parent
+    context.session.execute(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+           ^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2355, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?, ?)]
+[parameters: (1, 2, 3)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-01-14 00:47:06 ERROR homeplanner.tasks get_tasks: [SERVER ERROR] Exception occurred: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.enabled = 1 ORDER BY tasks.reminder_time]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.OperationalError: no such column: tasks.alarm
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/backend/routers/tasks.py", line 130, in get_tasks
+    tasks = TaskService.get_all_tasks(db, enabled_only=enabled_only)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 262, in get_all_tasks
+    return query.order_by(Task.reminder_time).all()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2704, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2857, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+           ^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2355, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.enabled = 1 ORDER BY tasks.reminder_time]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-01-14 00:47:06 ERROR homeplanner.system Unhandled exception in FastAPI app: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.enabled = 1 ORDER BY tasks.reminder_time]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.OperationalError: no such column: tasks.alarm
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ^^^^^^^^^^^^^^^^^^^^
+  File "/home/sorg/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/main.py", line 180, in dispatch
+    return await call_next(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ^^^^^^^^^^^^^^^^^^^^
+  File "/home/sorg/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/main.py", line 148, in dispatch
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/cors.py", line 85, in __call__
+    await self.app(scope, receive, send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 125, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 111, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 391, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 292, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/concurrency.py", line 38, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/anyio/to_thread.py", line 56, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 2485, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/routers/tasks.py", line 130, in get_tasks
+    tasks = TaskService.get_all_tasks(db, enabled_only=enabled_only)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 262, in get_all_tasks
+    return query.order_by(Task.reminder_time).all()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2704, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2857, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+           ^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2355, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.enabled = 1 ORDER BY tasks.reminder_time]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-01-14 03:01:00 ERROR homeplanner.day_change_scheduler Error in day change check: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.OperationalError: no such column: tasks.alarm
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/day_change_scheduler.py", line 38, in check_and_notify
+    is_new_day = TaskService.check_new_day(db, self.ws_manager)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 123, in check_new_day
+    TaskService.recalculate_tasks(db)
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 168, in recalculate_tasks
+    .all()
+     ^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2704, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2857, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+           ^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2355, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-01-14 06:21:58 ERROR homeplanner.system Unhandled exception in FastAPI app: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.OperationalError: no such column: tasks.alarm
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ^^^^^^^^^^^^^^^^^^^^
+  File "/home/sorg/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/main.py", line 175, in dispatch
+    TaskService.check_new_day(db)
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 123, in check_new_day
+    TaskService.recalculate_tasks(db)
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 168, in recalculate_tasks
+    .all()
+     ^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2704, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2857, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+           ^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2355, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-01-14 06:36:58 ERROR homeplanner.system Unhandled exception in FastAPI app: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.OperationalError: no such column: tasks.alarm
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ^^^^^^^^^^^^^^^^^^^^
+  File "/home/sorg/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/main.py", line 175, in dispatch
+    TaskService.check_new_day(db)
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 123, in check_new_day
+    TaskService.recalculate_tasks(db)
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 168, in recalculate_tasks
+    .all()
+     ^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2704, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2857, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+           ^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2355, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-01-14 08:17:32 ERROR homeplanner.system Unhandled exception in FastAPI app: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.OperationalError: no such column: tasks.alarm
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ^^^^^^^^^^^^^^^^^^^^
+  File "/home/sorg/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/main.py", line 175, in dispatch
+    TaskService.check_new_day(db)
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 123, in check_new_day
+    TaskService.recalculate_tasks(db)
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 168, in recalculate_tasks
+    .all()
+     ^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2704, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2857, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+           ^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2355, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-01-14 08:17:32 ERROR homeplanner.system Unhandled exception in FastAPI app: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.OperationalError: no such column: tasks.alarm
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ^^^^^^^^^^^^^^^^^^^^
+  File "/home/sorg/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/main.py", line 175, in dispatch
+    TaskService.check_new_day(db)
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 123, in check_new_day
+    TaskService.recalculate_tasks(db)
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 168, in recalculate_tasks
+    .all()
+     ^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2704, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2857, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+           ^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2355, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-01-14 08:17:32 ERROR homeplanner.system Unhandled exception in FastAPI app: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.OperationalError: no such column: tasks.alarm
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ^^^^^^^^^^^^^^^^^^^^
+  File "/home/sorg/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/main.py", line 175, in dispatch
+    TaskService.check_new_day(db)
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 123, in check_new_day
+    TaskService.recalculate_tasks(db)
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 168, in recalculate_tasks
+    .all()
+     ^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2704, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2857, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+           ^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2355, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-01-14 08:17:32 ERROR homeplanner.system Unhandled exception in FastAPI app: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.OperationalError: no such column: tasks.alarm
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ^^^^^^^^^^^^^^^^^^^^
+  File "/home/sorg/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/main.py", line 175, in dispatch
+    TaskService.check_new_day(db)
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 123, in check_new_day
+    TaskService.recalculate_tasks(db)
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 168, in recalculate_tasks
+    .all()
+     ^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2704, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2857, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+           ^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2355, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-01-14 08:17:32 ERROR homeplanner.system Unhandled exception in FastAPI app: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.OperationalError: no such column: tasks.alarm
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ^^^^^^^^^^^^^^^^^^^^
+  File "/home/sorg/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/main.py", line 175, in dispatch
+    TaskService.check_new_day(db)
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 123, in check_new_day
+    TaskService.recalculate_tasks(db)
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 168, in recalculate_tasks
+    .all()
+     ^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2704, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2857, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+           ^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2355, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-01-14 08:17:32 ERROR homeplanner.system Unhandled exception in FastAPI app: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.OperationalError: no such column: tasks.alarm
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ^^^^^^^^^^^^^^^^^^^^
+  File "/home/sorg/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/main.py", line 175, in dispatch
+    TaskService.check_new_day(db)
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 123, in check_new_day
+    TaskService.recalculate_tasks(db)
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 168, in recalculate_tasks
+    .all()
+     ^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2704, in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 2857, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+           ^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2355, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-01-14 08:25:58 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-14 08:25:58 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-14 08:25:59 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-14 08:25:59 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-14 08:26:00 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-14 08:26:05 ERROR homeplanner.system Unhandled exception in FastAPI app: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.OperationalError: no such column: tasks.alarm
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib64/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/main.py", line 175, in dispatch
+    TaskService.check_new_day(db)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 123, in check_new_day
+    TaskService.recalculate_tasks(db)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 168, in recalculate_tasks
+    .all()
+     ~~~^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/query.py", line 2704, in all
+    return self._iter().all()  # type: ignore
+           ~~~~~~~~~~^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/query.py", line 2857, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+        params,
+        ^^^^^^^
+        execution_options={"_sa_orm_load_options": self.load_options},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+    return self._execute_internal(
+           ~~~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+    ...<4 lines>...
+        _add_event=_add_event,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self,
+        ^^^^^
+    ...<4 lines>...
+        conn,
+        ^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+        statement, params or {}, execution_options=execution_options
+    )
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+        self,
+        distilled_parameters,
+        execution_options or NO_OPTIONS,
+    )
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/sql/elements.py", line 527, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self, distilled_params, execution_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+        dialect,
+    ...<8 lines>...
+        cache_hit=cache_hit,
+    )
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        dialect, context, statement, parameters
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        e, str_statement, effective_parameters, cursor, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-01-14 08:26:05 ERROR homeplanner.system Unhandled exception in FastAPI app: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.OperationalError: no such column: tasks.alarm
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib64/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/main.py", line 175, in dispatch
+    TaskService.check_new_day(db)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 123, in check_new_day
+    TaskService.recalculate_tasks(db)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 168, in recalculate_tasks
+    .all()
+     ~~~^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/query.py", line 2704, in all
+    return self._iter().all()  # type: ignore
+           ~~~~~~~~~~^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/query.py", line 2857, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+        params,
+        ^^^^^^^
+        execution_options={"_sa_orm_load_options": self.load_options},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+    return self._execute_internal(
+           ~~~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+    ...<4 lines>...
+        _add_event=_add_event,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self,
+        ^^^^^
+    ...<4 lines>...
+        conn,
+        ^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+        statement, params or {}, execution_options=execution_options
+    )
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+        self,
+        distilled_parameters,
+        execution_options or NO_OPTIONS,
+    )
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/sql/elements.py", line 527, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self, distilled_params, execution_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+        dialect,
+    ...<8 lines>...
+        cache_hit=cache_hit,
+    )
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        dialect, context, statement, parameters
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        e, str_statement, effective_parameters, cursor, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-01-14 08:26:05 ERROR homeplanner.system Unhandled exception in FastAPI app: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.OperationalError: no such column: tasks.alarm
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib64/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/main.py", line 175, in dispatch
+    TaskService.check_new_day(db)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 123, in check_new_day
+    TaskService.recalculate_tasks(db)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 168, in recalculate_tasks
+    .all()
+     ~~~^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/query.py", line 2704, in all
+    return self._iter().all()  # type: ignore
+           ~~~~~~~~~~^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/query.py", line 2857, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+        params,
+        ^^^^^^^
+        execution_options={"_sa_orm_load_options": self.load_options},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+    return self._execute_internal(
+           ~~~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+    ...<4 lines>...
+        _add_event=_add_event,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self,
+        ^^^^^
+    ...<4 lines>...
+        conn,
+        ^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+        statement, params or {}, execution_options=execution_options
+    )
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+        self,
+        distilled_parameters,
+        execution_options or NO_OPTIONS,
+    )
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/sql/elements.py", line 527, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self, distilled_params, execution_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+        dialect,
+    ...<8 lines>...
+        cache_hit=cache_hit,
+    )
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        dialect, context, statement, parameters
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        e, str_statement, effective_parameters, cursor, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-01-14 08:26:05 ERROR homeplanner.system Unhandled exception in FastAPI app: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.OperationalError: no such column: tasks.alarm
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib64/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/main.py", line 175, in dispatch
+    TaskService.check_new_day(db)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 123, in check_new_day
+    TaskService.recalculate_tasks(db)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 168, in recalculate_tasks
+    .all()
+     ~~~^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/query.py", line 2704, in all
+    return self._iter().all()  # type: ignore
+           ~~~~~~~~~~^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/query.py", line 2857, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+        params,
+        ^^^^^^^
+        execution_options={"_sa_orm_load_options": self.load_options},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+    return self._execute_internal(
+           ~~~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+    ...<4 lines>...
+        _add_event=_add_event,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self,
+        ^^^^^
+    ...<4 lines>...
+        conn,
+        ^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+        statement, params or {}, execution_options=execution_options
+    )
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+        self,
+        distilled_parameters,
+        execution_options or NO_OPTIONS,
+    )
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/sql/elements.py", line 527, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self, distilled_params, execution_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+        dialect,
+    ...<8 lines>...
+        cache_hit=cache_hit,
+    )
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        dialect, context, statement, parameters
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        e, str_statement, effective_parameters, cursor, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-01-14 08:26:05 ERROR homeplanner.system Unhandled exception in FastAPI app: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.OperationalError: no such column: tasks.alarm
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib64/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/main.py", line 175, in dispatch
+    TaskService.check_new_day(db)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 123, in check_new_day
+    TaskService.recalculate_tasks(db)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 168, in recalculate_tasks
+    .all()
+     ~~~^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/query.py", line 2704, in all
+    return self._iter().all()  # type: ignore
+           ~~~~~~~~~~^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/query.py", line 2857, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+        params,
+        ^^^^^^^
+        execution_options={"_sa_orm_load_options": self.load_options},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+    return self._execute_internal(
+           ~~~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+    ...<4 lines>...
+        _add_event=_add_event,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self,
+        ^^^^^
+    ...<4 lines>...
+        conn,
+        ^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+        statement, params or {}, execution_options=execution_options
+    )
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+        self,
+        distilled_parameters,
+        execution_options or NO_OPTIONS,
+    )
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/sql/elements.py", line 527, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self, distilled_params, execution_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+        dialect,
+    ...<8 lines>...
+        cache_hit=cache_hit,
+    )
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        dialect, context, statement, parameters
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        e, str_statement, effective_parameters, cursor, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-01-14 08:26:05 ERROR homeplanner.system Unhandled exception in FastAPI app: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.OperationalError: no such column: tasks.alarm
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib64/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/main.py", line 175, in dispatch
+    TaskService.check_new_day(db)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 123, in check_new_day
+    TaskService.recalculate_tasks(db)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 168, in recalculate_tasks
+    .all()
+     ~~~^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/query.py", line 2704, in all
+    return self._iter().all()  # type: ignore
+           ~~~~~~~~~~^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/query.py", line 2857, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+        params,
+        ^^^^^^^
+        execution_options={"_sa_orm_load_options": self.load_options},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+    return self._execute_internal(
+           ~~~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+    ...<4 lines>...
+        _add_event=_add_event,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self,
+        ^^^^^
+    ...<4 lines>...
+        conn,
+        ^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+        statement, params or {}, execution_options=execution_options
+    )
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+        self,
+        distilled_parameters,
+        execution_options or NO_OPTIONS,
+    )
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/sql/elements.py", line 527, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self, distilled_params, execution_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+        dialect,
+    ...<8 lines>...
+        cache_hit=cache_hit,
+    )
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        dialect, context, statement, parameters
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        e, str_statement, effective_parameters, cursor, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such column: tasks.alarm
+[SQL: SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-01-14 08:34:58 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-14 08:34:58 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-14 08:34:59 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-14 08:34:59 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-14 08:34:59 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-14 09:00:59 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-14 09:00:59 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-14 09:01:00 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-14 09:01:00 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-14 09:01:00 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-14 22:52:03 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-14 22:52:03 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-14 22:52:04 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-14 22:52:04 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-14 22:52:04 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written

@@ -60,7 +60,7 @@ fun TaskItemAll(
 
             Checkbox(
                 checked = task.completed,
-                onCheckedChange = { onComplete(task.id, task.completed) },
+                onCheckedChange = { checked -> onComplete(task.id, checked) },
                 modifier = Modifier
                     .size(20.dp)
                     .align(Alignment.TopEnd)

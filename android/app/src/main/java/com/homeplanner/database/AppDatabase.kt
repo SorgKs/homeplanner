@@ -15,7 +15,7 @@ import com.homeplanner.database.entity.TaskCache
 
 @Database(
     entities = [TaskCache::class, SyncQueueItem::class, Metadata::class],
-    version = 3,
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

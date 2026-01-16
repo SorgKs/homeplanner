@@ -5,7 +5,7 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Column, DateTime, Enum as SQLEnum, ForeignKey, Integer, Interval, String, Text
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, validates
 
 from backend.database import Base
 from backend.models.task_assignment import task_user_association
@@ -51,12 +51,28 @@ class Task(Base):
     recurrence_interval = Column(Integer, nullable=True, default=None)  # Every N days/weeks/etc (for recurring tasks only)
     interval_days = Column(Integer, nullable=True)  # For interval tasks: days between completions
     reminder_time = Column(DateTime, nullable=False, index=True)  # Reminder date and time (required for all tasks)
+    alarm = Column(Boolean, default=False, nullable=False)  # Whether the task has an alarm
+
     enabled = Column(Boolean, default=True, nullable=False)  # Task is enabled (replaces active)
     completed = Column(Boolean, default=False, nullable=False)  # Task is completed (replaces last_completed_at)
     group_id = Column(Integer, ForeignKey("groups.id"), nullable=True, index=True)
     last_shown_at = Column(DateTime, nullable=True)  # Last time this iteration was shown
     created_at = Column(DateTime, default=datetime.now, nullable=False)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
+
+    def __init__(self, **kwargs):
+        """Initialize Task with validation for alarm fields."""
+        super().__init__(**kwargs)
+        self._validate_alarm_fields()
+
+    def _validate_alarm_fields(self):
+        """Validate alarm field (alarm_time is not used)."""
+        pass
+
+    @validates('alarm')
+    def validate_alarm_fields(self, key, value):
+        """Validate alarm field (alarm_time is not used)."""
+        return value
 
     # Relationships
     group = relationship("Group", back_populates="tasks")

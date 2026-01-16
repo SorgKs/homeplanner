@@ -32,6 +32,7 @@ def init_db():
     import logging
     logger = logging.getLogger("homeplanner.database")
     logger.info("Initializing database tables...")
+    logger.info(f"Database URL: {settings.database_url}")
     try:
         Base.metadata.create_all(bind=engine)
         logger.info("Database tables created successfully")

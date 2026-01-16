@@ -6,6 +6,8 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- For exact alarms on Android 12+; user must grant special permission in settings -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-permission android:name="android.permission.CAMERA" />
 
     <application
@@ -44,7 +46,11 @@
         <receiver
             android:name=".ReminderReceiver"
             android:enabled="true"
-            android:exported="false" />
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.homeplanner.REMINDER_ACTION" />
+            </intent-filter>
+        </receiver>
 
         <!-- Receiver for day change task recalculation -->
         <receiver

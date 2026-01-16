@@ -36,6 +36,7 @@ data class TaskCache(
     val enabled: Boolean,
     val completed: Boolean,
     val assignedUserIds: String, // JSON array как строка
+    val alarm: Boolean = false,
     
     // Метаданные конфликтов больше не используются (конфликты обрабатываются только на сервере).
     // Поля сохранены только для совместимости со старой схемой БД и могут быть удалены в будущих миграциях.
@@ -72,6 +73,7 @@ data class TaskCache(
             enabled = enabled,
             completed = completed,
             assignedUserIds = assignedIds,
+            alarm = alarm,
             updatedAt = updatedAt,
             lastAccessed = lastAccessed,
             lastShownAt = lastShownAt,
@@ -96,6 +98,7 @@ data class TaskCache(
                 enabled = task.enabled,
                 completed = task.completed,
                 assignedUserIds = assignedIdsJson,
+                alarm = task.alarm,
                 hasConflict = hasConflict,
                 updatedAt = task.updatedAt,
                 lastAccessed = task.lastAccessed,

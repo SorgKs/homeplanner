@@ -13,6 +13,7 @@ data class Task(
     val enabled: Boolean,
     val completed: Boolean,
     val assignedUserIds: List<Int>,
+    val alarm: Boolean = false,
     val updatedAt: Long,
     val lastAccessed: Long,
     val lastShownAt: Long?,

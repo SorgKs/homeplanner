@@ -29,6 +29,7 @@ import org.koin.core.module.dsl.singleOf
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.bind
 import org.koin.dsl.module
+import kotlinx.coroutines.runBlocking
 
 // DI Module
 val appModule = module {
@@ -57,7 +58,16 @@ val appModule = module {
     // APIs
     single { LocalApi(get(), get()) }
     single { com.homeplanner.api.GroupsLocalApi(get()) }
-    single { ServerApi() }
+    single {
+        val networkSettings = get<NetworkSettings>()
+        val baseUrl = runBlocking { networkSettings.getApiBaseUrl() }
+        if (baseUrl != null) {
+            ServerApi(baseUrl = baseUrl)
+        } else {
+            // Fallback to BuildConfig if settings not configured
+            ServerApi()
+        }
+    }
 
     // Sync
     single { SyncService(get(), get(), androidContext()) }
@@ -130,7 +140,8 @@ class Application : android.app.Application() {
             offlineRepository = offlineRepository,
             syncService = syncService,
             taskValidationService = com.homeplanner.services.TaskValidationService(),
-            webSocketService = koin.get<WebSocketService>()
+            webSocketService = koin.get<WebSocketService>(),
+            networkSettings = koin.get<NetworkSettings>()
         )
 
         // Запустить наблюдение за запросами синхронизации

@@ -58,7 +58,11 @@ class SyncService(
         }
     }
     
-    suspend fun syncQueue(): Result<SyncResult> = queueSyncService.syncQueue()
+    suspend fun syncQueue(baseUrl: String = BuildConfig.API_BASE_URL): Result<SyncResult> {
+        val serverApi = com.homeplanner.api.ServerSyncApi(baseUrl = baseUrl)
+        val queueSyncService = QueueSyncService(repository, serverApi)
+        return queueSyncService.syncQueue()
+    }
     
     /**
      * Синхронизация кэша с сервером.

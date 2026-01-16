@@ -96,10 +96,19 @@ open class ServerApiBase(
 private fun parseIsoDateTime(dateTimeStr: String?): Long? {
     if (dateTimeStr.isNullOrEmpty()) return null
     return try {
-        val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).apply {
+        // Try parsing with microseconds first
+        val sdfWithMicroseconds = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS", Locale.US).apply {
             timeZone = TimeZone.getTimeZone("UTC")
         }
-        val date = sdf.parse(dateTimeStr.substring(0, 19)) // Take only date and time part, ignore microseconds and timezone
+        val dateWithMicro = sdfWithMicroseconds.parse(dateTimeStr)
+        if (dateWithMicro != null) {
+            return dateWithMicro.time
+        }
+        // Fallback to without microseconds
+        val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
+        val date = sdf.parse(dateTimeStr)
         date?.time ?: System.currentTimeMillis()
     } catch (e: Exception) {
         android.util.Log.w("ServerApiBase", "Failed to parse datetime: $dateTimeStr", e)
@@ -116,7 +125,7 @@ internal fun JSONObject.toTask(): Task {
         // Задача имеет null reminder_time
         throw IllegalStateException("Missing reminder_time in task payload: $this")
     } else {
-        val reminderStr = optString("reminder_time", null)
+        val reminderStr = optString("reminder_time")
         if (reminderStr.isNullOrEmpty()) {
             // Задача имеет пустой reminder_time
             throw IllegalStateException("Empty reminder_time in task payload: $this")
@@ -136,12 +145,14 @@ internal fun JSONObject.toTask(): Task {
         }
     }
 
+    val alarmValue = if (isNull("alarm")) false else getBoolean("alarm")
+
     return Task(
         id = getInt("id"),
         title = getString("title"),
-        description = optString("description", null),
+        description = if (isNull("description")) null else optString("description"),
         taskType = getString("task_type"),
-        recurrenceType = optString("recurrence_type", null),
+        recurrenceType = if (isNull("recurrence_type")) null else optString("recurrence_type"),
         recurrenceInterval = if (isNull("recurrence_interval")) null else getInt("recurrence_interval"),
         intervalDays = if (isNull("interval_days")) null else getInt("interval_days"),
         reminderTime = reminderValue,
@@ -149,9 +160,10 @@ internal fun JSONObject.toTask(): Task {
         enabled = enabledValue,
         completed = completedValue,
         assignedUserIds = assignedUserIds,
-        updatedAt = parseIsoDateTime(optString("updated_at", null)) ?: System.currentTimeMillis(),
+        alarm = alarmValue,
+        updatedAt = parseIsoDateTime(if (isNull("updated_at")) null else optString("updated_at")) ?: System.currentTimeMillis(),
         lastAccessed = System.currentTimeMillis(),
-        lastShownAt = parseIsoDateTime(optString("last_shown_at", null)),
-        createdAt = parseIsoDateTime(optString("created_at", null)) ?: System.currentTimeMillis()
+        lastShownAt = parseIsoDateTime(if (isNull("last_shown_at")) null else optString("last_shown_at")),
+        createdAt = parseIsoDateTime(if (isNull("created_at")) null else optString("created_at")) ?: System.currentTimeMillis()
     )
 }

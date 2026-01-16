@@ -50,7 +50,7 @@ fun TaskItemToday(
 
             Checkbox(
                 checked = task.completed,
-                onCheckedChange = { onComplete(task.id, task.completed) },
+                onCheckedChange = { checked -> onComplete(task.id, checked) },
                 modifier = Modifier
                     .size(14.dp)
                     .align(Alignment.CenterEnd)

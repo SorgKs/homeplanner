@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import com.homeplanner.model.Task
+import com.homeplanner.services.ReminderReceiver
 
 object ReminderScheduler {
 

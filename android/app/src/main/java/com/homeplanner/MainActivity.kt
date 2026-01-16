@@ -71,8 +71,8 @@ fun TasksScreen(state: TaskScreenState, navController: androidx.navigation.NavHo
         MainScreen(
             state = filteredState,
             onTaskClick = { /* TODO: Navigate to task details */ },
-            onTaskComplete = { taskId, isCompleted ->
-                if (isCompleted) viewModel.uncompleteTask(taskId) else viewModel.completeTask(taskId)
+            onTaskComplete = { taskId, newCompleted ->
+                if (newCompleted) viewModel.completeTask(taskId) else viewModel.uncompleteTask(taskId)
             },
             onTaskDelete = { /* TODO: Handle task deletion */ },
             onCreateTask = { /* TODO: Show create dialog */ },

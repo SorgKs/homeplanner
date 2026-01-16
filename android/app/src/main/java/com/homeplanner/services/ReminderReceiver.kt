@@ -1,4 +1,4 @@
-package com.homeplanner
+package com.homeplanner.services
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -17,7 +17,7 @@ class ReminderReceiver : BroadcastReceiver() {
 
         try {
             // Start ReminderActivity directly (will show over lock screen)
-            val activityIntent = Intent(context, ReminderActivity::class.java).apply {
+            val activityIntent = Intent(context, com.homeplanner.ReminderActivity::class.java).apply {
                 action = "com.homeplanner.REMINDER"
                 putExtra("title", title)
                 putExtra("message", message)
@@ -28,9 +28,9 @@ class ReminderReceiver : BroadcastReceiver() {
             }
             context.startActivity(activityIntent)
             Log.d("ReminderReceiver", "ReminderActivity started")
-            
+
             // Also show notification (for notification panel)
-            val builder = NotificationHelper.buildFullScreenReminder(context, title, message, if (taskId == null || taskId == -1) null else taskId)
+            val builder = com.homeplanner.NotificationHelper.buildFullScreenReminder(context, title, message, if (taskId == null || taskId == -1) null else taskId)
             val notification = builder.build()
             with(NotificationManagerCompat.from(context)) {
                 val notificationId = System.currentTimeMillis().toInt()
@@ -42,4 +42,3 @@ class ReminderReceiver : BroadcastReceiver() {
         }
     }
 }
-

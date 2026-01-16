@@ -4,7 +4,10 @@ import android.content.Context
 import com.homeplanner.database.AppDatabase
 import com.homeplanner.database.entity.SyncQueueItem
 import com.homeplanner.model.Task
+import com.homeplanner.utils.AlarmManagerUtil
 import org.json.JSONObject
+import java.time.Instant
+import java.time.format.DateTimeFormatter
 
 /**
  * Репозиторий для работы с оффлайн-хранилищем.
@@ -31,6 +34,8 @@ class OfflineRepository(
         val result = taskCacheRepository.saveTasksToCache(tasks)
         if (result.isSuccess) {
             storageMetadataManager.updateStorageMetadata()
+            // Управление алармами для сохранённых задач
+            manageAlarmsForTasks(tasks)
         }
         return result
     }
@@ -159,5 +164,53 @@ class OfflineRepository(
 
     suspend fun getUsers(): List<com.homeplanner.model.UserSummary> =
         groupsAndUsersCacheRepository.getUsers()
+
+    // ========== Управление алармами ==========
+
+    /**
+     * Управляет алармами для списка задач.
+     * Для каждой задачи с alarm=true и alarmTime в будущем - ставит аларм,
+     * для остальных - отменяет аларм.
+     */
+    private fun manageAlarmsForTasks(tasks: List<Task>) {
+        val currentTimeMillis = System.currentTimeMillis()
+        tasks.forEach { task ->
+            try {
+                if (task.alarm) {
+                    val alarmTimeMillis = parseIsoDateTimeToMillis(task.reminderTime)
+                    if (alarmTimeMillis > currentTimeMillis) {
+                        AlarmManagerUtil.scheduleAlarm(context, task.id.toLong(), alarmTimeMillis)
+                        android.util.Log.d("OfflineRepository", "Scheduled alarm for task ${task.id} at ${task.reminderTime}")
+                    } else {
+                        AlarmManagerUtil.cancelAlarm(context, task.id.toLong())
+                        android.util.Log.d("OfflineRepository", "Cancelled alarm for task ${task.id} (past time: ${task.reminderTime})")
+                    }
+                } else {
+                    AlarmManagerUtil.cancelAlarm(context, task.id.toLong())
+                    android.util.Log.d("OfflineRepository", "Cancelled alarm for task ${task.id} (alarm disabled)")
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("OfflineRepository", "Error managing alarm for task ${task.id}", e)
+            }
+        }
+    }
+
+    /**
+     * Конвертирует ISO datetime строку в milliseconds since epoch.
+     */
+    private fun parseIsoDateTimeToMillis(isoDateTime: String): Long {
+        return try {
+            // Try parsing with microseconds first (assume UTC if no timezone)
+            val withMicroseconds = if (isoDateTime.contains(".")) {
+                "${isoDateTime}Z"
+            } else {
+                "${isoDateTime}.000000Z"
+            }
+            Instant.parse(withMicroseconds).toEpochMilli()
+        } catch (e: Exception) {
+            android.util.Log.e("OfflineRepository", "Failed to parse alarm time: $isoDateTime", e)
+            0L
+        }
+    }
 }
 

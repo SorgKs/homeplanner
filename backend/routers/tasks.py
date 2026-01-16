@@ -213,7 +213,7 @@ def sync_task_queue(
     # Возможный пересчёт по новому дню единым местом
     if is_new_day(db):
         logger.info("sync-queue: new day detected, recalculating all tasks")
-        TaskService.get_all_tasks(db, active_only=False)
+        TaskService.get_all_tasks(db, enabled_only=False)
 
     # Сортировка операций по timestamp (на случай, если клиент прислал неотсортированный список)
     operations: list[TaskSyncOperation] = sorted(
@@ -226,11 +226,13 @@ def sync_task_queue(
         try:
             if op.operation == TaskOperationType.CREATE:
                 if op.payload is None:
+                    logger.info("sync-queue: skipping operation %s due to missing payload", op.operation)
                     continue
                 create_data = TaskCreate.model_validate(op.payload)
                 # В батче каждая операция имеет обязательный timestamp от клиента
                 # Используем его для установки created_at и updated_at создаваемой задачи
                 created_task = TaskService.create_task(db, create_data, timestamp=op.timestamp)
+                logger.info("sync-queue: applying CREATE for new task %s", created_task.id)
                 # Отправляем WebSocket уведомление
                 broadcast_task_update({
                     "type": "task_update",
@@ -240,6 +242,7 @@ def sync_task_queue(
                 })
             elif op.operation == TaskOperationType.UPDATE:
                 if op.task_id is None or op.payload is None:
+                    logger.info("sync-queue: skipping operation %s due to missing task_id or payload", op.operation)
                     continue
                 # Проверка конфликта по времени обновления
                 # Сервер - источник истины: если серверная версия задачи новее, чем timestamp операции,
@@ -261,6 +264,7 @@ def sync_task_queue(
                         )
                         # Пропускаем операцию - серверная версия остается актуальной (сервер - источник истины)
                         continue
+                logger.info("sync-queue: applying UPDATE for task %s without conflict, server updated_at=%s, operation timestamp=%s", op.task_id, task_updated_at, op_timestamp)
                 update_data = TaskUpdate.model_validate(op.payload)
                 # В батче каждая операция имеет обязательный timestamp от клиента
                 # Вызываем сервис напрямую с timestamp для установки updated_at
@@ -275,11 +279,13 @@ def sync_task_queue(
                     })
             elif op.operation == TaskOperationType.DELETE:
                 if op.task_id is None:
+                    logger.info("sync-queue: skipping operation %s due to missing task_id", op.operation)
                     continue
                 # В батче каждая операция имеет обязательный timestamp от клиента
                 # Вызываем сервис напрямую с timestamp
                 success = TaskService.delete_task(db, op.task_id, timestamp=op.timestamp)
                 if success:
+                    logger.info("sync-queue: applying DELETE for task %s", op.task_id)
                     # Отправляем WebSocket уведомление
                     broadcast_task_update({
                         "type": "task_update",
@@ -288,11 +294,13 @@ def sync_task_queue(
                     })
             elif op.operation == TaskOperationType.COMPLETE:
                 if op.task_id is None:
+                    logger.info("sync-queue: skipping operation %s due to missing task_id", op.operation)
                     continue
                 # В батче каждая операция имеет обязательный timestamp от клиента
                 # Вызываем сервис напрямую с timestamp для установки updated_at
                 completed_task = TaskService.complete_task(db, op.task_id, timestamp=op.timestamp)
                 if completed_task:
+                    logger.info("sync-queue: applying COMPLETE for task %s", op.task_id)
                     # Отправляем WebSocket уведомление
                     broadcast_task_update({
                         "type": "task_update",
@@ -302,11 +310,13 @@ def sync_task_queue(
                     })
             elif op.operation == TaskOperationType.UNCOMPLETE:
                 if op.task_id is None:
+                    logger.info("sync-queue: skipping operation %s due to missing task_id", op.operation)
                     continue
                 # В батче каждая операция имеет обязательный timestamp от клиента
                 # Вызываем сервис напрямую с timestamp для установки updated_at
                 uncompleted_task = TaskService.uncomplete_task(db, op.task_id, timestamp=op.timestamp)
                 if uncompleted_task:
+                    logger.info("sync-queue: applying UNCOMPLETE for task %s", op.task_id)
                     # Отправляем WebSocket уведомление
                     broadcast_task_update({
                         "type": "task_update",

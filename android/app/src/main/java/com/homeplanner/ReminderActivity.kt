@@ -30,6 +30,7 @@ import android.view.WindowManager
 import android.os.PowerManager
 import androidx.core.content.ContextCompat
 import android.media.Ringtone
+import com.homeplanner.services.ReminderReceiver
 
 class ReminderActivity : ComponentActivity() {
     private var ringtone: Ringtone? = null

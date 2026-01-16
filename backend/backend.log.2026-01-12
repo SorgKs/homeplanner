@@ -1,0 +1,129 @@
+2026-01-12 23:36:10 WARNING homeplanner.system WatchFiles detected changes in 'backend/services/task_service.py'. Reloading...
+2026-01-12 23:36:10 WARNING homeplanner.system WatchFiles detected changes in 'backend/services/task_service.py'. Reloading...
+2026-01-12 23:36:11 INFO  homeplanner.system uvicorn.access level: 30
+2026-01-12 23:36:11 INFO  homeplanner.system uvicorn level: 10
+2026-01-12 23:36:11 INFO  homeplanner.system uvicorn.access handlers: []
+2026-01-12 23:36:11 INFO  homeplanner.system uvicorn handlers: []
+2026-01-12 23:36:11 INFO  homeplanner.system Logging configured: level=DEBUG, log_dir=/mnt/ZFS/Dev/HomePlanner/backend
+2026-01-12 23:36:11 DEBUG homeplanner.system Diagnostic: DEBUG level test
+2026-01-12 23:36:11 INFO  homeplanner.system Diagnostic: INFO level test
+2026-01-12 23:36:11 WARNING homeplanner.system Diagnostic: WARNING level test
+2026-01-12 23:36:11 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-12 23:36:11 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-12 23:36:11 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-12 23:36:12 INFO  homeplanner.database Initializing database tables...
+2026-01-12 23:36:12 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-12 23:36:12 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("app_metadata")
+2026-01-12 23:36:12 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-12 23:36:12 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("events")
+2026-01-12 23:36:12 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-12 23:36:12 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("groups")
+2026-01-12 23:36:12 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-12 23:36:12 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_users")
+2026-01-12 23:36:12 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-12 23:36:12 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2026-01-12 23:36:12 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-12 23:36:12 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("task_history")
+2026-01-12 23:36:12 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-12 23:36:12 INFO  sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-01-12 23:36:12 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-12 23:36:12 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-12 23:36:12 INFO  homeplanner.database Database tables created successfully
+2026-01-12 23:36:12 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-12 23:36:12 INFO  sqlalchemy.engine.Engine SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-01-12 23:36:12 INFO  sqlalchemy.engine.Engine [raw sql] ()
+2026-01-12 23:36:12 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-12 23:36:12 INFO  homeplanner.database Available tables after init: ['alembic_version', 'app_metadata', 'debug_logs', 'events', 'groups', 'task_history', 'task_users', 'tasks', 'users']
+2026-01-12 23:36:12 INFO  homeplanner.day_change_scheduler DayChangeScheduler task created
+2026-01-12 23:36:12 INFO  homeplanner.day_change_scheduler DayChangeScheduler started - waiting for day changes
+2026-01-12 23:36:12 DEBUG homeplanner.day_change_scheduler Waiting 12288 seconds until next day check at 2026-01-13 03:01:00
+2026-01-12 23:36:12 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.2, origin: http://192.168.1.2:8000
+2026-01-12 23:36:12 INFO  homeplanner.realtime WS connect: id=140684612658736 host=192.168.1.2 port=34870 total=1
+2026-01-12 23:36:18 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/alembic.ini')}
+2026-01-12 23:36:21 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/alembic.ini')}
+2026-01-12 23:57:45 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-12 23:57:45 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-12 23:57:45 INFO  sqlalchemy.engine.Engine [generated in 0.00065s] ('last_task_update', 1, 0)
+2026-01-12 23:57:45 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-12 23:57:45 INFO  homeplanner.tasks HTTP REQUEST: get_tasks called from 192.168.1.39, enabled_only=True, days_ahead=None, selected_user_id=None
+2026-01-12 23:57:45 INFO  homeplanner.tasks get_tasks: [SERVER STEP 1] Request received from 192.168.1.39, enabled_only=True, days_ahead=None, selected_user_id=None
+2026-01-12 23:57:45 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-12 23:57:45 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-12 23:57:45 INFO  sqlalchemy.engine.Engine [cached since 0.00604s ago] ('last_task_update', 1, 0)
+2026-01-12 23:57:45 INFO  sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.enabled = 1 ORDER BY tasks.reminder_time
+2026-01-12 23:57:45 INFO  sqlalchemy.engine.Engine [generated in 0.00028s] ()
+2026-01-12 23:57:45 INFO  sqlalchemy.engine.Engine SELECT tasks_1.id AS tasks_1_id, users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM tasks AS tasks_1 JOIN task_users AS task_users_1 ON tasks_1.id = task_users_1.task_id JOIN users ON users.id = task_users_1.user_id 
+WHERE tasks_1.id IN (?, ?, ?, ?, ?, ?, ?)
+2026-01-12 23:57:45 INFO  sqlalchemy.engine.Engine [generated in 0.00032s] (12, 2, 6, 10, 3, 7, 11)
+2026-01-12 23:57:45 INFO  homeplanner.tasks get_tasks: [SERVER STEP 2] Found 7 tasks in database
+2026-01-12 23:57:45 INFO  homeplanner.tasks get_tasks: [TASK 1] id=12, title='Future Task for User 1', enabled=True, task_type=TaskType.ONE_TIME
+2026-01-12 23:57:45 INFO  homeplanner.tasks get_tasks: [TASK 2] id=2, title='Daily Recurring Task', enabled=True, task_type=TaskType.RECURRING
+2026-01-12 23:57:45 INFO  homeplanner.tasks get_tasks: [TASK 3] id=6, title='Daily Recurring Task', enabled=True, task_type=TaskType.RECURRING
+2026-01-12 23:57:45 INFO  homeplanner.tasks get_tasks: [SERVER STEP 3] Returning 7 tasks to client
+2026-01-12 23:57:45 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-12 23:57:45 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-12 23:57:45 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-12 23:57:45 INFO  sqlalchemy.engine.Engine [cached since 0.2212s ago] ('last_task_update', 1, 0)
+2026-01-12 23:57:45 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-12 23:57:45 INFO  homeplanner.api.users GET /users endpoint called with simple=True
+2026-01-12 23:57:45 INFO  homeplanner.users Starting query for simple users
+2026-01-12 23:57:45 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-12 23:57:45 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name 
+FROM users 
+WHERE users.is_active = 1 ORDER BY users.name
+2026-01-12 23:57:45 INFO  sqlalchemy.engine.Engine [generated in 0.00028s] ()
+2026-01-12 23:57:45 INFO  homeplanner.users Query executed successfully, found 3 active users
+2026-01-12 23:57:45 INFO  homeplanner.api.users Returning 3 active users (simple mode) via API
+2026-01-12 23:57:45 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-12 23:57:45 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-12 23:57:45 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-12 23:57:45 INFO  sqlalchemy.engine.Engine [cached since 0.2617s ago] ('last_task_update', 1, 0)
+2026-01-12 23:57:45 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-12 23:57:45 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-12 23:57:45 INFO  sqlalchemy.engine.Engine SELECT groups.id AS groups_id, groups.name AS groups_name, groups.description AS groups_description, groups.created_at AS groups_created_at, groups.updated_at AS groups_updated_at 
+FROM groups ORDER BY groups.name
+2026-01-12 23:57:45 INFO  sqlalchemy.engine.Engine [generated in 0.00023s] ()
+2026-01-12 23:57:45 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-13 20:07:01 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/models/task.py')}
+2026-01-13 20:07:01 WARNING homeplanner.system WatchFiles detected changes in 'backend/models/task.py'. Reloading...
+2026-01-13 20:07:02 DEBUG watchfiles.main 3 changes detected: {(<Change.deleted: 3>, '/mnt/ZFS/Dev/HomePlanner/backend/models/__pycache__/task.cpython-312.pyc.139830330047792'), (<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/backend/models/__pycache__/task.cpython-312.pyc.139830330047792'), (<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/backend/models/__pycache__/task.cpython-312.pyc')}
+2026-01-13 20:07:09 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/models/task.py')}
+2026-01-13 20:07:09 WARNING homeplanner.system WatchFiles detected changes in 'backend/models/task.py'. Reloading...
+2026-01-13 20:07:10 DEBUG watchfiles.main 3 changes detected: {(<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/backend/models/__pycache__/task.cpython-312.pyc.140505833225520'), (<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/backend/models/__pycache__/task.cpython-312.pyc'), (<Change.deleted: 3>, '/mnt/ZFS/Dev/HomePlanner/backend/models/__pycache__/task.cpython-312.pyc.140505833225520')}
+2026-01-13 20:07:15 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/models/task.py')}
+2026-01-13 20:07:15 WARNING homeplanner.system WatchFiles detected changes in 'backend/models/task.py'. Reloading...
+2026-01-13 20:07:16 DEBUG watchfiles.main 3 changes detected: {(<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/backend/models/__pycache__/task.cpython-312.pyc.140256354909488'), (<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/backend/models/__pycache__/task.cpython-312.pyc'), (<Change.deleted: 3>, '/mnt/ZFS/Dev/HomePlanner/backend/models/__pycache__/task.cpython-312.pyc.140256354909488')}
+2026-01-13 20:07:25 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/models/task.py')}
+2026-01-13 20:07:25 WARNING homeplanner.system WatchFiles detected changes in 'backend/models/task.py'. Reloading...
+2026-01-13 20:07:26 DEBUG watchfiles.main 3 changes detected: {(<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/backend/models/__pycache__/task.cpython-312.pyc'), (<Change.deleted: 3>, '/mnt/ZFS/Dev/HomePlanner/backend/models/__pycache__/task.cpython-312.pyc.139676462021936'), (<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/backend/models/__pycache__/task.cpython-312.pyc.139676462021936')}
+2026-01-13 20:08:48 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/schemas/task.py')}
+2026-01-13 20:08:48 WARNING homeplanner.system WatchFiles detected changes in 'backend/schemas/task.py'. Reloading...
+2026-01-13 20:08:56 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/schemas/task.py')}
+2026-01-13 20:08:56 WARNING homeplanner.system WatchFiles detected changes in 'backend/schemas/task.py'. Reloading...
+2026-01-13 20:09:04 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/schemas/task.py')}
+2026-01-13 20:09:04 WARNING homeplanner.system WatchFiles detected changes in 'backend/schemas/task.py'. Reloading...
+2026-01-13 20:09:05 DEBUG watchfiles.main 3 changes detected: {(<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/backend/schemas/__pycache__/task.cpython-312.pyc'), (<Change.deleted: 3>, '/mnt/ZFS/Dev/HomePlanner/backend/schemas/__pycache__/task.cpython-312.pyc.140235712527152'), (<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/backend/schemas/__pycache__/task.cpython-312.pyc.140235712527152')}
+2026-01-13 20:09:12 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/schemas/task.py')}
+2026-01-13 20:09:12 WARNING homeplanner.system WatchFiles detected changes in 'backend/schemas/task.py'. Reloading...
+2026-01-13 20:09:23 DEBUG watchfiles.main 1 change detected: {(<Change.modified: 2>, '/mnt/ZFS/Dev/HomePlanner/backend/schemas/task.py')}
+2026-01-13 20:09:23 WARNING homeplanner.system WatchFiles detected changes in 'backend/schemas/task.py'. Reloading...
+2026-01-13 22:06:05 DEBUG watchfiles.main 3 changes detected: {(<Change.deleted: 3>, '/mnt/ZFS/Dev/HomePlanner/backend/alembic/__pycache__/env.cpython-312.pyc.140116841758384'), (<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/backend/alembic/__pycache__/env.cpython-312.pyc.140116841758384'), (<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/backend/alembic/__pycache__/env.cpython-312.pyc')}
+2026-01-13 22:06:16 DEBUG watchfiles.main 4 changes detected: {(<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/backend/alembic/versions/__pycache__/829794682916_.cpython-312.pyc'), (<Change.deleted: 3>, '/mnt/ZFS/Dev/HomePlanner/backend/alembic/versions/__pycache__/829794682916_.cpython-312.pyc.140007299750848'), (<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/backend/alembic/versions/829794682916_.py'), (<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/backend/alembic/versions/__pycache__/829794682916_.cpython-312.pyc.140007299750848')}
+2026-01-13 22:06:16 WARNING homeplanner.system WatchFiles detected changes in 'backend/alembic/versions/829794682916_.py'. Reloading...
+2026-01-13 22:08:22 DEBUG watchfiles.main 4 changes detected: {(<Change.deleted: 3>, '/mnt/ZFS/Dev/HomePlanner/backend/alembic/versions/__pycache__/d94c8af5aff3_add_alarm_fields_to_tasks.cpython-312.pyc.140433646507376'), (<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/backend/alembic/versions/d94c8af5aff3_add_alarm_fields_to_tasks.py'), (<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/backend/alembic/versions/__pycache__/d94c8af5aff3_add_alarm_fields_to_tasks.cpython-312.pyc'), (<Change.added: 1>, '/mnt/ZFS/Dev/HomePlanner/backend/alembic/versions/__pycache__/d94c8af5aff3_add_alarm_fields_to_tasks.cpython-312.pyc.140433646507376')}
+2026-01-13 22:08:22 WARNING homeplanner.system WatchFiles detected changes in 'backend/alembic/versions/d94c8af5aff3_add_alarm_fields_to_tasks.py'. Reloading...

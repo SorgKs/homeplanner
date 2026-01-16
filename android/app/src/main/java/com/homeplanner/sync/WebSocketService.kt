@@ -42,7 +42,7 @@ class WebSocketService(
 ) {
     companion object {
         private const val TAG = "WebSocketService"
-        private const val WEBSOCKET_PATH = "/api/v0.2/tasks/stream"
+        private const val WEBSOCKET_PATH = "/tasks/stream"
         private const val MAX_RECONNECT_DELAY_MS = 60_000L
         private const val INITIAL_RECONNECT_DELAY_MS = 2_000L
     }
@@ -329,7 +329,7 @@ class WebSocketService(
      * Использует ту же логику, что и MainActivity.
      */
     private fun parseTaskFromJson(json: JSONObject): Task {
-        val reminderValue = json.optString("reminder_time", null)?.takeIf { it.isNotBlank() }
+        val reminderValue = if (json.isNull("reminder_time")) throw IllegalStateException("Отсутствует reminder_time в ответе сервера: $json") else json.optString("reminder_time")?.takeIf { it.isNotBlank() }
             ?: throw IllegalStateException("Отсутствует reminder_time в ответе сервера: $json")
         val enabledValue = if (json.isNull("enabled")) true else json.getBoolean("enabled")
         val completedValue = if (json.isNull("completed")) false else json.getBoolean("completed")
@@ -342,12 +342,14 @@ class WebSocketService(
             }
         }
         
+        val alarmValue = if (json.isNull("alarm")) false else json.getBoolean("alarm")
+
         return Task(
             id = json.getInt("id"),
             title = json.getString("title"),
-            description = json.optString("description", null),
+            description = if (json.isNull("description")) null else json.optString("description"),
             taskType = json.getString("task_type"),
-            recurrenceType = json.optString("recurrence_type", null),
+            recurrenceType = if (json.isNull("recurrence_type")) null else json.optString("recurrence_type"),
             recurrenceInterval = if (json.isNull("recurrence_interval")) null else json.getInt("recurrence_interval"),
             intervalDays = if (json.isNull("interval_days")) null else json.getInt("interval_days"),
             reminderTime = reminderValue,
@@ -355,6 +357,7 @@ class WebSocketService(
             enabled = enabledValue,
             completed = completedValue,
             assignedUserIds = assignedUserIds,
+            alarm = alarmValue,
             updatedAt = if (json.isNull("updated_at")) System.currentTimeMillis() else json.getLong("updated_at"),
             lastAccessed = System.currentTimeMillis(),
             lastShownAt = if (json.isNull("last_shown_at")) null else json.getLong("last_shown_at"),

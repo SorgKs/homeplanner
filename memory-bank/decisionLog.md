@@ -122,3 +122,52 @@
 - **Impact**: Ensures consistent task recalculation behavior, completed future tasks are properly rescheduled
 - **Components**: Modified recalculate_tasks logic in TaskService, added test for future reminder_time recalculation
 - **Date**: 2026-01-12
+
+### Project Structure Reorganization
+- **Decision**: Move files from project root to appropriate subdirectories (alembic/ to backend/alembic/, scripts to scripts/, documentation files to docs/, etc.) and update configurations accordingly
+- **Rationale**: Clean up project root directory by organizing files into logical locations, improving maintainability and reducing clutter
+- **Impact**: Better project organization, updated paths in alembic.ini for database and script locations
+- **Components**: Moved alembic migrations, scripts, documentation, and updated backend/alembic.ini paths
+- **Date**: 2026-01-12
+
+### Alarm Fields Addition to Tasks
+- **Decision**: Add 'alarm' (Boolean, default=False) and 'alarm_time' (DateTime, nullable=True) fields to the tasks table using Alembic autogenenerate migration
+- **Rationale**: Enable alarm functionality for tasks, allowing users to set reminders with specific alarm times
+- **Impact**: Tasks can now have alarms set, with validation ensuring alarm_time is provided when alarm is True
+- **Components**: Updated Task model with alarm fields and validation, generated migration d94c8af5aff3 including full initial schema
+- **Date**: 2026-01-13
+
+### Alarm Management Utility Class
+- **Decision**: Create AlarmManagerUtil Kotlin class in Android app to provide centralized methods for scheduling and canceling alarms using AlarmManager
+- **Rationale**: Encapsulate alarm management logic in a reusable utility class, ensuring consistent PendingIntent handling and proper AlarmManager usage
+- **Impact**: Android app can now schedule and cancel task alarms reliably, integrating with existing ReminderReceiver for alarm notifications
+- **Components**: Added AlarmManagerUtil.kt in utils/ package with scheduleAlarm and cancelAlarm methods
+- **Date**: 2026-01-13
+
+### Alarm Integration in OfflineRepository
+- **Decision**: Integrate alarm scheduling logic into OfflineRepository.saveTasksToCache() method to automatically manage alarms when tasks are loaded or updated
+- **Rationale**: Centralize alarm management at the repository level to ensure alarms are consistently scheduled/cancelled whenever task data changes, whether from server sync or local operations
+- **Impact**: Tasks with alarm=True and future alarm_time will have alarms scheduled automatically; alarms are cancelled for disabled alarms or past times
+- **Components**: Updated Task and TaskCache models with alarm fields, added manageAlarmsForTasks() function in OfflineRepository with ISO datetime parsing and AlarmManagerUtil integration
+- **Date**: 2026-01-13
+
+### Dependency Management with uv
+- **Decision**: Use uv package manager for Python dependency installation and virtual environment management
+- **Rationale**: uv is faster and more reliable than pip for dependency resolution and installation, especially for projects with complex dependency trees
+- **Impact**: Backend can now start properly with all required dependencies (SQLAlchemy, FastAPI, etc.) installed in isolated virtual environment
+- **Components**: Created .venv virtual environment, installed 54 packages including all project dependencies from pyproject.toml
+- **Date**: 2026-01-13
+
+### WebSocket Endpoint Path Fix
+- **Decision**: Change WebSocket path construction in Android WebSocketService from hardcoded "/api/v0.2/tasks/stream" to relative "/tasks/stream" to work with dynamic API versioning
+- **Rationale**: Android app was constructing incorrect WebSocket URLs by appending hardcoded v0.2 path to base URL that already contained API version, resulting in malformed URLs like "/api/v0.3/api/v0.2/tasks/stream"
+- **Impact**: Android app can now properly connect to WebSocket endpoint using correct API version from configuration (currently v0.3)
+- **Components**: Modified WEBSOCKET_PATH constant in WebSocketService.kt, updated NetworkConfig.kt comments to reflect v0.3 API version
+- **Date**: 2026-01-13
+
+### Task Completion UI Bug Fixes
+- **Decision**: Fix incorrect onCheckedChange handlers in TaskItemToday.kt and TaskItemAll.kt to pass the new checked state instead of old task.completed, and correct the logic in MainActivity.kt to properly handle complete/uncomplete based on new state
+- **Rationale**: The UI was passing incorrect values to the completion handlers, and the logic was inverted, preventing proper task state updates and synchronization
+- **Impact**: Task completion/uncompletion now correctly updates local state and triggers server synchronization
+- **Components**: Updated onCheckedChange in TaskItemToday.kt and TaskItemAll.kt to pass 'checked' parameter, fixed if-else logic in MainActivity.kt onTaskComplete
+- **Date**: 2026-01-14

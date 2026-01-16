@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.media.RingtoneManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
 
@@ -63,6 +64,7 @@ object NotificationHelper {
             .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM))
             .setVibrate(longArrayOf(0, 500, 500, 500))
             .setAutoCancel(true)
             .setFullScreenIntent(fullScreenPendingIntent, true)

@@ -1,0 +1,1181 @@
+2026-01-16 03:01:00 INFO  homeplanner.day_change_scheduler Checking for new day and performing task recalculation if needed
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine [cached since 1.686e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.completed = 1
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine [generated in 0.00028s] ()
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine SELECT tasks_1.id AS tasks_1_id, users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM tasks AS tasks_1 JOIN task_users AS task_users_1 ON tasks_1.id = task_users_1.task_id JOIN users ON users.id = task_users_1.user_id 
+WHERE tasks_1.id IN (?, ?, ?, ?, ?, ?)
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine [cached since 1.686e+04s ago] (4, 8, 18, 22, 36, 38)
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine [cached since 1.686e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine UPDATE app_metadata SET value=?, updated_at=? WHERE app_metadata."key" = ?
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine [generated in 0.00040s] ('2026-01-16 03:01:00.009148', '2026-01-16 03:01:00.013027', 'last_task_update')
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine UPDATE tasks SET enabled=?, updated_at=? WHERE tasks.id = ?
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine [generated in 0.00038s] (0, '2026-01-16 03:01:00.015013', 4)
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine UPDATE tasks SET reminder_time=?, completed=?, updated_at=? WHERE tasks.id = ?
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine [generated in 0.00036s] [('2026-01-26 09:00:00.000000', 0, '2026-01-16 03:01:00.016170', 8), ('2026-01-19 09:00:00.000000', 0, '2026-01-16 03:01:00.016179', 18)]
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine UPDATE tasks SET enabled=?, updated_at=? WHERE tasks.id = ?
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine [generated in 0.00031s] [(0, '2026-01-16 03:01:00.017335', 22), (0, '2026-01-16 03:01:00.017344', 36)]
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine UPDATE tasks SET reminder_time=?, completed=?, updated_at=? WHERE tasks.id = ?
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine [generated in 0.00030s] ('2026-01-22 09:00:00.000000', 0, '2026-01-16 03:01:00.018378', 38)
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-16 03:01:00 INFO  homeplanner.day_change_scheduler Day change processed: tasks recalculated and clients notified for 2026-01-16
+2026-01-16 03:01:00 DEBUG homeplanner.day_change_scheduler Waiting 86400 seconds until next day check at 2026-01-17 03:01:00
+2026-01-16 03:01:00 INFO  homeplanner.realtime WS broadcast: targets=1, payload={"type": "day_changed", "new_day": "2026-01-16", "timestamp": "2026-01-16T03:01:00.062233"}
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine [cached since 1.686e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine [cached since 1.686e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine [cached since 1.686e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine [cached since 1.686e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 03:01:00 INFO  homeplanner.tasks HTTP REQUEST: get_tasks called from 192.168.1.2, enabled_only=False, days_ahead=None, selected_user_id=1
+2026-01-16 03:01:00 INFO  homeplanner.tasks get_tasks: [SERVER STEP 1] Request received from 192.168.1.2, enabled_only=False, days_ahead=None, selected_user_id=1
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 03:01:00 INFO  homeplanner.tasks HTTP REQUEST: get_today_task_ids called from 192.168.1.2, selected_user_id=1
+2026-01-16 03:01:00 INFO  homeplanner.api.users GET /users endpoint called with simple=False
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine SELECT groups.id AS groups_id, groups.name AS groups_name, groups.description AS groups_description, groups.created_at AS groups_created_at, groups.updated_at AS groups_updated_at 
+FROM groups ORDER BY groups.name
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine [cached since 1.686e+04s ago] ()
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 03:01:00 INFO  homeplanner.users Starting query for all users
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine [cached since 1.686e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine [cached since 1.686e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users ORDER BY users.name
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine [generated in 0.00057s] ()
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks ORDER BY tasks.reminder_time
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks ORDER BY tasks.reminder_time
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine [generated in 0.00163s] ()
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine [cached since 0.001297s ago] ()
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine SELECT users_1.id AS users_1_id, tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM users AS users_1 JOIN task_users AS task_users_1 ON users_1.id = task_users_1.user_id JOIN tasks ON tasks.id = task_users_1.task_id 
+WHERE users_1.id IN (?, ?)
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine [generated in 0.00083s] (2, 1)
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine SELECT tasks_1.id AS tasks_1_id, users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM tasks AS tasks_1 JOIN task_users AS task_users_1 ON tasks_1.id = task_users_1.task_id JOIN users ON users.id = task_users_1.user_id 
+WHERE tasks_1.id IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine [cached since 1.686e+04s ago] (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 36, 37, 21, 22, 23, 24, 25, 39, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 18, 38, 8)
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine SELECT tasks_1.id AS tasks_1_id, users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM tasks AS tasks_1 JOIN task_users AS task_users_1 ON tasks_1.id = task_users_1.task_id JOIN users ON users.id = task_users_1.user_id 
+WHERE tasks_1.id IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine [cached since 1.686e+04s ago] (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 36, 37, 21, 22, 23, 24, 25, 39, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 18, 38, 8)
+2026-01-16 03:01:00 INFO  homeplanner.tasks HTTP REQUEST: get_today_task_ids returning 10 task IDs for user 1
+2026-01-16 03:01:00 INFO  homeplanner.users Query executed successfully, found 2 users
+2026-01-16 03:01:00 DEBUG homeplanner.users Users: [{'id': 2, 'name': 'Алёна', 'email': 'lyokyk@rambler.ru', 'is_active': True}, {'id': 1, 'name': 'Сергей', 'email': 'sorg2@yandex.ru', 'is_active': True}]
+2026-01-16 03:01:00 INFO  homeplanner.api.users Returning 2 users (full mode) via API
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 03:01:00 INFO  homeplanner.tasks get_tasks: [SERVER STEP 2] Found 39 tasks in database
+2026-01-16 03:01:00 INFO  homeplanner.tasks get_tasks: [TASK 1] id=1, title='Test Task 1 (Day -3, Type recurring)', enabled=True, task_type=TaskType.RECURRING
+2026-01-16 03:01:00 INFO  homeplanner.tasks get_tasks: [TASK 2] id=2, title='Test Task 2 (Day -3, Type recurring)', enabled=True, task_type=TaskType.RECURRING
+2026-01-16 03:01:00 INFO  homeplanner.tasks get_tasks: [TASK 3] id=3, title='Test Task 3 (Day -3, Type one_time)', enabled=True, task_type=TaskType.ONE_TIME
+2026-01-16 03:01:00 INFO  homeplanner.tasks get_tasks: [SERVER STEP 3] Returning 39 tasks to client
+2026-01-16 03:01:00 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-16 08:21:36 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.39, origin: None
+2026-01-16 08:21:36 INFO  homeplanner.realtime WS connect: id=140085376221264 host=192.168.1.39 port=40776 total=2
+2026-01-16 08:22:04 INFO  homeplanner.realtime WS disconnect: id=140085376221264, total=1
+2026-01-16 08:22:08 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.39, origin: None
+2026-01-16 08:22:08 INFO  homeplanner.realtime WS connect: id=140085375445584 host=192.168.1.39 port=39990 total=2
+2026-01-16 08:22:08 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:22:08 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:22:08 INFO  sqlalchemy.engine.Engine [cached since 3.613e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:22:08 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:22:08 INFO  homeplanner.tasks HTTP REQUEST: get_tasks called from 192.168.1.39, enabled_only=True, days_ahead=None, selected_user_id=None
+2026-01-16 08:22:08 INFO  homeplanner.tasks get_tasks: [SERVER STEP 1] Request received from 192.168.1.39, enabled_only=True, days_ahead=None, selected_user_id=None
+2026-01-16 08:22:08 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:22:08 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:22:08 INFO  sqlalchemy.engine.Engine [cached since 3.613e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:22:08 INFO  sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.enabled = 1 ORDER BY tasks.reminder_time
+2026-01-16 08:22:08 INFO  sqlalchemy.engine.Engine [cached since 3.613e+04s ago] ()
+2026-01-16 08:22:08 INFO  sqlalchemy.engine.Engine SELECT tasks_1.id AS tasks_1_id, users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM tasks AS tasks_1 JOIN task_users AS task_users_1 ON tasks_1.id = task_users_1.task_id JOIN users ON users.id = task_users_1.user_id 
+WHERE tasks_1.id IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-01-16 08:22:08 INFO  sqlalchemy.engine.Engine [cached since 3.613e+04s ago] (1, 2, 3, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 37, 21, 23, 24, 25, 39, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 18, 38, 8)
+2026-01-16 08:22:08 INFO  homeplanner.tasks get_tasks: [SERVER STEP 2] Found 36 tasks in database
+2026-01-16 08:22:08 INFO  homeplanner.tasks get_tasks: [TASK 1] id=1, title='Test Task 1 (Day -3, Type recurring)', enabled=True, task_type=TaskType.RECURRING
+2026-01-16 08:22:08 INFO  homeplanner.tasks get_tasks: [TASK 2] id=2, title='Test Task 2 (Day -3, Type recurring)', enabled=True, task_type=TaskType.RECURRING
+2026-01-16 08:22:08 INFO  homeplanner.tasks get_tasks: [TASK 3] id=3, title='Test Task 3 (Day -3, Type one_time)', enabled=True, task_type=TaskType.ONE_TIME
+2026-01-16 08:22:08 INFO  homeplanner.tasks get_tasks: [SERVER STEP 3] Returning 36 tasks to client
+2026-01-16 08:22:08 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-16 08:22:09 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:22:09 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:22:09 INFO  sqlalchemy.engine.Engine [cached since 3.613e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:22:09 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:22:09 INFO  homeplanner.tasks HTTP REQUEST: get_tasks called from 192.168.1.39, enabled_only=True, days_ahead=None, selected_user_id=None
+2026-01-16 08:22:09 INFO  homeplanner.tasks get_tasks: [SERVER STEP 1] Request received from 192.168.1.39, enabled_only=True, days_ahead=None, selected_user_id=None
+2026-01-16 08:22:09 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:22:09 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:22:09 INFO  sqlalchemy.engine.Engine [cached since 3.613e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:22:09 INFO  sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.enabled = 1 ORDER BY tasks.reminder_time
+2026-01-16 08:22:09 INFO  sqlalchemy.engine.Engine [cached since 3.613e+04s ago] ()
+2026-01-16 08:22:09 INFO  sqlalchemy.engine.Engine SELECT tasks_1.id AS tasks_1_id, users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM tasks AS tasks_1 JOIN task_users AS task_users_1 ON tasks_1.id = task_users_1.task_id JOIN users ON users.id = task_users_1.user_id 
+WHERE tasks_1.id IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-01-16 08:22:09 INFO  sqlalchemy.engine.Engine [cached since 3.613e+04s ago] (1, 2, 3, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 37, 21, 23, 24, 25, 39, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 18, 38, 8)
+2026-01-16 08:22:09 INFO  homeplanner.tasks get_tasks: [SERVER STEP 2] Found 36 tasks in database
+2026-01-16 08:22:09 INFO  homeplanner.tasks get_tasks: [TASK 1] id=1, title='Test Task 1 (Day -3, Type recurring)', enabled=True, task_type=TaskType.RECURRING
+2026-01-16 08:22:09 INFO  homeplanner.tasks get_tasks: [TASK 2] id=2, title='Test Task 2 (Day -3, Type recurring)', enabled=True, task_type=TaskType.RECURRING
+2026-01-16 08:22:09 INFO  homeplanner.tasks get_tasks: [TASK 3] id=3, title='Test Task 3 (Day -3, Type one_time)', enabled=True, task_type=TaskType.ONE_TIME
+2026-01-16 08:22:09 INFO  homeplanner.tasks get_tasks: [SERVER STEP 3] Returning 36 tasks to client
+2026-01-16 08:22:09 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-16 08:22:09 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:22:09 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:22:09 INFO  sqlalchemy.engine.Engine [cached since 3.613e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:22:09 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:22:09 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:22:09 INFO  sqlalchemy.engine.Engine SELECT groups.id AS groups_id, groups.name AS groups_name, groups.description AS groups_description, groups.created_at AS groups_created_at, groups.updated_at AS groups_updated_at 
+FROM groups ORDER BY groups.name
+2026-01-16 08:22:09 INFO  sqlalchemy.engine.Engine [cached since 3.613e+04s ago] ()
+2026-01-16 08:22:09 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:22:09 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:22:09 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:22:09 INFO  sqlalchemy.engine.Engine [cached since 3.613e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:22:09 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:22:09 INFO  homeplanner.api.users GET /users endpoint called with simple=True
+2026-01-16 08:22:09 INFO  homeplanner.users Starting query for simple users
+2026-01-16 08:22:09 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:22:09 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name 
+FROM users 
+WHERE users.is_active = 1 ORDER BY users.name
+2026-01-16 08:22:09 INFO  sqlalchemy.engine.Engine [cached since 3.613e+04s ago] ()
+2026-01-16 08:22:09 INFO  homeplanner.users Query executed successfully, found 2 active users
+2026-01-16 08:22:09 INFO  homeplanner.api.users Returning 2 active users (simple mode) via API
+2026-01-16 08:22:09 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:22:11 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:22:11 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:22:11 INFO  sqlalchemy.engine.Engine [cached since 3.614e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:22:11 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:22:11 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:22:11 INFO  sqlalchemy.engine.Engine SELECT groups.id AS groups_id, groups.name AS groups_name, groups.description AS groups_description, groups.created_at AS groups_created_at, groups.updated_at AS groups_updated_at 
+FROM groups ORDER BY groups.name
+2026-01-16 08:22:11 INFO  sqlalchemy.engine.Engine [cached since 3.614e+04s ago] ()
+2026-01-16 08:22:11 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:22:11 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:22:11 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:22:11 INFO  sqlalchemy.engine.Engine [cached since 3.614e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:22:11 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:22:11 INFO  homeplanner.api.users GET /users endpoint called with simple=True
+2026-01-16 08:22:11 INFO  homeplanner.users Starting query for simple users
+2026-01-16 08:22:11 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:22:11 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name 
+FROM users 
+WHERE users.is_active = 1 ORDER BY users.name
+2026-01-16 08:22:11 INFO  sqlalchemy.engine.Engine [cached since 3.614e+04s ago] ()
+2026-01-16 08:22:11 INFO  homeplanner.users Query executed successfully, found 2 active users
+2026-01-16 08:22:11 INFO  homeplanner.api.users Returning 2 active users (simple mode) via API
+2026-01-16 08:22:11 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:22:14 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:22:14 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:22:14 INFO  sqlalchemy.engine.Engine [cached since 3.614e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:22:14 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:22:14 INFO  homeplanner.api.users GET /users endpoint called with simple=True
+2026-01-16 08:22:14 INFO  homeplanner.users Starting query for simple users
+2026-01-16 08:22:14 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:22:14 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name 
+FROM users 
+WHERE users.is_active = 1 ORDER BY users.name
+2026-01-16 08:22:14 INFO  sqlalchemy.engine.Engine [cached since 3.614e+04s ago] ()
+2026-01-16 08:22:14 INFO  homeplanner.users Query executed successfully, found 2 active users
+2026-01-16 08:22:14 INFO  homeplanner.api.users Returning 2 active users (simple mode) via API
+2026-01-16 08:22:14 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:30:03 INFO  homeplanner.realtime WS disconnect: id=140085375445584, total=1
+2026-01-16 08:30:18 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.39, origin: None
+2026-01-16 08:30:18 INFO  homeplanner.realtime WS connect: id=140085365353200 host=192.168.1.39 port=43856 total=2
+2026-01-16 08:30:18 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:30:18 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:30:18 INFO  sqlalchemy.engine.Engine [cached since 3.662e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:30:18 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:30:18 INFO  homeplanner.tasks HTTP REQUEST: get_tasks called from 192.168.1.39, enabled_only=False, days_ahead=None, selected_user_id=None
+2026-01-16 08:30:18 INFO  homeplanner.tasks get_tasks: [SERVER STEP 1] Request received from 192.168.1.39, enabled_only=False, days_ahead=None, selected_user_id=None
+2026-01-16 08:30:18 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:30:18 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:30:18 INFO  sqlalchemy.engine.Engine [cached since 3.662e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:30:18 INFO  sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks ORDER BY tasks.reminder_time
+2026-01-16 08:30:18 INFO  sqlalchemy.engine.Engine [cached since 1.976e+04s ago] ()
+2026-01-16 08:30:18 INFO  sqlalchemy.engine.Engine SELECT tasks_1.id AS tasks_1_id, users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM tasks AS tasks_1 JOIN task_users AS task_users_1 ON tasks_1.id = task_users_1.task_id JOIN users ON users.id = task_users_1.user_id 
+WHERE tasks_1.id IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-01-16 08:30:18 INFO  sqlalchemy.engine.Engine [cached since 3.662e+04s ago] (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 36, 37, 21, 22, 23, 24, 25, 39, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 18, 38, 8)
+2026-01-16 08:30:18 INFO  homeplanner.tasks get_tasks: [SERVER STEP 2] Found 39 tasks in database
+2026-01-16 08:30:18 INFO  homeplanner.tasks get_tasks: [TASK 1] id=1, title='Test Task 1 (Day -3, Type recurring)', enabled=True, task_type=TaskType.RECURRING
+2026-01-16 08:30:18 INFO  homeplanner.tasks get_tasks: [TASK 2] id=2, title='Test Task 2 (Day -3, Type recurring)', enabled=True, task_type=TaskType.RECURRING
+2026-01-16 08:30:18 INFO  homeplanner.tasks get_tasks: [TASK 3] id=3, title='Test Task 3 (Day -3, Type one_time)', enabled=True, task_type=TaskType.ONE_TIME
+2026-01-16 08:30:18 INFO  homeplanner.tasks get_tasks: [SERVER STEP 3] Returning 39 tasks to client
+2026-01-16 08:30:18 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-16 08:30:19 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:30:19 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:30:19 INFO  sqlalchemy.engine.Engine [cached since 3.662e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:30:19 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:30:19 INFO  homeplanner.tasks HTTP REQUEST: get_tasks called from 192.168.1.39, enabled_only=False, days_ahead=None, selected_user_id=None
+2026-01-16 08:30:19 INFO  homeplanner.tasks get_tasks: [SERVER STEP 1] Request received from 192.168.1.39, enabled_only=False, days_ahead=None, selected_user_id=None
+2026-01-16 08:30:19 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:30:19 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:30:19 INFO  sqlalchemy.engine.Engine [cached since 3.662e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:30:19 INFO  sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks ORDER BY tasks.reminder_time
+2026-01-16 08:30:19 INFO  sqlalchemy.engine.Engine [cached since 1.976e+04s ago] ()
+2026-01-16 08:30:19 INFO  sqlalchemy.engine.Engine SELECT tasks_1.id AS tasks_1_id, users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM tasks AS tasks_1 JOIN task_users AS task_users_1 ON tasks_1.id = task_users_1.task_id JOIN users ON users.id = task_users_1.user_id 
+WHERE tasks_1.id IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-01-16 08:30:19 INFO  sqlalchemy.engine.Engine [cached since 3.662e+04s ago] (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 36, 37, 21, 22, 23, 24, 25, 39, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 18, 38, 8)
+2026-01-16 08:30:19 INFO  homeplanner.tasks get_tasks: [SERVER STEP 2] Found 39 tasks in database
+2026-01-16 08:30:19 INFO  homeplanner.tasks get_tasks: [TASK 1] id=1, title='Test Task 1 (Day -3, Type recurring)', enabled=True, task_type=TaskType.RECURRING
+2026-01-16 08:30:19 INFO  homeplanner.tasks get_tasks: [TASK 2] id=2, title='Test Task 2 (Day -3, Type recurring)', enabled=True, task_type=TaskType.RECURRING
+2026-01-16 08:30:19 INFO  homeplanner.tasks get_tasks: [TASK 3] id=3, title='Test Task 3 (Day -3, Type one_time)', enabled=True, task_type=TaskType.ONE_TIME
+2026-01-16 08:30:19 INFO  homeplanner.tasks get_tasks: [SERVER STEP 3] Returning 39 tasks to client
+2026-01-16 08:30:19 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-16 08:30:19 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:30:19 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:30:19 INFO  sqlalchemy.engine.Engine [cached since 3.662e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:30:19 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:30:19 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:30:19 INFO  sqlalchemy.engine.Engine SELECT groups.id AS groups_id, groups.name AS groups_name, groups.description AS groups_description, groups.created_at AS groups_created_at, groups.updated_at AS groups_updated_at 
+FROM groups ORDER BY groups.name
+2026-01-16 08:30:19 INFO  sqlalchemy.engine.Engine [cached since 3.662e+04s ago] ()
+2026-01-16 08:30:19 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:30:19 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:30:19 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:30:19 INFO  sqlalchemy.engine.Engine [cached since 3.662e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:30:19 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:30:19 INFO  homeplanner.api.users GET /users endpoint called with simple=True
+2026-01-16 08:30:19 INFO  homeplanner.users Starting query for simple users
+2026-01-16 08:30:19 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:30:19 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name 
+FROM users 
+WHERE users.is_active = 1 ORDER BY users.name
+2026-01-16 08:30:19 INFO  sqlalchemy.engine.Engine [cached since 3.662e+04s ago] ()
+2026-01-16 08:30:19 INFO  homeplanner.users Query executed successfully, found 2 active users
+2026-01-16 08:30:19 INFO  homeplanner.api.users Returning 2 active users (simple mode) via API
+2026-01-16 08:30:19 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:30:21 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:30:21 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:30:21 INFO  sqlalchemy.engine.Engine [cached since 3.663e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:30:21 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:30:21 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:30:21 INFO  sqlalchemy.engine.Engine SELECT groups.id AS groups_id, groups.name AS groups_name, groups.description AS groups_description, groups.created_at AS groups_created_at, groups.updated_at AS groups_updated_at 
+FROM groups ORDER BY groups.name
+2026-01-16 08:30:21 INFO  sqlalchemy.engine.Engine [cached since 3.663e+04s ago] ()
+2026-01-16 08:30:21 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:30:21 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:30:21 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:30:21 INFO  sqlalchemy.engine.Engine [cached since 3.663e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:30:21 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:30:21 INFO  homeplanner.api.users GET /users endpoint called with simple=True
+2026-01-16 08:30:21 INFO  homeplanner.users Starting query for simple users
+2026-01-16 08:30:21 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:30:21 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name 
+FROM users 
+WHERE users.is_active = 1 ORDER BY users.name
+2026-01-16 08:30:21 INFO  sqlalchemy.engine.Engine [cached since 3.663e+04s ago] ()
+2026-01-16 08:30:21 INFO  homeplanner.users Query executed successfully, found 2 active users
+2026-01-16 08:30:21 INFO  homeplanner.api.users Returning 2 active users (simple mode) via API
+2026-01-16 08:30:21 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:30:29 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:30:29 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:30:29 INFO  sqlalchemy.engine.Engine [cached since 3.663e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:30:29 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:30:29 INFO  homeplanner.api.users GET /users endpoint called with simple=True
+2026-01-16 08:30:29 INFO  homeplanner.users Starting query for simple users
+2026-01-16 08:30:29 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:30:29 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name 
+FROM users 
+WHERE users.is_active = 1 ORDER BY users.name
+2026-01-16 08:30:29 INFO  sqlalchemy.engine.Engine [cached since 3.663e+04s ago] ()
+2026-01-16 08:30:29 INFO  homeplanner.users Query executed successfully, found 2 active users
+2026-01-16 08:30:29 INFO  homeplanner.api.users Returning 2 active users (simple mode) via API
+2026-01-16 08:30:29 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:41:46 INFO  homeplanner.realtime WS disconnect: id=140085365353200, total=1
+2026-01-16 08:42:08 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.39, origin: None
+2026-01-16 08:42:08 INFO  homeplanner.realtime WS connect: id=140085365460656 host=192.168.1.39 port=43888 total=2
+2026-01-16 08:42:08 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:42:08 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:42:08 INFO  sqlalchemy.engine.Engine [cached since 3.733e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:42:08 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:42:08 INFO  homeplanner.tasks HTTP REQUEST: get_tasks called from 192.168.1.39, enabled_only=False, days_ahead=None, selected_user_id=None
+2026-01-16 08:42:08 INFO  homeplanner.tasks get_tasks: [SERVER STEP 1] Request received from 192.168.1.39, enabled_only=False, days_ahead=None, selected_user_id=None
+2026-01-16 08:42:08 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:42:08 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:42:08 INFO  sqlalchemy.engine.Engine [cached since 3.733e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:42:08 INFO  sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks ORDER BY tasks.reminder_time
+2026-01-16 08:42:08 INFO  sqlalchemy.engine.Engine [cached since 2.047e+04s ago] ()
+2026-01-16 08:42:08 INFO  sqlalchemy.engine.Engine SELECT tasks_1.id AS tasks_1_id, users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM tasks AS tasks_1 JOIN task_users AS task_users_1 ON tasks_1.id = task_users_1.task_id JOIN users ON users.id = task_users_1.user_id 
+WHERE tasks_1.id IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-01-16 08:42:08 INFO  sqlalchemy.engine.Engine [cached since 3.733e+04s ago] (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 36, 37, 21, 22, 23, 24, 25, 39, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 18, 38, 8)
+2026-01-16 08:42:08 INFO  homeplanner.tasks get_tasks: [SERVER STEP 2] Found 39 tasks in database
+2026-01-16 08:42:08 INFO  homeplanner.tasks get_tasks: [TASK 1] id=1, title='Test Task 1 (Day -3, Type recurring)', enabled=True, task_type=TaskType.RECURRING
+2026-01-16 08:42:08 INFO  homeplanner.tasks get_tasks: [TASK 2] id=2, title='Test Task 2 (Day -3, Type recurring)', enabled=True, task_type=TaskType.RECURRING
+2026-01-16 08:42:08 INFO  homeplanner.tasks get_tasks: [TASK 3] id=3, title='Test Task 3 (Day -3, Type one_time)', enabled=True, task_type=TaskType.ONE_TIME
+2026-01-16 08:42:08 INFO  homeplanner.tasks get_tasks: [SERVER STEP 3] Returning 39 tasks to client
+2026-01-16 08:42:08 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-16 08:42:09 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:42:09 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:42:09 INFO  sqlalchemy.engine.Engine [cached since 3.733e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:42:09 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:42:09 INFO  homeplanner.tasks HTTP REQUEST: get_tasks called from 192.168.1.39, enabled_only=False, days_ahead=None, selected_user_id=None
+2026-01-16 08:42:09 INFO  homeplanner.tasks get_tasks: [SERVER STEP 1] Request received from 192.168.1.39, enabled_only=False, days_ahead=None, selected_user_id=None
+2026-01-16 08:42:09 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:42:09 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:42:09 INFO  sqlalchemy.engine.Engine [cached since 3.733e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:42:09 INFO  sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks ORDER BY tasks.reminder_time
+2026-01-16 08:42:09 INFO  sqlalchemy.engine.Engine [cached since 2.047e+04s ago] ()
+2026-01-16 08:42:09 INFO  sqlalchemy.engine.Engine SELECT tasks_1.id AS tasks_1_id, users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM tasks AS tasks_1 JOIN task_users AS task_users_1 ON tasks_1.id = task_users_1.task_id JOIN users ON users.id = task_users_1.user_id 
+WHERE tasks_1.id IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-01-16 08:42:09 INFO  sqlalchemy.engine.Engine [cached since 3.733e+04s ago] (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 36, 37, 21, 22, 23, 24, 25, 39, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 18, 38, 8)
+2026-01-16 08:42:09 INFO  homeplanner.tasks get_tasks: [SERVER STEP 2] Found 39 tasks in database
+2026-01-16 08:42:09 INFO  homeplanner.tasks get_tasks: [TASK 1] id=1, title='Test Task 1 (Day -3, Type recurring)', enabled=True, task_type=TaskType.RECURRING
+2026-01-16 08:42:09 INFO  homeplanner.tasks get_tasks: [TASK 2] id=2, title='Test Task 2 (Day -3, Type recurring)', enabled=True, task_type=TaskType.RECURRING
+2026-01-16 08:42:09 INFO  homeplanner.tasks get_tasks: [TASK 3] id=3, title='Test Task 3 (Day -3, Type one_time)', enabled=True, task_type=TaskType.ONE_TIME
+2026-01-16 08:42:09 INFO  homeplanner.tasks get_tasks: [SERVER STEP 3] Returning 39 tasks to client
+2026-01-16 08:42:09 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-16 08:42:09 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:42:09 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:42:09 INFO  sqlalchemy.engine.Engine [cached since 3.733e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:42:09 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:42:09 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:42:09 INFO  sqlalchemy.engine.Engine SELECT groups.id AS groups_id, groups.name AS groups_name, groups.description AS groups_description, groups.created_at AS groups_created_at, groups.updated_at AS groups_updated_at 
+FROM groups ORDER BY groups.name
+2026-01-16 08:42:09 INFO  sqlalchemy.engine.Engine [cached since 3.733e+04s ago] ()
+2026-01-16 08:42:09 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:42:09 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:42:09 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:42:09 INFO  sqlalchemy.engine.Engine [cached since 3.733e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:42:09 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:42:09 INFO  homeplanner.api.users GET /users endpoint called with simple=True
+2026-01-16 08:42:09 INFO  homeplanner.users Starting query for simple users
+2026-01-16 08:42:09 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:42:09 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name 
+FROM users 
+WHERE users.is_active = 1 ORDER BY users.name
+2026-01-16 08:42:09 INFO  sqlalchemy.engine.Engine [cached since 3.733e+04s ago] ()
+2026-01-16 08:42:09 INFO  homeplanner.users Query executed successfully, found 2 active users
+2026-01-16 08:42:09 INFO  homeplanner.api.users Returning 2 active users (simple mode) via API
+2026-01-16 08:42:09 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:42:11 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:42:11 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:42:11 INFO  sqlalchemy.engine.Engine [cached since 3.734e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:42:11 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:42:11 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:42:11 INFO  sqlalchemy.engine.Engine SELECT groups.id AS groups_id, groups.name AS groups_name, groups.description AS groups_description, groups.created_at AS groups_created_at, groups.updated_at AS groups_updated_at 
+FROM groups ORDER BY groups.name
+2026-01-16 08:42:11 INFO  sqlalchemy.engine.Engine [cached since 3.734e+04s ago] ()
+2026-01-16 08:42:11 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:42:11 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:42:11 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:42:11 INFO  sqlalchemy.engine.Engine [cached since 3.734e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:42:11 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:42:11 INFO  homeplanner.api.users GET /users endpoint called with simple=True
+2026-01-16 08:42:11 INFO  homeplanner.users Starting query for simple users
+2026-01-16 08:42:11 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:42:11 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name 
+FROM users 
+WHERE users.is_active = 1 ORDER BY users.name
+2026-01-16 08:42:11 INFO  sqlalchemy.engine.Engine [cached since 3.734e+04s ago] ()
+2026-01-16 08:42:11 INFO  homeplanner.users Query executed successfully, found 2 active users
+2026-01-16 08:42:11 INFO  homeplanner.api.users Returning 2 active users (simple mode) via API
+2026-01-16 08:42:11 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:42:13 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:42:13 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:42:13 INFO  sqlalchemy.engine.Engine [cached since 3.734e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:42:13 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:42:13 INFO  homeplanner.api.users GET /users endpoint called with simple=True
+2026-01-16 08:42:13 INFO  homeplanner.users Starting query for simple users
+2026-01-16 08:42:13 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:42:13 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name 
+FROM users 
+WHERE users.is_active = 1 ORDER BY users.name
+2026-01-16 08:42:13 INFO  sqlalchemy.engine.Engine [cached since 3.734e+04s ago] ()
+2026-01-16 08:42:13 INFO  homeplanner.users Query executed successfully, found 2 active users
+2026-01-16 08:42:13 INFO  homeplanner.api.users Returning 2 active users (simple mode) via API
+2026-01-16 08:42:13 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:55:24 INFO  homeplanner.realtime WS disconnect: id=140085365460656, total=1
+2026-01-16 08:55:25 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.39, origin: None
+2026-01-16 08:55:25 INFO  homeplanner.realtime WS connect: id=140085375583728 host=192.168.1.39 port=47734 total=2
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine [cached since 3.813e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:55:26 INFO  homeplanner.tasks HTTP REQUEST: get_tasks called from 192.168.1.39, enabled_only=False, days_ahead=None, selected_user_id=None
+2026-01-16 08:55:26 INFO  homeplanner.tasks get_tasks: [SERVER STEP 1] Request received from 192.168.1.39, enabled_only=False, days_ahead=None, selected_user_id=None
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine [cached since 3.813e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks ORDER BY tasks.reminder_time
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine [cached since 2.127e+04s ago] ()
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine SELECT tasks_1.id AS tasks_1_id, users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM tasks AS tasks_1 JOIN task_users AS task_users_1 ON tasks_1.id = task_users_1.task_id JOIN users ON users.id = task_users_1.user_id 
+WHERE tasks_1.id IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine [cached since 3.813e+04s ago] (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 36, 37, 21, 22, 23, 24, 25, 39, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 18, 38, 8)
+2026-01-16 08:55:26 INFO  homeplanner.tasks get_tasks: [SERVER STEP 2] Found 39 tasks in database
+2026-01-16 08:55:26 INFO  homeplanner.tasks get_tasks: [TASK 1] id=1, title='Test Task 1 (Day -3, Type recurring)', enabled=True, task_type=TaskType.RECURRING
+2026-01-16 08:55:26 INFO  homeplanner.tasks get_tasks: [TASK 2] id=2, title='Test Task 2 (Day -3, Type recurring)', enabled=True, task_type=TaskType.RECURRING
+2026-01-16 08:55:26 INFO  homeplanner.tasks get_tasks: [TASK 3] id=3, title='Test Task 3 (Day -3, Type one_time)', enabled=True, task_type=TaskType.ONE_TIME
+2026-01-16 08:55:26 INFO  homeplanner.tasks get_tasks: [SERVER STEP 3] Returning 39 tasks to client
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine [cached since 3.813e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:55:26 INFO  homeplanner.tasks HTTP REQUEST: get_tasks called from 192.168.1.39, enabled_only=False, days_ahead=None, selected_user_id=None
+2026-01-16 08:55:26 INFO  homeplanner.tasks get_tasks: [SERVER STEP 1] Request received from 192.168.1.39, enabled_only=False, days_ahead=None, selected_user_id=None
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine [cached since 3.813e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks ORDER BY tasks.reminder_time
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine [cached since 2.127e+04s ago] ()
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine SELECT tasks_1.id AS tasks_1_id, users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM tasks AS tasks_1 JOIN task_users AS task_users_1 ON tasks_1.id = task_users_1.task_id JOIN users ON users.id = task_users_1.user_id 
+WHERE tasks_1.id IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine [cached since 3.813e+04s ago] (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 36, 37, 21, 22, 23, 24, 25, 39, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 18, 38, 8)
+2026-01-16 08:55:26 INFO  homeplanner.tasks get_tasks: [SERVER STEP 2] Found 39 tasks in database
+2026-01-16 08:55:26 INFO  homeplanner.tasks get_tasks: [TASK 1] id=1, title='Test Task 1 (Day -3, Type recurring)', enabled=True, task_type=TaskType.RECURRING
+2026-01-16 08:55:26 INFO  homeplanner.tasks get_tasks: [TASK 2] id=2, title='Test Task 2 (Day -3, Type recurring)', enabled=True, task_type=TaskType.RECURRING
+2026-01-16 08:55:26 INFO  homeplanner.tasks get_tasks: [TASK 3] id=3, title='Test Task 3 (Day -3, Type one_time)', enabled=True, task_type=TaskType.ONE_TIME
+2026-01-16 08:55:26 INFO  homeplanner.tasks get_tasks: [SERVER STEP 3] Returning 39 tasks to client
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine [cached since 3.813e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine SELECT groups.id AS groups_id, groups.name AS groups_name, groups.description AS groups_description, groups.created_at AS groups_created_at, groups.updated_at AS groups_updated_at 
+FROM groups ORDER BY groups.name
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine [cached since 3.813e+04s ago] ()
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine [cached since 3.813e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:55:26 INFO  homeplanner.api.users GET /users endpoint called with simple=True
+2026-01-16 08:55:26 INFO  homeplanner.users Starting query for simple users
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name 
+FROM users 
+WHERE users.is_active = 1 ORDER BY users.name
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine [cached since 3.813e+04s ago] ()
+2026-01-16 08:55:26 INFO  homeplanner.users Query executed successfully, found 2 active users
+2026-01-16 08:55:26 INFO  homeplanner.api.users Returning 2 active users (simple mode) via API
+2026-01-16 08:55:26 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:55:29 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:55:29 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:55:29 INFO  sqlalchemy.engine.Engine [cached since 3.813e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:55:29 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:55:29 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:55:29 INFO  sqlalchemy.engine.Engine SELECT groups.id AS groups_id, groups.name AS groups_name, groups.description AS groups_description, groups.created_at AS groups_created_at, groups.updated_at AS groups_updated_at 
+FROM groups ORDER BY groups.name
+2026-01-16 08:55:29 INFO  sqlalchemy.engine.Engine [cached since 3.813e+04s ago] ()
+2026-01-16 08:55:29 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:55:29 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:55:29 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:55:29 INFO  sqlalchemy.engine.Engine [cached since 3.813e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:55:29 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:55:29 INFO  homeplanner.api.users GET /users endpoint called with simple=True
+2026-01-16 08:55:29 INFO  homeplanner.users Starting query for simple users
+2026-01-16 08:55:29 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:55:29 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name 
+FROM users 
+WHERE users.is_active = 1 ORDER BY users.name
+2026-01-16 08:55:29 INFO  sqlalchemy.engine.Engine [cached since 3.813e+04s ago] ()
+2026-01-16 08:55:29 INFO  homeplanner.users Query executed successfully, found 2 active users
+2026-01-16 08:55:29 INFO  homeplanner.api.users Returning 2 active users (simple mode) via API
+2026-01-16 08:55:29 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:55:31 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:55:31 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 08:55:31 INFO  sqlalchemy.engine.Engine [cached since 3.814e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 08:55:31 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 08:55:31 INFO  homeplanner.api.users GET /users endpoint called with simple=True
+2026-01-16 08:55:31 INFO  homeplanner.users Starting query for simple users
+2026-01-16 08:55:31 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 08:55:31 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name 
+FROM users 
+WHERE users.is_active = 1 ORDER BY users.name
+2026-01-16 08:55:31 INFO  sqlalchemy.engine.Engine [cached since 3.814e+04s ago] ()
+2026-01-16 08:55:31 INFO  homeplanner.users Query executed successfully, found 2 active users
+2026-01-16 08:55:31 INFO  homeplanner.api.users Returning 2 active users (simple mode) via API
+2026-01-16 08:55:31 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 09:08:08 INFO  homeplanner.realtime WS disconnect: id=140085375583728, total=1
+2026-01-16 20:57:01 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.39, origin: None
+2026-01-16 20:57:01 INFO  homeplanner.realtime WS connect: id=140085375584304 host=192.168.1.39 port=45070 total=2
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine [cached since 8.143e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 20:57:02 INFO  homeplanner.tasks HTTP REQUEST: get_tasks called from 192.168.1.39, enabled_only=False, days_ahead=None, selected_user_id=None
+2026-01-16 20:57:02 INFO  homeplanner.tasks get_tasks: [SERVER STEP 1] Request received from 192.168.1.39, enabled_only=False, days_ahead=None, selected_user_id=None
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine [cached since 8.143e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks ORDER BY tasks.reminder_time
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine [cached since 6.456e+04s ago] ()
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine SELECT tasks_1.id AS tasks_1_id, users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM tasks AS tasks_1 JOIN task_users AS task_users_1 ON tasks_1.id = task_users_1.task_id JOIN users ON users.id = task_users_1.user_id 
+WHERE tasks_1.id IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine [cached since 8.143e+04s ago] (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 36, 37, 21, 22, 23, 24, 25, 39, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 18, 38, 8)
+2026-01-16 20:57:02 INFO  homeplanner.tasks get_tasks: [SERVER STEP 2] Found 39 tasks in database
+2026-01-16 20:57:02 INFO  homeplanner.tasks get_tasks: [TASK 1] id=1, title='Test Task 1 (Day -3, Type recurring)', enabled=True, task_type=TaskType.RECURRING
+2026-01-16 20:57:02 INFO  homeplanner.tasks get_tasks: [TASK 2] id=2, title='Test Task 2 (Day -3, Type recurring)', enabled=True, task_type=TaskType.RECURRING
+2026-01-16 20:57:02 INFO  homeplanner.tasks get_tasks: [TASK 3] id=3, title='Test Task 3 (Day -3, Type one_time)', enabled=True, task_type=TaskType.ONE_TIME
+2026-01-16 20:57:02 INFO  homeplanner.tasks get_tasks: [SERVER STEP 3] Returning 39 tasks to client
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine [cached since 8.143e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 20:57:02 INFO  homeplanner.tasks HTTP REQUEST: get_tasks called from 192.168.1.39, enabled_only=False, days_ahead=None, selected_user_id=None
+2026-01-16 20:57:02 INFO  homeplanner.tasks get_tasks: [SERVER STEP 1] Request received from 192.168.1.39, enabled_only=False, days_ahead=None, selected_user_id=None
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine [cached since 8.143e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks ORDER BY tasks.reminder_time
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine [cached since 6.456e+04s ago] ()
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine SELECT tasks_1.id AS tasks_1_id, users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM tasks AS tasks_1 JOIN task_users AS task_users_1 ON tasks_1.id = task_users_1.task_id JOIN users ON users.id = task_users_1.user_id 
+WHERE tasks_1.id IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine [cached since 8.143e+04s ago] (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 36, 37, 21, 22, 23, 24, 25, 39, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 18, 38, 8)
+2026-01-16 20:57:02 INFO  homeplanner.tasks get_tasks: [SERVER STEP 2] Found 39 tasks in database
+2026-01-16 20:57:02 INFO  homeplanner.tasks get_tasks: [TASK 1] id=1, title='Test Task 1 (Day -3, Type recurring)', enabled=True, task_type=TaskType.RECURRING
+2026-01-16 20:57:02 INFO  homeplanner.tasks get_tasks: [TASK 2] id=2, title='Test Task 2 (Day -3, Type recurring)', enabled=True, task_type=TaskType.RECURRING
+2026-01-16 20:57:02 INFO  homeplanner.tasks get_tasks: [TASK 3] id=3, title='Test Task 3 (Day -3, Type one_time)', enabled=True, task_type=TaskType.ONE_TIME
+2026-01-16 20:57:02 INFO  homeplanner.tasks get_tasks: [SERVER STEP 3] Returning 39 tasks to client
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine [cached since 8.143e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine SELECT groups.id AS groups_id, groups.name AS groups_name, groups.description AS groups_description, groups.created_at AS groups_created_at, groups.updated_at AS groups_updated_at 
+FROM groups ORDER BY groups.name
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine [cached since 8.143e+04s ago] ()
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine [cached since 8.143e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 20:57:02 INFO  homeplanner.api.users GET /users endpoint called with simple=True
+2026-01-16 20:57:02 INFO  homeplanner.users Starting query for simple users
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name 
+FROM users 
+WHERE users.is_active = 1 ORDER BY users.name
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine [cached since 8.143e+04s ago] ()
+2026-01-16 20:57:02 INFO  homeplanner.users Query executed successfully, found 2 active users
+2026-01-16 20:57:02 INFO  homeplanner.api.users Returning 2 active users (simple mode) via API
+2026-01-16 20:57:02 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 20:57:05 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 20:57:05 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 20:57:05 INFO  sqlalchemy.engine.Engine [cached since 8.143e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 20:57:05 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 20:57:05 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 20:57:05 INFO  sqlalchemy.engine.Engine SELECT groups.id AS groups_id, groups.name AS groups_name, groups.description AS groups_description, groups.created_at AS groups_created_at, groups.updated_at AS groups_updated_at 
+FROM groups ORDER BY groups.name
+2026-01-16 20:57:05 INFO  sqlalchemy.engine.Engine [cached since 8.143e+04s ago] ()
+2026-01-16 20:57:05 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 20:57:05 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 20:57:05 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 20:57:05 INFO  sqlalchemy.engine.Engine [cached since 8.143e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 20:57:05 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 20:57:05 INFO  homeplanner.api.users GET /users endpoint called with simple=True
+2026-01-16 20:57:05 INFO  homeplanner.users Starting query for simple users
+2026-01-16 20:57:05 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 20:57:05 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name 
+FROM users 
+WHERE users.is_active = 1 ORDER BY users.name
+2026-01-16 20:57:05 INFO  sqlalchemy.engine.Engine [cached since 8.143e+04s ago] ()
+2026-01-16 20:57:05 INFO  homeplanner.users Query executed successfully, found 2 active users
+2026-01-16 20:57:05 INFO  homeplanner.api.users Returning 2 active users (simple mode) via API
+2026-01-16 20:57:05 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 20:57:08 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 20:57:08 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 20:57:08 INFO  sqlalchemy.engine.Engine [cached since 8.143e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 20:57:08 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 20:57:08 INFO  homeplanner.api.users GET /users endpoint called with simple=True
+2026-01-16 20:57:08 INFO  homeplanner.users Starting query for simple users
+2026-01-16 20:57:08 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 20:57:08 INFO  sqlalchemy.engine.Engine SELECT users.id AS users_id, users.name AS users_name 
+FROM users 
+WHERE users.is_active = 1 ORDER BY users.name
+2026-01-16 20:57:08 INFO  sqlalchemy.engine.Engine [cached since 8.143e+04s ago] ()
+2026-01-16 20:57:08 INFO  homeplanner.users Query executed successfully, found 2 active users
+2026-01-16 20:57:08 INFO  homeplanner.api.users Returning 2 active users (simple mode) via API
+2026-01-16 20:57:08 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 21:12:01 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 21:12:01 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 21:12:01 INFO  sqlalchemy.engine.Engine [cached since 8.233e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 21:12:01 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 21:12:01 INFO  homeplanner.tasks HTTP REQUEST: get_tasks called from 192.168.1.39, enabled_only=True, days_ahead=None, selected_user_id=None
+2026-01-16 21:12:01 INFO  homeplanner.tasks get_tasks: [SERVER STEP 1] Request received from 192.168.1.39, enabled_only=True, days_ahead=None, selected_user_id=None
+2026-01-16 21:12:01 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 21:12:01 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 21:12:01 INFO  sqlalchemy.engine.Engine [cached since 8.233e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 21:12:01 INFO  sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.enabled = 1 ORDER BY tasks.reminder_time
+2026-01-16 21:12:01 INFO  sqlalchemy.engine.Engine [cached since 8.233e+04s ago] ()
+2026-01-16 21:12:01 INFO  sqlalchemy.engine.Engine SELECT tasks_1.id AS tasks_1_id, users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM tasks AS tasks_1 JOIN task_users AS task_users_1 ON tasks_1.id = task_users_1.task_id JOIN users ON users.id = task_users_1.user_id 
+WHERE tasks_1.id IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-01-16 21:12:01 INFO  sqlalchemy.engine.Engine [cached since 8.233e+04s ago] (1, 2, 3, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 37, 21, 23, 24, 25, 39, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 18, 38, 8)
+2026-01-16 21:12:01 INFO  homeplanner.tasks get_tasks: [SERVER STEP 2] Found 36 tasks in database
+2026-01-16 21:12:01 INFO  homeplanner.tasks get_tasks: [TASK 1] id=1, title='Test Task 1 (Day -3, Type recurring)', enabled=True, task_type=TaskType.RECURRING
+2026-01-16 21:12:01 INFO  homeplanner.tasks get_tasks: [TASK 2] id=2, title='Test Task 2 (Day -3, Type recurring)', enabled=True, task_type=TaskType.RECURRING
+2026-01-16 21:12:01 INFO  homeplanner.tasks get_tasks: [TASK 3] id=3, title='Test Task 3 (Day -3, Type one_time)', enabled=True, task_type=TaskType.ONE_TIME
+2026-01-16 21:12:01 INFO  homeplanner.tasks get_tasks: [SERVER STEP 3] Returning 36 tasks to client
+2026-01-16 21:12:01 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-16 21:16:50 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.39, origin: None
+2026-01-16 21:16:50 INFO  homeplanner.realtime WS connect: id=140085375584160 host=192.168.1.39 port=37366 total=3
+2026-01-16 21:16:54 ERROR asyncio ConnectionClosedError exception in shielded future
+future: <Future finished exception=ConnectionClosedError(None, Close(code=<CloseCode.INTERNAL_ERROR: 1011>, reason='keepalive ping timeout'), None)>
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 1276, in close_connection
+    await self.transfer_data_task
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 940, in transfer_data
+    message = await self.read_message()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 1010, in read_message
+    frame = await self.read_data_frame(max_size=self.max_size)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 1087, in read_data_frame
+    frame = await self.read_frame(max_size)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 1144, in read_frame
+    frame = await Frame.read(
+            ^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/framing.py", line 70, in read
+    data = await reader(2)
+           ^^^^^^^^^^^^^^^
+  File "/usr/lib64/python3.14/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/lib64/python3.14/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+websockets.exceptions.ConnectionClosedError: sent 1011 (internal error) keepalive ping timeout; no close frame received
+2026-01-16 21:16:54 INFO  homeplanner.realtime WS disconnect: id=140085375584304, total=2
+2026-01-16 21:17:40 ERROR asyncio ConnectionClosedError exception in shielded future
+future: <Future finished exception=ConnectionClosedError(None, Close(code=<CloseCode.INTERNAL_ERROR: 1011>, reason='keepalive ping timeout'), None)>
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 1276, in close_connection
+    await self.transfer_data_task
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 940, in transfer_data
+    message = await self.read_message()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 1010, in read_message
+    frame = await self.read_data_frame(max_size=self.max_size)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 1087, in read_data_frame
+    frame = await self.read_frame(max_size)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 1144, in read_frame
+    frame = await Frame.read(
+            ^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/framing.py", line 70, in read
+    data = await reader(2)
+           ^^^^^^^^^^^^^^^
+  File "/usr/lib64/python3.14/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/lib64/python3.14/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+websockets.exceptions.ConnectionClosedError: sent 1011 (internal error) keepalive ping timeout; no close frame received
+2026-01-16 21:17:40 INFO  homeplanner.realtime WS disconnect: id=140085375584160, total=1
+2026-01-16 21:17:42 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.39, origin: None
+2026-01-16 21:17:42 INFO  homeplanner.realtime WS connect: id=140085375584160 host=192.168.1.39 port=38488 total=2
+2026-01-16 21:17:42 INFO  homeplanner.realtime WS disconnect: id=140085375584160, total=1
+2026-01-16 21:17:48 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.39, origin: None
+2026-01-16 21:17:48 INFO  homeplanner.realtime WS connect: id=140085375584160 host=192.168.1.39 port=45440 total=2
+2026-01-16 21:19:39 ERROR asyncio ConnectionClosedError exception in shielded future
+future: <Future finished exception=ConnectionClosedError(None, Close(code=<CloseCode.INTERNAL_ERROR: 1011>, reason='keepalive ping timeout'), None)>
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 1276, in close_connection
+    await self.transfer_data_task
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 940, in transfer_data
+    message = await self.read_message()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 1010, in read_message
+    frame = await self.read_data_frame(max_size=self.max_size)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 1087, in read_data_frame
+    frame = await self.read_frame(max_size)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 1144, in read_frame
+    frame = await Frame.read(
+            ^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/framing.py", line 70, in read
+    data = await reader(2)
+           ^^^^^^^^^^^^^^^
+  File "/usr/lib64/python3.14/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/lib64/python3.14/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+websockets.exceptions.ConnectionClosedError: sent 1011 (internal error) keepalive ping timeout; no close frame received
+2026-01-16 21:19:39 INFO  homeplanner.realtime WS disconnect: id=140085375584160, total=1
+2026-01-16 21:19:41 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.39, origin: None
+2026-01-16 21:19:41 INFO  homeplanner.realtime WS connect: id=140085375584160 host=192.168.1.39 port=39230 total=2
+2026-01-16 21:19:41 INFO  homeplanner.realtime WS disconnect: id=140085375584160, total=1
+2026-01-16 21:19:49 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.39, origin: None
+2026-01-16 21:19:49 INFO  homeplanner.realtime WS connect: id=140085375584160 host=192.168.1.39 port=44088 total=2
+2026-01-16 21:20:39 ERROR asyncio ConnectionClosedError exception in shielded future
+future: <Future finished exception=ConnectionClosedError(None, Close(code=<CloseCode.INTERNAL_ERROR: 1011>, reason='keepalive ping timeout'), None)>
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 1276, in close_connection
+    await self.transfer_data_task
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 940, in transfer_data
+    message = await self.read_message()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 1010, in read_message
+    frame = await self.read_data_frame(max_size=self.max_size)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 1087, in read_data_frame
+    frame = await self.read_frame(max_size)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 1144, in read_frame
+    frame = await Frame.read(
+            ^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/framing.py", line 70, in read
+    data = await reader(2)
+           ^^^^^^^^^^^^^^^
+  File "/usr/lib64/python3.14/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/lib64/python3.14/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+websockets.exceptions.ConnectionClosedError: sent 1011 (internal error) keepalive ping timeout; no close frame received
+2026-01-16 21:20:39 INFO  homeplanner.realtime WS disconnect: id=140085375584160, total=1
+2026-01-16 21:20:41 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.39, origin: None
+2026-01-16 21:20:41 INFO  homeplanner.realtime WS connect: id=140085375584160 host=192.168.1.39 port=49986 total=2
+2026-01-16 21:20:41 INFO  homeplanner.realtime WS disconnect: id=140085375584160, total=1
+2026-01-16 21:20:48 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.39, origin: None
+2026-01-16 21:20:48 INFO  homeplanner.realtime WS connect: id=140085375584160 host=192.168.1.39 port=48598 total=2
+2026-01-16 21:22:39 ERROR asyncio ConnectionClosedError exception in shielded future
+future: <Future finished exception=ConnectionClosedError(None, Close(code=<CloseCode.INTERNAL_ERROR: 1011>, reason='keepalive ping timeout'), None)>
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 1276, in close_connection
+    await self.transfer_data_task
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 940, in transfer_data
+    message = await self.read_message()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 1010, in read_message
+    frame = await self.read_data_frame(max_size=self.max_size)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 1087, in read_data_frame
+    frame = await self.read_frame(max_size)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 1144, in read_frame
+    frame = await Frame.read(
+            ^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/framing.py", line 70, in read
+    data = await reader(2)
+           ^^^^^^^^^^^^^^^
+  File "/usr/lib64/python3.14/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/lib64/python3.14/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+websockets.exceptions.ConnectionClosedError: sent 1011 (internal error) keepalive ping timeout; no close frame received
+2026-01-16 21:22:39 INFO  homeplanner.realtime WS disconnect: id=140085375584160, total=1
+2026-01-16 21:22:41 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.39, origin: None
+2026-01-16 21:22:41 INFO  homeplanner.realtime WS connect: id=140085375584160 host=192.168.1.39 port=45112 total=2
+2026-01-16 21:22:41 INFO  homeplanner.realtime WS disconnect: id=140085375584160, total=1
+2026-01-16 21:22:49 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.39, origin: None
+2026-01-16 21:22:49 INFO  homeplanner.realtime WS connect: id=140085375584160 host=192.168.1.39 port=38634 total=2
+2026-01-16 21:23:51 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.39, origin: None
+2026-01-16 21:23:51 INFO  homeplanner.realtime WS connect: id=140085375585888 host=192.168.1.39 port=46828 total=3
+2026-01-16 21:23:59 ERROR asyncio ConnectionClosedError exception in shielded future
+future: <Future finished exception=ConnectionClosedError(None, Close(code=<CloseCode.INTERNAL_ERROR: 1011>, reason='keepalive ping timeout'), None)>
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 1276, in close_connection
+    await self.transfer_data_task
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 940, in transfer_data
+    message = await self.read_message()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 1010, in read_message
+    frame = await self.read_data_frame(max_size=self.max_size)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 1087, in read_data_frame
+    frame = await self.read_frame(max_size)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 1144, in read_frame
+    frame = await Frame.read(
+            ^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/framing.py", line 70, in read
+    data = await reader(2)
+           ^^^^^^^^^^^^^^^
+  File "/usr/lib64/python3.14/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/lib64/python3.14/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+websockets.exceptions.ConnectionClosedError: sent 1011 (internal error) keepalive ping timeout; no close frame received
+2026-01-16 21:23:59 INFO  homeplanner.realtime WS disconnect: id=140085375584160, total=2
+2026-01-16 21:27:28 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 21:27:28 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 21:27:28 INFO  sqlalchemy.engine.Engine [cached since 8.325e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 21:27:28 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 21:27:28 INFO  homeplanner.tasks HTTP REQUEST: get_tasks called from 192.168.1.39, enabled_only=True, days_ahead=None, selected_user_id=None
+2026-01-16 21:27:28 INFO  homeplanner.tasks get_tasks: [SERVER STEP 1] Request received from 192.168.1.39, enabled_only=True, days_ahead=None, selected_user_id=None
+2026-01-16 21:27:28 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 21:27:28 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 21:27:28 INFO  sqlalchemy.engine.Engine [cached since 8.325e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 21:27:28 INFO  sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.enabled = 1 ORDER BY tasks.reminder_time
+2026-01-16 21:27:28 INFO  sqlalchemy.engine.Engine [cached since 8.325e+04s ago] ()
+2026-01-16 21:27:28 INFO  sqlalchemy.engine.Engine SELECT tasks_1.id AS tasks_1_id, users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM tasks AS tasks_1 JOIN task_users AS task_users_1 ON tasks_1.id = task_users_1.task_id JOIN users ON users.id = task_users_1.user_id 
+WHERE tasks_1.id IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-01-16 21:27:28 INFO  sqlalchemy.engine.Engine [cached since 8.325e+04s ago] (1, 2, 3, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 37, 21, 23, 24, 25, 39, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 18, 38, 8)
+2026-01-16 21:27:28 INFO  homeplanner.tasks get_tasks: [SERVER STEP 2] Found 36 tasks in database
+2026-01-16 21:27:28 INFO  homeplanner.tasks get_tasks: [TASK 1] id=1, title='Test Task 1 (Day -3, Type recurring)', enabled=True, task_type=TaskType.RECURRING
+2026-01-16 21:27:28 INFO  homeplanner.tasks get_tasks: [TASK 2] id=2, title='Test Task 2 (Day -3, Type recurring)', enabled=True, task_type=TaskType.RECURRING
+2026-01-16 21:27:28 INFO  homeplanner.tasks get_tasks: [TASK 3] id=3, title='Test Task 3 (Day -3, Type one_time)', enabled=True, task_type=TaskType.ONE_TIME
+2026-01-16 21:27:28 INFO  homeplanner.tasks get_tasks: [SERVER STEP 3] Returning 36 tasks to client
+2026-01-16 21:27:28 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-16 21:33:35 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.39, origin: None
+2026-01-16 21:33:35 INFO  homeplanner.realtime WS connect: id=140085375584160 host=192.168.1.39 port=43008 total=3
+2026-01-16 21:33:43 ERROR asyncio ConnectionClosedError exception in shielded future
+future: <Future finished exception=ConnectionClosedError(None, Close(code=<CloseCode.INTERNAL_ERROR: 1011>, reason='keepalive ping timeout'), None)>
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 1276, in close_connection
+    await self.transfer_data_task
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 940, in transfer_data
+    message = await self.read_message()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 1010, in read_message
+    frame = await self.read_data_frame(max_size=self.max_size)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 1087, in read_data_frame
+    frame = await self.read_frame(max_size)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 1144, in read_frame
+    frame = await Frame.read(
+            ^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/framing.py", line 70, in read
+    data = await reader(2)
+           ^^^^^^^^^^^^^^^
+  File "/usr/lib64/python3.14/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/lib64/python3.14/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+websockets.exceptions.ConnectionClosedError: sent 1011 (internal error) keepalive ping timeout; no close frame received
+2026-01-16 21:33:43 INFO  homeplanner.realtime WS disconnect: id=140085375585888, total=2
+2026-01-16 21:47:27 INFO  homeplanner.realtime WS disconnect: id=140085375584160, total=1
+2026-01-16 21:52:51 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.39, origin: None
+2026-01-16 21:52:51 INFO  homeplanner.realtime WS connect: id=140085375584160 host=192.168.1.39 port=41630 total=2
+2026-01-16 21:54:14 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.39, origin: None
+2026-01-16 21:54:14 INFO  homeplanner.realtime WS connect: id=140085375586464 host=192.168.1.39 port=46018 total=3
+2026-01-16 21:54:21 ERROR asyncio ConnectionClosedError exception in shielded future
+future: <Future finished exception=ConnectionClosedError(None, Close(code=<CloseCode.INTERNAL_ERROR: 1011>, reason='keepalive ping timeout'), None)>
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 1276, in close_connection
+    await self.transfer_data_task
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 940, in transfer_data
+    message = await self.read_message()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 1010, in read_message
+    frame = await self.read_data_frame(max_size=self.max_size)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 1087, in read_data_frame
+    frame = await self.read_frame(max_size)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/protocol.py", line 1144, in read_frame
+    frame = await Frame.read(
+            ^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/websockets/legacy/framing.py", line 70, in read
+    data = await reader(2)
+           ^^^^^^^^^^^^^^^
+  File "/usr/lib64/python3.14/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/lib64/python3.14/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+websockets.exceptions.ConnectionClosedError: sent 1011 (internal error) keepalive ping timeout; no close frame received
+2026-01-16 21:54:21 INFO  homeplanner.realtime WS disconnect: id=140085375584160, total=2
+2026-01-16 22:05:02 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 22:05:02 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 22:05:02 INFO  sqlalchemy.engine.Engine [cached since 8.551e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 22:05:02 INFO  sqlalchemy.engine.Engine ROLLBACK
+2026-01-16 22:05:02 INFO  homeplanner.tasks HTTP REQUEST: get_tasks called from 192.168.1.39, enabled_only=True, days_ahead=None, selected_user_id=None
+2026-01-16 22:05:02 INFO  homeplanner.tasks get_tasks: [SERVER STEP 1] Request received from 192.168.1.39, enabled_only=True, days_ahead=None, selected_user_id=None
+2026-01-16 22:05:02 INFO  sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-16 22:05:02 INFO  sqlalchemy.engine.Engine SELECT app_metadata."key" AS app_metadata_key, app_metadata.value AS app_metadata_value, app_metadata.updated_at AS app_metadata_updated_at 
+FROM app_metadata 
+WHERE app_metadata."key" = ?
+ LIMIT ? OFFSET ?
+2026-01-16 22:05:02 INFO  sqlalchemy.engine.Engine [cached since 8.551e+04s ago] ('last_task_update', 1, 0)
+2026-01-16 22:05:02 INFO  sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.task_type AS tasks_task_type, tasks.recurrence_type AS tasks_recurrence_type, tasks.recurrence_interval AS tasks_recurrence_interval, tasks.interval_days AS tasks_interval_days, tasks.reminder_time AS tasks_reminder_time, tasks.alarm AS tasks_alarm, tasks.enabled AS tasks_enabled, tasks.completed AS tasks_completed, tasks.group_id AS tasks_group_id, tasks.last_shown_at AS tasks_last_shown_at, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at 
+FROM tasks 
+WHERE tasks.enabled = 1 ORDER BY tasks.reminder_time
+2026-01-16 22:05:02 INFO  sqlalchemy.engine.Engine [cached since 8.551e+04s ago] ()
+2026-01-16 22:05:02 INFO  sqlalchemy.engine.Engine SELECT tasks_1.id AS tasks_1_id, users.id AS users_id, users.name AS users_name, users.email AS users_email, users.role AS users_role, users.is_active AS users_is_active, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM tasks AS tasks_1 JOIN task_users AS task_users_1 ON tasks_1.id = task_users_1.task_id JOIN users ON users.id = task_users_1.user_id 
+WHERE tasks_1.id IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-01-16 22:05:02 INFO  sqlalchemy.engine.Engine [cached since 8.551e+04s ago] (1, 2, 3, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 37, 21, 23, 24, 25, 39, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 18, 38, 8)
+2026-01-16 22:05:02 INFO  homeplanner.tasks get_tasks: [SERVER STEP 2] Found 36 tasks in database
+2026-01-16 22:05:02 INFO  homeplanner.tasks get_tasks: [TASK 1] id=1, title='Test Task 1 (Day -3, Type recurring)', enabled=True, task_type=TaskType.RECURRING
+2026-01-16 22:05:02 INFO  homeplanner.tasks get_tasks: [TASK 2] id=2, title='Test Task 2 (Day -3, Type recurring)', enabled=True, task_type=TaskType.RECURRING
+2026-01-16 22:05:02 INFO  homeplanner.tasks get_tasks: [TASK 3] id=3, title='Test Task 3 (Day -3, Type one_time)', enabled=True, task_type=TaskType.ONE_TIME
+2026-01-16 22:05:02 INFO  homeplanner.tasks get_tasks: [SERVER STEP 3] Returning 36 tasks to client
+2026-01-16 22:05:02 INFO  sqlalchemy.engine.Engine COMMIT
+2026-01-16 22:07:59 INFO  homeplanner.realtime WS disconnect: id=140085375586464, total=1
+2026-01-16 23:13:48 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.39, origin: None
+2026-01-16 23:13:48 INFO  homeplanner.realtime WS connect: id=140085375586464 host=192.168.1.39 port=49498 total=2
+2026-01-16 23:13:55 INFO  homeplanner.realtime WS disconnect: id=140085375586464, total=1
+2026-01-16 23:51:50 INFO  homeplanner.realtime WebSocket connection attempt from 192.168.1.39, origin: None
+2026-01-16 23:51:50 INFO  homeplanner.realtime WS connect: id=140085375586464 host=192.168.1.39 port=44510 total=2
+2026-01-16 23:55:55 INFO  homeplanner.realtime WS disconnect: id=140085375586464, total=1

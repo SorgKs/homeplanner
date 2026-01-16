@@ -1,23 +1,24 @@
 # Active Context
 
 ## Current Task
-Forced task recalculation completed successfully. Synchronization debugging previously resolved.
+Debugged task completion synchronization issues in Android app.
 
 ## Problem Description
-- Previous: Task confirmations (marking tasks as complete) and their cancellations were not properly synchronized between the Android app and web interface
-- RESOLVED: Fixed WebSocket message format to include full task payload for all update actions
+- User reports: Tapping task confirmation/cancellation in Android app sends nothing to server
+- Identified bugs in UI event handlers and completion logic
+- Additionally, connection issues between Android emulator and backend server
 
 ## Current Status
-- Synchronization issue between Android app and web interface has been resolved
-- Forced task recalculation has been implemented and executed
+- Fixed onCheckedChange handlers in TaskItemToday.kt and TaskItemAll.kt to pass new checked state
+- Corrected completion logic in MainActivity.kt to properly handle complete/uncomplete operations
+- Backend is running and accessible on localhost, but Android app fails to connect using 10.0.2.2:8000
+- Need to rebuild APK and test connectivity
 
 ## Immediate Next Steps
-1. Complete Memory Bank creation
-2. Switch back to Debug mode
-3. Analyze the synchronization architecture (WebSocket, API calls)
-4. Identify where confirmations are handled in Android app, web frontend, and backend
-5. Find the root cause of desynchronization
-6. Propose and implement fixes
+1. Rebuild Android APK with UI fixes
+2. Resolve network connectivity issue (possibly configure correct host IP or use adb reverse)
+3. Test task completion synchronization
+4. Verify operations are sent to server and processed
 
 ## Context Information
 - Android app: Kotlin with Jetpack Compose, offline-first architecture
@@ -31,3 +32,9 @@ Forced task recalculation completed successfully. Synchronization debugging prev
 - Completed Memory Bank setup
 - Fixed synchronization issue between Android and web interfaces
 - Implemented and executed forced task recalculation script
+- Fixed filtering bugs in Android TodayTaskFilter.kt
+- Reorganized project structure by moving files from root to appropriate directories
+- Committed and pushed all changes to remote repository
+- Created AlarmManagerUtil class for Android alarm management using AlarmManager and PendingIntent
+- [2026-01-13 19:30:00] - Built and installed Android debug APK v0.3.86 on device after fixing alarm field compilation errors
+- [2026-01-13 20:08:00] - Fixed broken WebSocket endpoint paths in Android app by correcting hardcoded API version in WebSocketService

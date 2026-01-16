@@ -87,3 +87,10 @@
 - Default settings with overrides
 - Environment-specific configurations
 - Runtime vs build-time resolution
+
+### 17. Alarm Scheduling Pattern
+- Centralized alarm management through AlarmManagerUtil utility class
+- Uses AlarmManager.setExactAndAllowWhileIdle for precise timing
+- PendingIntent with FLAG_IMMUTABLE for security
+- Integrates with BroadcastReceiver (ReminderReceiver) for alarm handling
+- Supports scheduling and canceling alarms by task ID

@@ -8,6 +8,8 @@ import com.homeplanner.model.Task
 import com.homeplanner.repository.OfflineRepository
 import com.homeplanner.sync.SyncService
 import com.homeplanner.services.TaskValidationService
+import com.homeplanner.NetworkSettings
+import com.homeplanner.BuildConfig
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,7 +28,8 @@ class TaskSyncManager(
     private val offlineRepository: OfflineRepository,
     private val syncService: SyncService,
     private val taskValidationService: TaskValidationService,
-    private val webSocketService: com.homeplanner.sync.WebSocketService
+    private val webSocketService: com.homeplanner.sync.WebSocketService,
+    private val networkSettings: NetworkSettings? = null
 ) {
 
     private val _syncState = MutableStateFlow(SyncState())
@@ -117,7 +120,8 @@ class TaskSyncManager(
      * Не включает полную синхронизацию задач/групп/пользователей.
      */
     private suspend fun performQueueSync(): Result<Unit> = runCatching {
-        syncService.syncQueue().getOrThrow()
+        val baseUrl = networkSettings?.getApiBaseUrl() ?: BuildConfig.API_BASE_URL
+        syncService.syncQueue(baseUrl ?: BuildConfig.API_BASE_URL).getOrThrow()
     }
 
     /**

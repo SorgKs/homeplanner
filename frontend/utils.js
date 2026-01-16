@@ -4,7 +4,7 @@ console.log('utils.js loading...');
 import { timeAPI, tasksAPI, groupsAPI, usersAPI } from './api.js';
 import { handleUserSubmit, renderUsersList, showUserPickScreen } from './user_management.js';
 import { updateAdminNavigation, updateTimePanelVisibility, filterAndRenderTasks } from './filters.js';
-import { connectWebSocket } from './websocket.js';
+import { connectWebSocket, disconnectWebSocket } from './websocket.js';
 import { toggleUserFilterControls } from './app.js';
 import { renderHistoryView } from './history.js';
 

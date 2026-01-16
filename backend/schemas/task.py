@@ -22,7 +22,10 @@ class TaskBase(BaseModel):
     recurrence_interval: int | None = Field(None, ge=1, description="Recurrence interval (every N periods, for recurring tasks)")
     interval_days: int | None = Field(None, ge=1, description="Interval in days (for interval tasks)")
     reminder_time: datetime = Field(..., description="Reminder date and time (required for all tasks)")
+    alarm: bool = Field(default=False, description="Whether the task has an alarm")
     group_id: int | None = Field(None, description="Group ID")
+
+
 
 
 class TaskCreate(TaskBase):
@@ -44,6 +47,7 @@ class TaskUpdate(BaseModel):
     enabled: bool | None = None  # Task is enabled (replaces active)
     completed: bool | None = None  # Task is completed (replaces last_completed_at)
     last_shown_at: datetime | None = None
+    alarm: bool | None = None
     group_id: int | None = None
     assigned_user_ids: list[int] | None = Field(
         default=None,
@@ -77,7 +81,7 @@ class TaskUpdate(BaseModel):
     @model_validator(mode="after")
     def validate_reminder_time(self) -> "TaskUpdate":
         """Validate reminder_time is required for all tasks.
-        
+
         Note: For updates, if reminder_time is not provided, it will be preserved from existing task.
         But if it's explicitly set to None, that's an error.
         """
@@ -86,6 +90,8 @@ class TaskUpdate(BaseModel):
         # Note: In Pydantic, None in update_data means the field was explicitly set to None
         # This validation will catch it, but we also check in service layer
         return self
+
+
 
 
 class TaskResponse(TaskBase):
@@ -97,6 +103,7 @@ class TaskResponse(TaskBase):
     task_type: TaskType
     group_id: int | None
     interval_days: int | None
+    alarm: bool
     last_shown_at: datetime | None
     created_at: datetime
     updated_at: datetime
