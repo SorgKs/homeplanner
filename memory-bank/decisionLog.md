@@ -171,3 +171,17 @@
 - **Impact**: Task completion/uncompletion now correctly updates local state and triggers server synchronization
 - **Components**: Updated onCheckedChange in TaskItemToday.kt and TaskItemAll.kt to pass 'checked' parameter, fixed if-else logic in MainActivity.kt onTaskComplete
 - **Date**: 2026-01-14
+
+### TaskHistory Timestamp Parameter Implementation
+- **Decision**: Modify TaskHistoryService.log_action to accept an optional timestamp parameter for logging operations from sync queues with original timestamps
+- **Rationale**: When processing operations from offline queues, the history should preserve the original client timestamp rather than using server current time
+- **Impact**: Queue operations will now log with correct original timestamps, maintaining accurate audit trail
+- **Components**: Updated log_action method signature, helper methods (log_task_created, log_task_confirmed, etc.), and all TaskService calls to pass timestamp when available
+- **Date**: 2026-01-17
+
+### Sync-Queue Complete/Uncomplete Logic Simplification
+- **Decision**: Change sync-queue processing of complete/uncomplete operations to collect operations by task_id, sort by timestamp, and apply final state based on last operation, without considering existing TaskHistory
+- **Rationale**: Sync-queue should be self-contained for the batch of operations, relying on task current state rather than combining with historical operations
+- **Impact**: Simplified logic, consistent final state application based on operation sequence in the queue
+- **Components**: Modified sync_task_queue in backend/routers/tasks.py to remove history query and combination
+- **Date**: 2026-01-17

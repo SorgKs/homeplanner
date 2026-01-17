@@ -220,6 +220,73 @@ def sync_task_queue(
         payload.operations, key=lambda op: op.timestamp
     )
 
+    # Collect complete/uncomplete operations by task_id for conflict resolution
+    from collections import defaultdict
+    complete_ops_by_task = defaultdict(list)
+    for op in operations:
+        if op.operation in [TaskOperationType.COMPLETE, TaskOperationType.UNCOMPLETE]:
+            complete_ops_by_task[op.task_id].append(op)
+            logger.info("sync-queue: collected complete/uncomplete operation for task %s: %s at %s", op.task_id, op.operation, op.timestamp)
+
+    # Process complete/uncomplete operations: collect and apply final state based on last operation
+    from backend.models.task_history import TaskHistory, TaskHistoryAction
+    processed_complete_tasks = set()
+    for task_id, ops in complete_ops_by_task.items():
+        if task_id in processed_complete_tasks:
+            continue
+        processed_complete_tasks.add(task_id)
+
+        logger.info("sync-queue: processing %d complete/uncomplete operations for task %s", len(ops), task_id)
+
+        # Sort operations by timestamp
+        ops.sort(key=lambda op: op.timestamp)
+        logger.info("sync-queue: operations sorted by timestamp for task %s: %s", task_id, [(op.operation.value, op.timestamp) for op in ops])
+
+        # Get the last operation
+        if ops:
+            last_op = ops[-1]
+            final_completed = (last_op.operation == TaskOperationType.COMPLETE)
+            logger.info("sync-queue: final state for task %s: completed=%s based on last operation %s at %s", task_id, final_completed, last_op.operation, last_op.timestamp)
+
+            # Apply final state to task
+            task = TaskService.get_task(db, task_id)
+            if task:
+                logger.info("sync-queue: applying final state to task %s: completed=%s, updated_at=%s", task_id, final_completed, last_op.timestamp)
+                task.completed = final_completed
+                task.updated_at = last_op.timestamp
+                db.commit()
+                db.refresh(task)
+                logger.info("sync-queue: task %s state updated successfully", task_id)
+
+                # Log each operation and send WS notification
+                for op in ops:
+                    action = TaskHistoryAction.CONFIRMED if op.operation == TaskOperationType.COMPLETE else TaskHistoryAction.UNCONFIRMED
+                    logger.info("sync-queue: creating history entry for task %s: action=%s, timestamp=%s", task_id, action.value, op.timestamp)
+                    # Create history entry directly with client's timestamp
+                    history_entry = TaskHistory(
+                        task_id=task_id,
+                        action=action,
+                        action_timestamp=op.timestamp,
+                        iteration_date=task.reminder_time,
+                        meta_data=None,
+                        comment=None
+                    )
+                    db.add(history_entry)
+                    db.commit()
+                    logger.info("sync-queue: history entry created for task %s operation at %s", task_id, op.timestamp)
+
+                    # Send WebSocket notification
+                    action_ws = "completed" if op.operation == TaskOperationType.COMPLETE else "uncompleted"
+                    logger.info("sync-queue: broadcasting WebSocket update for task %s: %s", task_id, action_ws)
+                    broadcast_task_update({
+                        "type": "task_update",
+                        "action": action_ws,
+                        "task_id": task_id,
+                        "task": TaskResponse.model_validate(task).model_dump(mode="json")
+                    })
+            else:
+                logger.warning("sync-queue: task %s not found for complete/uncomplete resolution", task_id)
+
     logger.info("sync-queue: processing %d operations", len(operations))
     for i, op in enumerate(operations):
         logger.info("sync-queue: processing operation %d/%d: %s for task %s with timestamp %s", i+1, len(operations), op.operation, op.task_id, op.timestamp)
@@ -281,6 +348,27 @@ def sync_task_queue(
                 if op.task_id is None:
                     logger.info("sync-queue: skipping operation %s due to missing task_id", op.operation)
                     continue
+                # Проверка конфликта по времени обновления
+                # Сервер - источник истины: если серверная версия задачи новее, чем timestamp операции,
+                # операция пропускается, серверная версия остается актуальной
+                task = TaskService.get_task(db, op.task_id)
+                if task:
+                    # Нормализуем timezone для сравнения: система использует только локальное время
+                    # Убираем timezone если есть (на случай, если клиент отправил с timezone)
+                    task_updated_at = task.updated_at.replace(tzinfo=None) if task.updated_at.tzinfo else task.updated_at
+                    op_timestamp = op.timestamp.replace(tzinfo=None) if op.timestamp.tzinfo else op.timestamp
+
+                    if task_updated_at > op_timestamp:
+                        # Конфликт: серверная версия новее - пропускаем операцию
+                        logger.warning(
+                            "sync-queue: conflict for task %s: server updated_at=%s > operation timestamp=%s, skipping DELETE operation",
+                            op.task_id,
+                            task_updated_at,
+                            op_timestamp
+                        )
+                        # Пропускаем операцию - серверная версия остается актуальной (сервер - источник истины)
+                        continue
+                logger.info("sync-queue: applying DELETE for task %s without conflict, server updated_at=%s, operation timestamp=%s", op.task_id, task_updated_at if task else None, op_timestamp)
                 # В батче каждая операция имеет обязательный timestamp от клиента
                 # Вызываем сервис напрямую с timestamp
                 success = TaskService.delete_task(db, op.task_id, timestamp=op.timestamp)
@@ -293,37 +381,13 @@ def sync_task_queue(
                         "task_id": op.task_id
                     })
             elif op.operation == TaskOperationType.COMPLETE:
-                if op.task_id is None:
-                    logger.info("sync-queue: skipping operation %s due to missing task_id", op.operation)
-                    continue
-                # В батче каждая операция имеет обязательный timestamp от клиента
-                # Вызываем сервис напрямую с timestamp для установки updated_at
-                completed_task = TaskService.complete_task(db, op.task_id, timestamp=op.timestamp)
-                if completed_task:
-                    logger.info("sync-queue: applying COMPLETE for task %s", op.task_id)
-                    # Отправляем WebSocket уведомление
-                    broadcast_task_update({
-                        "type": "task_update",
-                        "action": "completed",
-                        "task_id": completed_task.id,
-                        "task": TaskResponse.model_validate(completed_task).model_dump(mode="json")
-                    })
+                # Complete/uncomplete operations are processed above with conflict resolution
+                logger.info("sync-queue: skipping COMPLETE operation for task %s - processed above", op.task_id)
+                continue
             elif op.operation == TaskOperationType.UNCOMPLETE:
-                if op.task_id is None:
-                    logger.info("sync-queue: skipping operation %s due to missing task_id", op.operation)
-                    continue
-                # В батче каждая операция имеет обязательный timestamp от клиента
-                # Вызываем сервис напрямую с timestamp для установки updated_at
-                uncompleted_task = TaskService.uncomplete_task(db, op.task_id, timestamp=op.timestamp)
-                if uncompleted_task:
-                    logger.info("sync-queue: applying UNCOMPLETE for task %s", op.task_id)
-                    # Отправляем WebSocket уведомление
-                    broadcast_task_update({
-                        "type": "task_update",
-                        "action": "uncompleted",
-                        "task_id": uncompleted_task.id,
-                        "task": TaskResponse.model_validate(uncompleted_task).model_dump(mode="json")
-                    })
+                # Complete/uncomplete operations are processed above with conflict resolution
+                logger.info("sync-queue: skipping UNCOMPLETE operation for task %s - processed above", op.task_id)
+                continue
         except Exception as exc:  # Логируем, но продолжаем остальные операции
             logger.error(
                 "sync-queue: failed to apply op %s for task %s: %s",

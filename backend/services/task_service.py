@@ -90,7 +90,7 @@ class TaskService:
         comment = task_settings
 
         from backend.models.task_history import TaskHistoryAction
-        TaskHistoryService.log_action(db, task.id, TaskHistoryAction.CREATED, metadata=metadata, comment=comment)
+        TaskHistoryService.log_action(db, task.id, TaskHistoryAction.CREATED, metadata=metadata, comment=comment, timestamp=timestamp)
 
         return task
 
@@ -520,7 +520,7 @@ class TaskService:
                 comment = f"вместо '{old_settings}' теперь будет '{new_settings}'"
             
             TaskHistoryService.log_action(
-                db, task.id, TaskHistoryAction.EDITED, metadata=metadata, comment=comment
+                db, task.id, TaskHistoryAction.EDITED, metadata=metadata, comment=comment, timestamp=timestamp
             )
         
         return task
@@ -647,7 +647,7 @@ class TaskService:
 
             # Log confirmation to history
             from backend.services.task_history_service import TaskHistoryService
-            TaskHistoryService.log_task_confirmed(db, task.id, iteration_date)
+            TaskHistoryService.log_task_confirmed(db, task.id, iteration_date, timestamp=timestamp)
 
             return task
         except Exception as e:
@@ -713,7 +713,7 @@ class TaskService:
 
         # Log unconfirmation to history
         from backend.services.task_history_service import TaskHistoryService
-        TaskHistoryService.log_task_unconfirmed(db, task.id, task.reminder_time)
+        TaskHistoryService.log_task_unconfirmed(db, task.id, task.reminder_time, timestamp=timestamp)
 
         logger.info("uncomplete_task: completed successfully for task_id=%s", task_id)
         return task

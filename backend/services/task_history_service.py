@@ -51,6 +51,7 @@ class TaskHistoryService:
         iteration_date: datetime | None = None,
         metadata: str | None = None,
         comment: str | None = None,
+        timestamp: datetime | None = None,
     ) -> TaskHistory:
         """Log an action to task history."""
         import logging
@@ -60,7 +61,7 @@ class TaskHistoryService:
             history_data = {
                 "task_id": task_id,
                 "action": action,
-                "action_timestamp": get_current_time(),
+                "action_timestamp": timestamp if timestamp is not None else get_current_time(),
                 "iteration_date": iteration_date,
                 "meta_data": metadata,
                 "comment": comment,
@@ -75,7 +76,7 @@ class TaskHistoryService:
             raise
 
     @staticmethod
-    def log_task_created(db: Session, task_id: int, creation_data: dict | None = None) -> TaskHistory:
+    def log_task_created(db: Session, task_id: int, creation_data: dict | None = None, timestamp: datetime | None = None) -> TaskHistory:
         """Log task creation."""
         metadata = None
         if creation_data:
@@ -87,7 +88,7 @@ class TaskHistoryService:
                     return obj.isoformat()
                 return str(obj)
             metadata = json.dumps(creation_data, default=json_default)
-        return TaskHistoryService.log_action(db, task_id, TaskHistoryAction.CREATED, metadata=metadata)
+        return TaskHistoryService.log_action(db, task_id, TaskHistoryAction.CREATED, metadata=metadata, timestamp=timestamp)
 
     @staticmethod
     def log_task_confirmed(
@@ -95,6 +96,7 @@ class TaskHistoryService:
         task_id: int,
         iteration_date: datetime,
         metadata: dict | None = None,
+        timestamp: datetime | None = None,
     ) -> TaskHistory:
         """Log task confirmation."""
         meta_str = None
@@ -106,25 +108,27 @@ class TaskHistoryService:
                     return obj.isoformat()
                 return str(obj)
             meta_str = json.dumps(metadata, default=json_default)
-        return TaskHistoryService.log_action(db, task_id, TaskHistoryAction.CONFIRMED, iteration_date, meta_str)
+        return TaskHistoryService.log_action(db, task_id, TaskHistoryAction.CONFIRMED, iteration_date, meta_str, timestamp=timestamp)
 
     @staticmethod
     def log_task_unconfirmed(
         db: Session,
         task_id: int,
         iteration_date: datetime,
+        timestamp: datetime | None = None,
     ) -> TaskHistory:
         """Log task unconfirmation."""
-        return TaskHistoryService.log_action(db, task_id, TaskHistoryAction.UNCONFIRMED, iteration_date)
+        return TaskHistoryService.log_action(db, task_id, TaskHistoryAction.UNCONFIRMED, iteration_date, timestamp=timestamp)
 
     @staticmethod
     def log_task_first_shown(
         db: Session,
         task_id: int,
         iteration_date: datetime,
+        timestamp: datetime | None = None,
     ) -> TaskHistory:
         """Log first time task iteration is shown."""
-        return TaskHistoryService.log_action(db, task_id, TaskHistoryAction.FIRST_SHOWN, iteration_date)
+        return TaskHistoryService.log_action(db, task_id, TaskHistoryAction.FIRST_SHOWN, iteration_date, timestamp=timestamp)
 
     @staticmethod
     def delete_history_entry(db: Session, history_id: int) -> bool:

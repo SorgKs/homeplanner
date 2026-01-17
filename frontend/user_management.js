@@ -91,9 +91,9 @@ export function renderUserPickButtons(userList) {
                         role,
                         is_active: true,
                     });
-                    users = [created];
+                    setUsers([created]);
                     setCookie('hp.selectedUserId', created.id);
-                    selectedUserId = created.id;
+                    setSelectedUserId(created.id);
                     showToast('Пользователь создан', 'success');
                     await initializeAppIfNeeded();
                 } catch (err) {

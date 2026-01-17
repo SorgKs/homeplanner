@@ -22,36 +22,47 @@ def main():
         today_9am = now.replace(hour=9, minute=0, second=0, microsecond=0)
         tomorrow_9am = (now + timedelta(days=1)).replace(hour=9, minute=0, second=0, microsecond=0)
 
-        tasks_data = [
-            TaskCreate(
-                title="Test Task Today",
-                description="A test task for today",
-                task_type=TaskType.ONE_TIME,
-                reminder_time=today_9am,
-            ),
-            TaskCreate(
-                title="Daily Recurring Task",
-                description="A recurring task every day",
-                task_type=TaskType.RECURRING,
-                recurrence_type=RecurrenceType.DAILY,
-                recurrence_interval=1,
-                reminder_time=today_9am,
-            ),
-            TaskCreate(
-                title="Weekly Task",
-                description="A task every week",
-                task_type=TaskType.RECURRING,
-                recurrence_type=RecurrenceType.WEEKLY,
-                recurrence_interval=1,
-                reminder_time=tomorrow_9am,
-            ),
-            TaskCreate(
-                title="Future One-time Task",
-                description="A task in the future",
-                task_type=TaskType.ONE_TIME,
-                reminder_time=tomorrow_9am,
-            ),
-        ]
+        tasks_data = []
+
+        # Create 25 test tasks
+        for i in range(1, 26):
+            if i % 4 == 1:
+                # One-time task
+                task = TaskCreate(
+                    title=f"One-time Task {i}",
+                    description=f"A one-time test task number {i}",
+                    task_type=TaskType.ONE_TIME,
+                    reminder_time=today_9am + timedelta(hours=i),
+                )
+            elif i % 4 == 2:
+                # Daily recurring
+                task = TaskCreate(
+                    title=f"Daily Recurring Task {i}",
+                    description=f"A daily recurring test task number {i}",
+                    task_type=TaskType.RECURRING,
+                    recurrence_type=RecurrenceType.DAILY,
+                    recurrence_interval=1,
+                    reminder_time=today_9am + timedelta(hours=i),
+                )
+            elif i % 4 == 3:
+                # Weekly recurring
+                task = TaskCreate(
+                    title=f"Weekly Recurring Task {i}",
+                    description=f"A weekly recurring test task number {i}",
+                    task_type=TaskType.RECURRING,
+                    recurrence_type=RecurrenceType.WEEKLY,
+                    recurrence_interval=1,
+                    reminder_time=tomorrow_9am + timedelta(hours=i),
+                )
+            else:
+                # Future one-time
+                task = TaskCreate(
+                    title=f"Future One-time Task {i}",
+                    description=f"A future one-time test task number {i}",
+                    task_type=TaskType.ONE_TIME,
+                    reminder_time=tomorrow_9am + timedelta(days=i//4, hours=i),
+                )
+            tasks_data.append(task)
 
         for task_data in tasks_data:
             task = TaskService.create_task(db, task_data, timestamp=get_current_time())

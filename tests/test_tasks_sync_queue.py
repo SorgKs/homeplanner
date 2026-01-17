@@ -155,4 +155,119 @@ class TestSyncQueueEndpoint:
         # All tasks should be gone after create+delete
         assert tasks == []
 
+    def test_complete_uncomplete_conflict_resolution(self, client: TestClient) -> None:
+        """Test conflict resolution for complete/uncomplete operations."""
+        now = datetime(2025, 1, 1, 9, 0)
+
+        # First create a task
+        create_payload = {
+            "title": "Test Complete",
+            "description": "Test",
+            "task_type": TaskType.ONE_TIME.value,
+            "reminder_time": _iso(now),
+        }
+
+        create_body = {
+            "operations": [
+                {
+                    "operation": "create",
+                    "timestamp": _iso(now),
+                    "task_id": None,
+                    "payload": create_payload,
+                }
+            ]
+        }
+
+        resp = client.post("/api/v0.2/tasks/sync-queue", json=create_body)
+        assert resp.status_code == 200, resp.text
+        tasks = resp.json()
+        assert len(tasks) == 1
+        task_id = tasks[0]["id"]
+        assert tasks[0]["completed"] == False
+
+        # Now send complete, then uncomplete, then complete again
+        conflict_body = {
+            "operations": [
+                {
+                    "operation": "complete",
+                    "timestamp": _iso(now + timedelta(seconds=1)),
+                    "task_id": task_id,
+                    "payload": None,
+                },
+                {
+                    "operation": "uncomplete",
+                    "timestamp": _iso(now + timedelta(seconds=2)),
+                    "task_id": task_id,
+                    "payload": None,
+                },
+                {
+                    "operation": "complete",
+                    "timestamp": _iso(now + timedelta(seconds=3)),
+                    "task_id": task_id,
+                    "payload": None,
+                },
+            ]
+        }
+
+        resp = client.post("/api/v0.2/tasks/sync-queue", json=conflict_body)
+        assert resp.status_code == 200, resp.text
+        tasks = resp.json()
+        assert len(tasks) == 1
+        task = tasks[0]
+        assert task["id"] == task_id
+        assert task["completed"] == True  # Last operation was complete, so should be completed
+
+    def test_complete_with_existing_history(self, client: TestClient) -> None:
+        """Test complete operation when task already has complete history."""
+        now = datetime(2026, 1, 17, 9, 0)
+
+        # Create a task
+        create_payload = {
+            "title": "Test History",
+            "description": "Test",
+            "task_type": TaskType.ONE_TIME.value,
+            "reminder_time": _iso(now),
+        }
+
+        create_body = {
+            "operations": [
+                {
+                    "operation": "create",
+                    "timestamp": _iso(now),
+                    "task_id": None,
+                    "payload": create_payload,
+                }
+            ]
+        }
+
+        resp = client.post("/api/v0.2/tasks/sync-queue", json=create_body)
+        assert resp.status_code == 200
+        tasks = resp.json()
+        task_id = tasks[0]["id"]
+
+        # Complete the task via direct API
+        resp = client.post(f"/api/v0.2/tasks/{task_id}/complete")
+        assert resp.status_code == 200
+        task = resp.json()
+        assert task["completed"] == True
+
+        # Now send uncomplete via sync-queue with later timestamp
+        uncomplete_body = {
+            "operations": [
+                {
+                    "operation": "uncomplete",
+                    "timestamp": _iso(datetime(2026, 1, 17, 12, 0, 0)),  # Later than current server time
+                    "task_id": task_id,
+                    "payload": None,
+                }
+            ]
+        }
+
+        resp = client.post("/api/v0.2/tasks/sync-queue", json=uncomplete_body)
+        assert resp.status_code == 200
+        tasks = resp.json()
+        assert len(tasks) == 1
+        task = tasks[0]
+        assert task["completed"] == False  # Should be uncompleted despite prior complete
+
 
