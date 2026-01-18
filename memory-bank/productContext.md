@@ -1,44 +1,30 @@
-# Product Context: HomePlanner
+# Product Context
 
 ## Overview
-HomePlanner is a task planning and reminder application designed for home use. It helps users manage recurring tasks and one-time events with notifications, providing both a web interface and an Android mobile app.
+HomePlanner - это система управления задачами с поддержкой офлайн-режима, предназначенная для совместной работы в семье или небольших группах. Приложение включает веб-интерфейс и Android-приложение, обеспечивающее синхронизацию данных между устройствами.
+
+## Users
+- **Основные пользователи:** Члены семьи или небольшие группы (домохозяйства, студенческие группы, малые команды)
+- **Цели пользователей:** Эффективное планирование и отслеживание выполнения задач, совместная работа над задачами, управление временем и ресурсами
 
 ## Key Features
-- Recurring task reminders
-- One-time event storage and notifications
-- Simple Android application for creating events and reminders
-- Web interface for task management
-- Complete history of all task actions
+- Создание и управление задачами с детальными свойствами (приоритеты, сроки, исполнители, группы)
+- Поддержка пользователей и групп с ролевым доступом
+- Offline-first архитектура с автоматической синхронизацией
+- История изменений задач
+- Веб-интерфейс и Android-приложение
+- Реальное время обновления через WebSocket
 
-## Architecture
-- **Backend**: Python-based API server using FastAPI framework
-- **Database**: SQLite by default, PostgreSQL support for production
-- **Android App**: Kotlin with Jetpack Compose, offline-first design
-- **Web Frontend**: Static web interface served via HTTP server
-- **Real-time Sync**: WebSocket connections for live updates
-- **Configuration**: Centralized via `common/config/settings.toml`
+## Business Goals
+- Обеспечить надежную работу приложения без интернета (офлайн-режим)
+- Поддерживать синхронизацию данных между множеством устройств
+- Предоставить интуитивный интерфейс для управления задачами
+- Гарантировать целостность данных при конфликтах синхронизации
+- Поддерживать масштабируемость для небольших групп пользователей
 
-## Deployment
-- Backend runs on port 8000 (configurable)
-- Web frontend on port 8080
-- Supports network deployment for mobile access
-- Production-ready with systemd services and reverse proxies
-
-## Target Users
-Home users who need to manage household tasks, chores, and reminders across multiple devices.
-
-## Key Components
-- Task management with completion tracking
-- Group-based task organization
-- User assignments for tasks
-- Task history logging
-- Real-time notifications via WebSocket
-- Offline synchronization for mobile app
-
-## Technology Stack
-- Backend: Python 3.11+, FastAPI, SQLAlchemy, Alembic
-- Database: SQLite/PostgreSQL
-- Android: Kotlin, Jetpack Compose, Gradle
-- Frontend: HTML/CSS/JavaScript
-- Networking: WebSocket, HTTP API
-- Versioning: Semantic versioning with bump scripts
+## Technical Constraints
+- Android-приложение должно работать на устройствах с API 21+
+- Backend на Python с FastAPI
+- WebSocket для реального времени
+- Room для локальной БД на Android
+- SharedPreferences для простого хранения (планируется миграция)

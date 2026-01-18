@@ -11,7 +11,8 @@ import com.homeplanner.utils.TaskDateCalculator
  */
 class RecurringTaskUpdater(
     private val context: Context,
-    private val taskCacheRepository: TaskCacheRepository
+    private val taskRepository: TaskRepository,
+    private val appContext: android.content.Context
 ) {
     private val prefs: SharedPreferences =
         context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
@@ -84,7 +85,7 @@ class RecurringTaskUpdater(
             val now = System.currentTimeMillis()
 
             // Сначала проверяем содержимое кэша: если нечего пересчитывать, сразу выходим.
-            val cachedTasks = taskCacheRepository.loadTasksFromCache()
+            val cachedTasks = taskRepository.loadTasksFromCache()
             if (cachedTasks.isEmpty()) {
                 Log.d(TAG, "updateRecurringTasksForNewDay: cache is empty, nothing to recalculate")
                 return false
@@ -144,7 +145,7 @@ class RecurringTaskUpdater(
             }
 
             // Перезаписываем кэш пересчитанными задачами
-            taskCacheRepository.saveTasksToCache(updatedTasks)
+            taskRepository.saveTasksToCache(updatedTasks)
             setLastUpdateTimestamp(now, dayStartHour)
 
             Log.d(TAG, "updateRecurringTasksForNewDay: recalculated ${updatedTasks.size} tasks")

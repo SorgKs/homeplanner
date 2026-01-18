@@ -6,24 +6,23 @@ import androidx.room.Index
 import com.homeplanner.model.Task
 
 /**
- * Entity для кэширования задач в Room Database.
- * Хранит полные данные задачи.
- * 
- * Примечание: Поля hasConflict, conflictReason, conflictTimestamp больше не используются,
- * так как конфликты обрабатываются только на сервере. Сервер - источник истины.
+ * Entity для хранения задач в Room Database.
+ * Хранит полные данные задачи с оптимизациями индексов.
  */
-    @Entity(
-    tableName = "tasks_cache",
+@Entity(
+    tableName = "tasks",
     indices = [
         Index(value = ["reminderTime"]),
         Index(value = ["updatedAt"]),
-        Index(value = ["taskType"])
+        Index(value = ["taskType"]),
+        Index(value = ["groupId"]),
+        Index(value = ["hash"])
     ]
 )
-data class TaskCache(
+data class TaskEntity(
     @PrimaryKey
     val id: Int,
-    
+
     // Поля из Task
     val title: String,
     val description: String?,
@@ -35,16 +34,11 @@ data class TaskCache(
     val groupId: Int?,
     val enabled: Boolean,
     val completed: Boolean,
-    val assignedUserIds: String, // JSON array как строка
+    val assignedUserIds: String?, // JSON array как строка
     val alarm: Boolean = false,
-    
-    // Метаданные конфликтов больше не используются (конфликты обрабатываются только на сервере).
-    // Поля сохранены только для совместимости со старой схемой БД и могут быть удалены в будущих миграциях.
-    val hasConflict: Boolean = false,
-    val conflictReason: String? = null,
-    val conflictTimestamp: Long? = null,
-    val localVersion: String? = null,
-    val serverVersion: String? = null,
+
+    // Индивидуальный SHA-256 хеш для синхронизации
+    val hash: String,
 
     // Метаданные для LRU очистки
     val updatedAt: Long = System.currentTimeMillis(),
@@ -53,7 +47,7 @@ data class TaskCache(
     val createdAt: Long = System.currentTimeMillis()
 ) {
     fun toTask(): Task {
-        val assignedIds = if (assignedUserIds.isNotEmpty()) {
+        val assignedIds = if (!assignedUserIds.isNullOrEmpty()) {
             assignedUserIds.trim('[', ']').split(",")
                 .mapNotNull { it.trim().toIntOrNull() }
         } else {
@@ -80,12 +74,16 @@ data class TaskCache(
             createdAt = createdAt
         )
     }
-    
-    companion object {
-        fun fromTask(task: Task, hasConflict: Boolean = false): TaskCache {
-            val assignedIdsJson = task.assignedUserIds.joinToString(",", "[", "]")
 
-            return TaskCache(
+    companion object {
+        fun fromTask(task: Task, hash: String): TaskEntity {
+            val assignedIdsJson = if (task.assignedUserIds.isNotEmpty()) {
+                task.assignedUserIds.joinToString(",", "[", "]")
+            } else {
+                ""
+            }
+
+            return TaskEntity(
                 id = task.id,
                 title = task.title,
                 description = task.description,
@@ -99,7 +97,7 @@ data class TaskCache(
                 completed = task.completed,
                 assignedUserIds = assignedIdsJson,
                 alarm = task.alarm,
-                hasConflict = hasConflict,
+                hash = hash,
                 updatedAt = task.updatedAt,
                 lastAccessed = task.lastAccessed,
                 lastShownAt = task.lastShownAt,

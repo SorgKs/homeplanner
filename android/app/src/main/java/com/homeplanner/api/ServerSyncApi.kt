@@ -81,4 +81,75 @@ class ServerSyncApi(
             result
         }
     }
+
+    /**
+     * Проверка хешей для синхронизации.
+     *
+     * Серверный эндпоинт: POST /api/v0.3/sync/hash-check
+     * Тело: { "hashes": [ { "entity_type": "task|user|group", "id": ..., "hash": "..." }, ... ] }
+     * Ответ: { "differences": [ { "entity_type": "...", "id": ..., "server_hash": "..." }, ... ] }
+     */
+    suspend fun hashCheck(hashesJson: String): Result<String> = runCatching {
+        val url = "$baseUrl/api/v0.3/sync/hash-check"
+        val mediaType = "application/json; charset=utf-8".toMediaType()
+        val body = hashesJson.toRequestBody(mediaType)
+
+        val request = okhttp3.Request.Builder()
+            .url(url)
+            .post(body)
+            .applyUserCookie()
+            .build()
+
+        executeAsync(request).use { response ->
+            if (!response.isSuccessful) {
+                val errorBody = response.body?.string() ?: "No error body"
+                throw IllegalStateException("HTTP ${response.code}: $errorBody")
+            }
+            response.body?.string() ?: "{}"
+        }
+    }
+
+    /**
+     * Получение полного состояния сущностей.
+     *
+     * Серверный эндпоинт: GET /api/v0.3/sync/full-state/{entity_type}
+     * Ответ: массив объектов сущностей
+     */
+    suspend fun getFullState(entityType: String): Result<String> = runCatching {
+        val url = "$baseUrl/api/v0.3/sync/full-state/$entityType"
+
+        val request = okhttp3.Request.Builder()
+            .url(url)
+            .get()
+            .applyUserCookie()
+            .build()
+
+        executeAsync(request).use { response ->
+            if (!response.isSuccessful) {
+                val errorBody = response.body?.string() ?: "No error body"
+                throw IllegalStateException("HTTP ${response.code}: $errorBody")
+            }
+            response.body?.string() ?: "[]"
+        }
+    }
+
+     suspend fun getTask(taskId: Int): Result<Task> = runCatching {
+         val url = "$baseUrl/tasks/$taskId"
+         val request = okhttp3.Request.Builder()
+             .url(url)
+             .get()
+             .applyUserCookie()
+             .build()
+
+         executeAsync(request).use { response ->
+             if (!response.isSuccessful) {
+                 val errorBody = response.body?.string() ?: "No error body"
+                 throw IllegalStateException("HTTP ${response.code}: $errorBody")
+             }
+             val body = response.body?.string() ?: throw IllegalStateException("Empty body")
+             val obj = JSONObject(body)
+             obj.toTask()
+         }
+     }
 }
+

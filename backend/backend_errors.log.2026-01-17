@@ -1,0 +1,379 @@
+2026-01-17 03:01:00 ERROR homeplanner.day_change_scheduler Error in day change check: (sqlite3.OperationalError) attempt to write a readonly database
+[SQL: UPDATE app_metadata SET value=?, updated_at=? WHERE app_metadata."key" = ?]
+[parameters: ('2026-01-17 03:01:00.005339', '2026-01-17 03:01:00.007027', 'last_task_update')]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.OperationalError: attempt to write a readonly database
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/day_change_scheduler.py", line 38, in check_and_notify
+    is_new_day = TaskService.check_new_day(db, self.ws_manager)
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 123, in check_new_day
+    TaskService.recalculate_tasks(db)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/backend/services/task_service.py", line 229, in recalculate_tasks
+    db.commit()
+    ~~~~~~~~~^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/session.py", line 2030, in commit
+    trans.commit(_to_root=True)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "<string>", line 2, in commit
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/state_changes.py", line 137, in _go
+    ret_value = fn(self, *arg, **kw)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/session.py", line 1311, in commit
+    self._prepare_impl()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "<string>", line 2, in _prepare_impl
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/state_changes.py", line 137, in _go
+    ret_value = fn(self, *arg, **kw)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/session.py", line 1286, in _prepare_impl
+    self.session.flush()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/session.py", line 4331, in flush
+    self._flush(objects)
+    ~~~~~~~~~~~^^^^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/session.py", line 4466, in _flush
+    with util.safe_reraise():
+         ~~~~~~~~~~~~~~~~~^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/util/langhelpers.py", line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/session.py", line 4427, in _flush
+    flush_context.execute()
+    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/unitofwork.py", line 466, in execute
+    rec.execute(self)
+    ~~~~~~~~~~~^^^^^^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/unitofwork.py", line 642, in execute
+    util.preloaded.orm_persistence.save_obj(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self.mapper,
+        ^^^^^^^^^^^^
+        uow.states_for_mapper_hierarchy(self.mapper, False, False),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        uow,
+        ^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/persistence.py", line 85, in save_obj
+    _emit_update_statements(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        base_mapper,
+        ^^^^^^^^^^^^
+    ...<3 lines>...
+        update,
+        ^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/orm/persistence.py", line 912, in _emit_update_statements
+    c = connection.execute(
+        statement, multiparams, execution_options=execution_options
+    )
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+        self,
+        distilled_parameters,
+        execution_options or NO_OPTIONS,
+    )
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/sql/elements.py", line 527, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self, distilled_params, execution_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+        dialect,
+    ...<8 lines>...
+        cache_hit=cache_hit,
+    )
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        dialect, context, statement, parameters
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        e, str_statement, effective_parameters, cursor, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/mnt/ZFS/Dev/HomePlanner/.venv/lib64/python3.14/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) attempt to write a readonly database
+[SQL: UPDATE app_metadata SET value=?, updated_at=? WHERE app_metadata."key" = ?]
+[parameters: ('2026-01-17 03:01:00.005339', '2026-01-17 03:01:00.007027', 'last_task_update')]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-01-17 10:43:04 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:43:04 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:04 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:10 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:43:10 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:10 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:17 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:43:17 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:17 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:28 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:43:28 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:28 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:28 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:28 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:28 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:29 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:29 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:29 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:29 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:29 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:29 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:30 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:30 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:30 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:30 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:30 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:30 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:30 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:31 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:31 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:31 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:31 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:31 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:31 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:32 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:32 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:32 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:32 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:32 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:32 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:33 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:33 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:33 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:33 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:43:33 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:45:21 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:45:21 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:45:21 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:45:29 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:45:29 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:45:29 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:45:35 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:45:35 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:45:35 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:45:47 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:45:47 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:45:47 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:45:59 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:45:59 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:45:59 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:46:04 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:46:04 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:46:04 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:46:04 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:46:05 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:46:14 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:46:14 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:46:14 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:46:18 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:46:18 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:46:18 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:46:28 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:46:28 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:46:29 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:46:33 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:46:33 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:46:34 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:46:37 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:46:37 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:46:37 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:46:44 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:46:44 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:46:44 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:46:48 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:46:48 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:46:48 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:46:53 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:46:53 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:46:54 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:46:54 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:46:54 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:46:54 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:47:59 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:47:59 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:47:59 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:48:03 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:48:03 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:48:03 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:48:06 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:48:06 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:48:06 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:48:10 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:48:10 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:48:10 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:48:14 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:48:14 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:48:14 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:48:19 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:48:19 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:48:19 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:48:24 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:48:24 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:48:24 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:48:29 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:48:29 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:48:29 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:48:32 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:48:32 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:48:33 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:48:38 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:48:38 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:48:38 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:53:34 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:53:34 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:53:34 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:53:47 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:53:47 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:53:47 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:53:53 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:53:53 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:53:53 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:55:15 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:55:15 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:55:15 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:55:29 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:55:29 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:55:29 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:55:35 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:55:35 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:55:35 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:56:34 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 10:56:34 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:56:34 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:56:34 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:56:34 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 10:56:34 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 12:26:26 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 12:26:26 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 12:26:26 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 17:45:01 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 17:45:01 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 17:45:01 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 17:45:01 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 17:45:01 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 17:45:02 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 17:45:02 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 17:45:02 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 17:45:02 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 18:32:59 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 18:32:59 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 18:32:59 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:02:40 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 19:02:40 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:02:41 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:03:13 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 19:03:13 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:03:13 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:03:41 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 19:03:41 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:03:41 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:03:53 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 19:03:53 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:03:53 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:04:08 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 19:04:08 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:04:08 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:05:00 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 19:05:00 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:05:00 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:05:11 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 19:05:11 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:05:11 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:05:16 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 19:05:16 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:05:16 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:05:22 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 19:05:22 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:05:22 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:05:37 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 19:05:37 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:05:37 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:05:48 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 19:05:48 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:05:48 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:07:03 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 19:07:03 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:07:03 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:07:34 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 19:07:34 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:07:34 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:07:57 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 19:07:57 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:07:57 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:08:17 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 19:08:17 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:08:17 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:08:27 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 19:08:27 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:08:27 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:09:20 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 19:09:20 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:09:20 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:09:48 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 19:09:48 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:09:49 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:10:11 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 19:10:11 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:10:11 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:10:16 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 19:10:16 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:10:17 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:10:26 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 19:10:26 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:10:27 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:10:30 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 19:10:30 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:10:30 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:10:39 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 19:10:39 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:10:39 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:10:45 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 19:10:45 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:10:45 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:10:51 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 19:10:51 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:10:51 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:10:56 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 19:10:56 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:10:56 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:11:01 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 19:11:01 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:11:01 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:11:07 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 19:11:07 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:11:07 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:11:19 ERROR homeplanner.system Diagnostic: ERROR level test
+2026-01-17 19:11:19 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written
+2026-01-17 19:11:20 ERROR homeplanner.system Test ERROR log in main.py to check if ERROR messages are written

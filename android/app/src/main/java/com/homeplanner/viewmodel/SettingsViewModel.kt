@@ -9,7 +9,7 @@ import com.homeplanner.api.UsersServerApi
 import com.homeplanner.database.AppDatabase
 import com.homeplanner.model.User
 import com.homeplanner.repository.OfflineRepository
-import com.homeplanner.repository.TaskCacheRepository
+import com.homeplanner.repository.TaskRepository
 import com.homeplanner.utils.TaskDateCalculator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
@@ -33,7 +33,7 @@ class SettingsViewModel(
 ) : AndroidViewModel(application) {
 
     private val db = AppDatabase.getDatabase(application)
-    private val taskCacheRepository = TaskCacheRepository(db)
+    private val taskRepository = TaskRepository(db, application)
 
     private val _state = MutableStateFlow(SettingsState())
     val state: StateFlow<SettingsState> = _state.asStateFlow()
@@ -87,7 +87,7 @@ class SettingsViewModel(
     private suspend fun loadDebugStats() {
         try {
             val tasksCount = withContext(Dispatchers.IO) {
-                taskCacheRepository.getCachedTasksCount()
+                taskRepository.getCachedTasksCount()
             }
             // BinaryLogger removed, set debug count to 0
             updateState(_state.value.copy(tasksCount = tasksCount, debugMessagesCount = 0))

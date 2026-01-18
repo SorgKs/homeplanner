@@ -8,6 +8,7 @@ import com.homeplanner.api.UsersServerApi
 import com.homeplanner.database.AppDatabase
 import com.homeplanner.repository.OfflineRepository
 import com.homeplanner.sync.SyncService
+import com.homeplanner.sync.SyncWorker
 import com.homeplanner.sync.WebSocketService
 import com.homeplanner.utils.TaskDateCalculator
 import com.homeplanner.viewmodel.TaskViewModel
@@ -30,6 +31,7 @@ import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.bind
 import org.koin.dsl.module
 import kotlinx.coroutines.runBlocking
+import androidx.work.WorkManager
 
 // DI Module
 val appModule = module {
@@ -72,6 +74,7 @@ val appModule = module {
     // Sync
     single { SyncService(get(), get(), androidContext()) }
     single { WebSocketService(androidContext(), get(), get()) }
+    single { com.homeplanner.services.ConnectionMonitor(androidContext()) }
 
     // ViewModel
     viewModel { TaskViewModel(androidContext() as Application, get(), get(), get(), get()) }
@@ -141,12 +144,23 @@ class Application : android.app.Application() {
             syncService = syncService,
             taskValidationService = com.homeplanner.services.TaskValidationService(),
             webSocketService = koin.get<WebSocketService>(),
-            networkSettings = koin.get<NetworkSettings>()
+            networkSettings = koin.get<NetworkSettings>(),
+            connectionMonitor = koin.get<com.homeplanner.services.ConnectionMonitor>()
         )
 
         // Запустить наблюдение за запросами синхронизации
         taskSyncManager.observeSyncRequests()
         android.util.Log.d("Application", "TaskSyncManager created and sync observation started")
+
+        // Запланировать периодическую синхронизацию
+        val workManager = WorkManager.getInstance(this)
+        val syncWorkRequest = SyncWorker.createPeriodicWorkRequest()
+        workManager.enqueueUniquePeriodicWork(
+            SyncWorker.WORK_NAME,
+            androidx.work.ExistingPeriodicWorkPolicy.REPLACE,
+            syncWorkRequest
+        )
+        android.util.Log.d("Application", "SyncWorker periodic work scheduled")
 
         // Perform initial cache synchronization to load users
         android.util.Log.d("Application", "createTaskSyncManager: launching performInitialCacheSync")

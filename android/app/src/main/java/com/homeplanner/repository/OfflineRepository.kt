@@ -20,18 +20,19 @@ class OfflineRepository(
     companion object {
         private const val DAY_START_HOUR = 4 // TODO: Получать из настроек
     }
-    private val taskCacheRepository = TaskCacheRepository(db)
+    private val taskRepository = TaskRepository(db, context)
     private val syncQueueRepository = SyncQueueRepository(db)
     private val storageMetadataManager = StorageMetadataManager(db, context)
-    private val recurringTaskUpdater = RecurringTaskUpdater(context, taskCacheRepository)
-    private val groupsAndUsersCacheRepository = GroupsAndUsersCacheRepository(context)
+    private val recurringTaskUpdater = RecurringTaskUpdater(context, taskRepository, context)
+    private val userRepository = UserRepository(db, context)
+    private val groupRepository = GroupRepository(db, context)
 
     var requestSync: Boolean = false
 
     // ========== Работа с кэшем задач ==========
 
     suspend fun saveTasksToCache(tasks: List<Task>): Result<Unit> {
-        val result = taskCacheRepository.saveTasksToCache(tasks)
+        val result = taskRepository.saveTasksToCache(tasks)
         if (result.isSuccess) {
             storageMetadataManager.updateStorageMetadata()
             // Управление алармами для сохранённых задач
@@ -42,16 +43,16 @@ class OfflineRepository(
 
     suspend fun loadTasksFromCache(): List<Task> {
         checkAndRecalculateIfNewDay(DAY_START_HOUR)
-        return taskCacheRepository.loadTasksFromCache()
+        return taskRepository.loadTasksFromCache()
     }
 
     suspend fun getTaskFromCache(id: Int): Task? {
         checkAndRecalculateIfNewDay(DAY_START_HOUR)
-        return taskCacheRepository.getTaskFromCache(id)
+        return taskRepository.getTaskFromCache(id)
     }
 
     suspend fun deleteTaskFromCache(id: Int) {
-        taskCacheRepository.deleteTaskFromCache(id)
+        taskRepository.deleteTaskFromCache(id)
         storageMetadataManager.updateStorageMetadata()
     }
 
@@ -98,12 +99,12 @@ class OfflineRepository(
 
     suspend fun getCacheSizeBytesLocal(): Long = storageMetadataManager.getCacheSizeBytes()
 
-    suspend fun getCachedTasksCountLocal(): Int = taskCacheRepository.getCachedTasksCount()
+    suspend fun getCachedTasksCountLocal(): Int = taskRepository.getCachedTasksCount()
 
     // ========== Вспомогательные функции ==========
 
     suspend fun clearAllCacheLocal() {
-        taskCacheRepository.clearAllCache()
+        taskRepository.clearAllCache()
         storageMetadataManager.updateStorageMetadata()
     }
 
@@ -139,31 +140,29 @@ class OfflineRepository(
 
     suspend fun loadGroupsFromCache(): List<com.homeplanner.model.Group> {
         checkAndRecalculateIfNewDay(DAY_START_HOUR)
-        return groupsAndUsersCacheRepository.loadGroupsFromCache()
+        return groupRepository.loadGroupsFromCache()
     }
 
-    suspend fun saveGroupsToCache(groups: List<com.homeplanner.model.Group>) =
-        groupsAndUsersCacheRepository.saveGroupsToCache(groups)
+    suspend fun saveGroupsToCache(groups: List<com.homeplanner.model.Group>): Result<Unit> =
+        groupRepository.saveGroupsToCache(groups)
 
     suspend fun deleteGroupFromCache(groupId: Int) =
-        groupsAndUsersCacheRepository.deleteGroupFromCache(groupId)
+        groupRepository.deleteGroupFromCache(groupId)
 
     suspend fun loadUsersFromCache(): List<com.homeplanner.model.User> {
         checkAndRecalculateIfNewDay(DAY_START_HOUR)
-        return groupsAndUsersCacheRepository.loadUsersFromCache()
+        return userRepository.loadUsersFromCache()
     }
 
-    suspend fun saveUsersToCache(users: List<com.homeplanner.model.User>) =
-        groupsAndUsersCacheRepository.saveUsersToCache(users)
+    suspend fun saveUsersToCache(users: List<com.homeplanner.model.User>): Result<Unit> =
+        userRepository.saveUsersToCache(users)
 
     suspend fun deleteUserFromCache(userId: Int) =
-        groupsAndUsersCacheRepository.deleteUserFromCache(userId)
+        userRepository.deleteUserFromCache(userId)
 
-    suspend fun getAll(): List<com.homeplanner.model.UserSummary> =
-        groupsAndUsersCacheRepository.getAll()
+    suspend fun getAll(): List<com.homeplanner.model.UserSummary> = emptyList() // TODO: Implement if needed
 
-    suspend fun getUsers(): List<com.homeplanner.model.UserSummary> =
-        groupsAndUsersCacheRepository.getUsers()
+    suspend fun getUsers(): List<com.homeplanner.model.UserSummary> = emptyList() // TODO: Implement if needed
 
     // ========== Управление алармами ==========
 

@@ -7,12 +7,14 @@
 ```
 HomePlanner/
 ├── backend/          # Backend API (FastAPI)
+│   ├── db/          # Файлы базы данных (SQLite)
 │   ├── models/      # SQLAlchemy модели
 │   ├── schemas/     # Pydantic схемы
 │   ├── routers/     # API роутеры
 │   ├── services/    # Бизнес-логика
 │   ├── config.py    # Конфигурация
 │   ├── database.py  # Настройка БД
+│   ├── alembic/     # Миграции БД
 │   └── main.py      # Точка входа
 ├── frontend/         # Веб-интерфейс
 │   ├── app.js       # Основная логика
@@ -22,8 +24,7 @@ HomePlanner/
 ├── android/          # Android приложение
 ├── tests/            # Тесты
 ├── docs/             # Документация
-├── alembic/          # Миграции БД
-└── config/           # Конфигурационные файлы
+└── common/           # Общие модули (версионирование, конфигурация)
 ```
 
 ## Технологический стек
@@ -163,7 +164,7 @@ uv run alembic downgrade -1
 
 ### Работа с БД в разработке
 
-Для работы с базой данных используется SQLAlchemy. Модели находятся в `backend/models/`.
+Для работы с базой данных используется SQLAlchemy. Модели находятся в `backend/models/`. Файлы базы данных (SQLite) хранятся в `backend/db/` (по умолчанию `backend/db/homeplanner.db`).
 
 ### Работа с временем
 

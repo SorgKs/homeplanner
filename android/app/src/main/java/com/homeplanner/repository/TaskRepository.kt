@@ -2,20 +2,22 @@ package com.homeplanner.repository
 
 import android.util.Log
 import com.homeplanner.database.AppDatabase
-import com.homeplanner.database.entity.TaskCache
+import com.homeplanner.database.entity.TaskEntity
 import com.homeplanner.model.Task
+import com.homeplanner.utils.HashCalculator
 import kotlinx.coroutines.flow.first
 
 /**
- * Репозиторий для работы с кэшем задач.
+ * Репозиторий для работы с задачами в локальном хранилище.
  */
-class TaskCacheRepository(
-    private val db: AppDatabase
+class TaskRepository(
+    private val db: AppDatabase,
+    private val context: android.content.Context
 ) {
-    private val taskCacheDao = db.taskCacheDao()
+    private val taskDao = db.taskDao()
 
     companion object {
-        private const val TAG = "TaskCacheRepository"
+        private const val TAG = "TaskRepository"
         private const val CACHE_RETENTION_DAYS = 7L
         private const val CACHE_LIMIT_BYTES = 20L * 1024 * 1024 // 20 МБ
     }
@@ -23,12 +25,15 @@ class TaskCacheRepository(
     suspend fun saveTasksToCache(tasks: List<Task>): Result<Unit> {
         return try {
             Log.d(TAG, "saveTasksToCache: saving ${tasks.size} tasks")
-            val cacheTasks = tasks.map { TaskCache.fromTask(it) }
-            taskCacheDao.insertTasks(cacheTasks)
+            val cacheTasks = tasks.map { task ->
+                val hash = HashCalculator.calculateTaskHash(task)
+                TaskEntity.fromTask(task, hash)
+            }
+            taskDao.insertTasks(cacheTasks)
 
             // Обновление lastAccessed для сохраненных задач
             tasks.forEach { task ->
-                taskCacheDao.updateLastAccessed(task.id)
+                taskDao.updateLastAccessed(task.id)
             }
 
             cleanupOldCache()
@@ -40,22 +45,22 @@ class TaskCacheRepository(
 
     suspend fun loadTasksFromCache(): List<Task> {
         return try {
-            // Загрузка всех задач из кэша
+            // Загрузка всех задач из базы
             // Используем Flow.first() для получения первого значения
-            val allCacheTasks = taskCacheDao.getAllTasks().first()
+            val allCacheTasks = taskDao.getAllTasks().first()
             Log.d(TAG, "loadTasksFromCache: loaded ${allCacheTasks.size} tasks from database")
             // DEBUG: Проверяем количество задач в базе
-            val taskCount = taskCacheDao.getTaskCount()
+            val taskCount = taskDao.getTaskCount()
             Log.d(TAG, "loadTasksFromCache: total task count in DB: $taskCount")
 
             // Обновление lastAccessed для загруженных задач
             allCacheTasks.forEach { taskCache ->
-                taskCacheDao.updateLastAccessed(taskCache.id)
+                taskDao.updateLastAccessed(taskCache.id)
             }
 
             // Очистка старых задач
             val cutoffTime = System.currentTimeMillis() - (CACHE_RETENTION_DAYS * 24 * 60 * 60 * 1000)
-            taskCacheDao.deleteOldTasks(cutoffTime)
+            taskDao.deleteOldTasks(cutoffTime)
 
             val result = allCacheTasks.map { it.toTask() }
             Log.d(TAG, "loadTasksFromCache: converted to ${result.size} Task objects")
@@ -69,9 +74,9 @@ class TaskCacheRepository(
 
     suspend fun getTaskFromCache(id: Int): Task? {
         return try {
-            val cacheTask = taskCacheDao.getTaskById(id)
+            val cacheTask = taskDao.getTaskById(id)
             cacheTask?.let {
-                taskCacheDao.updateLastAccessed(id)
+                taskDao.updateLastAccessed(id)
                 it.toTask()
             }
         } catch (e: Exception) {
@@ -82,7 +87,7 @@ class TaskCacheRepository(
 
     suspend fun deleteTaskFromCache(id: Int) {
         try {
-            taskCacheDao.deleteTaskById(id)
+            taskDao.deleteTaskById(id)
             Log.d(TAG, "Deleted task from cache: id=$id")
         } catch (e: Exception) {
             Log.e(TAG, "Error deleting task from cache", e)
@@ -91,7 +96,7 @@ class TaskCacheRepository(
 
     suspend fun getCachedTasksCount(): Int {
         return try {
-            taskCacheDao.getTaskCount()
+            taskDao.getTaskCount()
         } catch (e: Exception) {
             Log.e(TAG, "Error getting cached tasks count", e)
             0
@@ -100,7 +105,7 @@ class TaskCacheRepository(
 
     suspend fun clearAllCache() {
         try {
-            taskCacheDao.deleteAllTasks()
+            taskDao.deleteAllTasks()
         } catch (e: Exception) {
             Log.e(TAG, "Error clearing cache", e)
         }
@@ -109,15 +114,15 @@ class TaskCacheRepository(
     private suspend fun cleanupOldCache() {
         try {
             val cutoffTime = System.currentTimeMillis() - (CACHE_RETENTION_DAYS * 24 * 60 * 60 * 1000)
-            taskCacheDao.deleteOldTasks(cutoffTime)
+            taskDao.deleteOldTasks(cutoffTime)
 
             // Проверка лимита размера кэша
-            val cacheSize = taskCacheDao.getCacheSizeBytes() ?: 0L
+            val cacheSize = taskDao.getCacheSizeBytes() ?: 0L
             if (cacheSize > CACHE_LIMIT_BYTES) {
                 // Удаление самых старых задач по LRU
-                val oldestTasks = taskCacheDao.getOldestTasks(0, 10)
+                val oldestTasks = taskDao.getOldestTasks(0, 10)
                 oldestTasks.forEach { task ->
-                    taskCacheDao.deleteTask(task)
+                    taskDao.deleteTask(task)
                 }
             }
         } catch (e: Exception) {

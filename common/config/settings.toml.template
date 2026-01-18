@@ -9,7 +9,7 @@
 
 [database]
 # URL подключения к БД (SQLite, PostgreSQL и т.д.)
-url = "sqlite:///./homeplanner.db"
+url = "sqlite:///./backend/db/homeplanner.db"
 
 [security]
 # Секретный ключ для подписи JWT (обязательно заменить в production)

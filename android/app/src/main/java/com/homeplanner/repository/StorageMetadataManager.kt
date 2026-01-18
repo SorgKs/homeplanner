@@ -12,7 +12,7 @@ class StorageMetadataManager(
     private val db: AppDatabase,
     private val context: Context
 ) {
-    private val taskCacheDao = db.taskCacheDao()
+    private val taskDao = db.taskDao()
     private val syncQueueDao = db.syncQueueDao()
     private val metadataDao = db.metadataDao()
 
@@ -27,7 +27,7 @@ class StorageMetadataManager(
     suspend fun updateStorageMetadata() {
         try {
             val queueSize = syncQueueDao.getTotalSizeBytes() ?: 0L
-            val cacheSize = taskCacheDao.getCacheSizeBytes() ?: 0L
+            val cacheSize = taskDao.getCacheSizeBytes() ?: 0L
             val totalSize = queueSize + cacheSize
             val percentage = (totalSize.toFloat() / STORAGE_LIMIT_BYTES * 100).coerceAtMost(100f)
 

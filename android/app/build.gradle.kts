@@ -329,6 +329,9 @@ dependencies {
     // InstantTaskExecutorRule for testing LiveData/ViewModels
     androidTestImplementation("androidx.arch.core:core-testing:2.2.0")
 
+    // WorkManager for background sync
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+
     // Koin for dependency injection
     implementation("io.insert-koin:koin-android:3.5.0")
     implementation("io.insert-koin:koin-androidx-compose:3.5.0")

@@ -16,7 +16,7 @@ from backend.config import get_settings
 from backend.database import engine, init_db
 from backend.logging_config import setup_logging
 from backend.models import AppMetadata, Event, Group, Task, TaskHistory, User  # noqa: F401
-from backend.routers import app_info, events, groups, task_history, tasks, time_control, users
+from backend.routers import app_info, events, groups, task_history, tasks, time_control, users, sync
 from backend.routers import download
 from backend.routers import realtime
 
@@ -229,6 +229,7 @@ def create_app() -> FastAPI:
         app.include_router(users.router, prefix=f"{version_path}/users", tags=["users"])
         app.include_router(task_history.router, prefix=version_path, tags=["task_history"])
         app.include_router(time_control.router, prefix=f"{version_path}/time", tags=["time"])
+        app.include_router(sync.router, prefix=f"{version_path}/sync", tags=["sync"])
         app.include_router(debug_router, prefix=version_path, tags=["debug"])
 
     app.include_router(download.router, prefix="/download", tags=["download"])

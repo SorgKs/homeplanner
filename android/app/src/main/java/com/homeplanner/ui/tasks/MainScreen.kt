@@ -54,7 +54,7 @@ fun MainScreen(
     ) { paddingValues ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Today.route,
+            startDestination = Screen.Settings.route,
             modifier = Modifier.padding(paddingValues)
         ) {
             composable(Screen.Today.route) {
@@ -84,8 +84,7 @@ fun MainScreen(
                 UserSelectionDialogScreen(navController)
             }
             composable("settings_network_edit") {
-                // TODO: NetworkEditDialogScreen(navController)
-                androidx.compose.material3.Text("Network Edit Dialog - TODO")
+                NetworkEditDialogScreen(navController)
             }
             composable("settings_connection_test") {
                 // TODO: ConnectionTestDialogScreen(navController)

@@ -1,72 +1,48 @@
 # Progress
 
-## Overall Project Status
-HomePlanner is a functional task management application with Android and web interfaces. Core features are implemented including task creation, completion tracking, user management, and real-time synchronization via WebSocket.
+## Current Goals
+- Реализация улучшенной офлайн-синхронизации в Android-приложении
+- Внедрение хешей для обнаружения изменений
+- Миграция на Room для надежного хранения данных
 
-## Completed Tasks
-- ✅ Modified sync-queue complete/uncomplete handling logic to collect operations and apply final state based on last operation
-- ✅ Simplified processing by removing consideration of existing TaskHistory in sync-queue batches
-- ✅ Tested implementation of conflict resolution algorithm with existing sync-queue tests (all 4 tests passed)
-
-## Completed Work
-- ✅ Project architecture established (backend, Android, frontend)
-- ✅ Core task management features implemented
-- ✅ User and group management
-- ✅ Real-time WebSocket synchronization
-- ✅ Offline-first Android implementation
-- ✅ Database schema with migrations
-- ✅ API versioning and configuration management
-- ✅ Memory Bank created and populated
-- ✅ Synchronization issue debugged and fixed
-- ✅ Forced task recalculation implemented and executed
+## Completed Items
+- Анализ требований и документации
+- Создание memory-bank для контекста проекта
+- Планирование архитектурных изменений
+- Создание новых Room Entity (TaskEntity, UserEntity, GroupEntity) с полями hash и индексами
+- Реализация HashCalculator для задач, пользователей и групп
+- Создание UserDao, GroupDao и обновление TaskDao
+- Обновление AppDatabase с миграцией до версии 6
+- Создание TaskRepository, UserRepository и GroupRepository
+- Обновление OfflineRepository для использования Room вместо SharedPreferences
+- Реализация EventProcessor для обработки событий
+- Реализация ConflictResolver с алгоритмами разрешения конфликтов
+- Интеграция новых компонентов в SyncService
+- Исправление несоответствий в HashCalculator между Android и backend
+- Создание тестов консистентности хешей
+- Миграция данных из SharedPreferences в Room при обновлении приложения
 
 ## In Progress
-None
+- Тестирование синхронизации
 
-## Next Steps
-1. Test WebSocket connection in updated Android app
-2. Verify real-time synchronization works between web and Android clients
-3. Test alarm functionality if applicable
-4. Monitor for any runtime issues
+## Pending Items
+- Обновление документации
 
-## Known Issues
-- RESOLVED: Synchronization of task confirmations between Android app and web interface
-- RESOLVED: Missing Python dependencies preventing backend startup
-- Potential WebSocket connection issues (unrelated to this fix)
-- Offline sync reliability (unrelated to this fix)
+[2026-01-17 22:27:56] - Task completed: собрать Android приложение в debug режиме и установить на устройство. Исправлены ошибки компиляции в ConflictResolver.kt (использование copy() вместо reassigned val) и удален лишний import в AppDatabase.kt.
 
-## Recent Changes
-- Memory Bank established for project context
-- Fixed WebSocket message format for task completions to include full task payload
-- Updated backend to send consistent data for all task update actions
-- Implemented offline task recalculation in Android app following the same principles as backend: check on every local storage access and scheduled daily at day start +1 minute
-- [2026-01-10 10:26:01] - Forced task recalculation executed successfully, updating 5 completed tasks according to business logic (deactivating one-time tasks, resetting recurring tasks to next occurrence)
-- [2026-01-11 14:58:08] - Forced task recalculation executed successfully, updating 6 completed tasks according to business logic (deactivating one-time tasks, resetting recurring tasks to next occurrence)
-- Fixed WebSocket "Assignment to constant variable" error by replacing direct reassignments of imported variables with setter function calls in frontend/websocket.js
-- Updated task recalculation logic to process ALL completed tasks regardless of reminder_time, and calculate next dates from task's reminder_time when it's in the future
-- Added test to verify recalculation of completed tasks with future reminder_time
-- [2026-01-12 23:37:00] - Project structure reorganized: moved files from root directory to appropriate subdirectories (alembic to backend/, scripts to scripts/, docs to docs/), cleaned up root and committed changes to remote repository
-- [2026-01-13 22:08:22] - Created Alembic migration d94c8af5aff3 to add alarm fields to tasks table, including full initial schema creation
-- [2026-01-13 22:10:40] - Created AlarmManagerUtil utility class in Android app for managing task alarms using AlarmManager and PendingIntent with ReminderReceiver
-- [2026-01-13 22:14:00] - Updated Task and TaskCache models to include alarm fields; integrated alarm scheduling in OfflineRepository.saveTasksToCache()
-- [2026-01-13 19:30:00] - Successfully built Android debug APK (v0.3.86), fixed compilation errors for new alarm fields in ServerApiBase.kt, WebSocketService.kt, and TaskDialogs.kt, and installed APK on connected device
-- [2026-01-13 20:05:00] - Installed Python dependencies using uv sync, created virtual environment .venv, resolved backend startup issues
-- [2026-01-13 20:08:00] - Fixed broken WebSocket endpoint paths in Android WebSocketService by removing hardcoded API version prefix
-- [2026-01-13 20:12:00] - Built and installed new Android debug APK v0.3.88 with WebSocket path fix
-- [2026-01-14 09:02:16] - Added 4 test tasks to database (Test Task Today, Daily Recurring Task, Weekly Task, Future One-time Task) to populate task storage; total tasks now 39
-[2026-01-14 09:21:25] - Added error logging to Android CacheSyncService.saveTasksToCache() to diagnose why tasks are not saved to local storage despite successful server sync
-[2026-01-14 16:26:28] - Increased Android AppDatabase version from 3 to 4 to resolve Room database schema integrity error preventing sync operations
-- [2026-01-14 19:38:00] - Fixed bugs in Android task completion UI: corrected onCheckedChange handlers in TaskItemToday.kt and TaskItemAll.kt to pass new checked state, and fixed logic in MainActivity.kt to properly handle complete/uncomplete operations
-- [2026-01-15 19:34:00] - Successfully built Android debug APK v0.3.92 with UI fixes, patch version incremented from 92 to 93, APK created at android/app/build/outputs/apk/debug/homeplanner_v0_3_92.apk
-- [2026-01-17 10:54:00] - Updated sync-queue complete/uncomplete processing to apply final state based on last operation in batch, simplified by removing history consideration
-- [2026-01-17 11:00:00] - Added detailed logging for conflict resolution process in complete/uncomplete operations: collection of operations, sorting by timestamp, final state determination, task state application, and history/WebSocket logging
-- [2026-01-17 10:56:00] - Tested sync-queue conflict resolution implementation; all 4 existing tests passed successfully
+[2026-01-17 21:18:00] - Issue resolved: исправлена миграция БД Room от версии 5 к 6. Заменен некорректный способ удаления колонок на recreate table. Приложение теперь успешно загружает данные: 2 пользователя и 39 задач из кэша после синхронизации с сервером.
 
 ## Metrics
-- Backend: FastAPI with comprehensive API
-- Android: Offline-first with sync
-- Frontend: Web interface with real-time updates
-- Database: Migrated schema with full history tracking
+- **Code Coverage:** TBD
+- **Test Pass Rate:** TBD
+- **Build Status:** TBD
 
-## Blockers
-None - Synchronization fix implemented successfully.
+## Risks
+- Сложность миграции БД без потери данных
+- Потенциальные конфликты при синхронизации
+- Производительность на старых устройствах
+
+## Next Milestones
+- Завершение создания entities и репозиториев (неделя 1)
+- Интеграция и тестирование (неделя 2)
+- Финальное тестирование и релиз (неделя 3)

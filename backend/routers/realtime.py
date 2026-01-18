@@ -68,7 +68,9 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
     """WebSocket endpoint for realtime updates.
 
     The server pushes JSON messages like:
-    {"type": "task_update", "action": "created|updated|deleted|completed", "task_id": 123}
+    {"type": "task_update", "action": "created|updated|deleted|completed", "task_id": 123, "task": {...}}
+    {"type": "user_update", "action": "updated", "user_id": 123, "user": {...}}
+    {"type": "group_update", "action": "created|updated|deleted", "group_id": 123, "group": {...}}
     """
     await manager.connect(websocket)
     try:

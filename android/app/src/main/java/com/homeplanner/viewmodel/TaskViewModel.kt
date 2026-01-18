@@ -77,7 +77,7 @@ class TaskViewModel(
                 android.util.Log.d("TaskViewModel", "TaskViewModel init: networkConfig is null, trying default config")
                 try {
                     val defaultConfig = NetworkConfig(
-                        host = "10.0.2.2", // For emulator
+                        host = "192.168.1.1", // Default host for device to reach host machine
                         port = 8000,
                         apiVersion = "0.3",
                         useHttps = false

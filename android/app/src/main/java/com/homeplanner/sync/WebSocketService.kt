@@ -5,8 +5,8 @@ import android.util.Log
 import com.homeplanner.api.LocalApi
 import com.homeplanner.api.ServerApi
 import com.homeplanner.database.AppDatabase
-import com.homeplanner.database.dao.TaskCacheDao
-import com.homeplanner.database.entity.TaskCache
+import com.homeplanner.database.dao.TaskDao
+import com.homeplanner.database.entity.TaskEntity
 import com.homeplanner.model.Task
 import com.homeplanner.repository.OfflineRepository
 import com.homeplanner.ReminderScheduler

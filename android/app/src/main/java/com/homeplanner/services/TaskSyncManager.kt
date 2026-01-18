@@ -29,7 +29,8 @@ class TaskSyncManager(
     private val syncService: SyncService,
     private val taskValidationService: TaskValidationService,
     private val webSocketService: com.homeplanner.sync.WebSocketService,
-    private val networkSettings: NetworkSettings? = null
+    private val networkSettings: NetworkSettings? = null,
+    private val connectionMonitor: com.homeplanner.services.ConnectionMonitor? = null
 ) {
 
     private val _syncState = MutableStateFlow(SyncState())
@@ -222,6 +223,32 @@ class TaskSyncManager(
                 } catch (e: Exception) {
                     Log.e("TaskSyncManager", "Error in data sync observation", e)
                     isFullSyncInProgress = false
+                }
+            }
+        }
+
+        // Наблюдение за восстановлением сети для немедленной синхронизации
+        connectionMonitor?.let { monitor ->
+            var wasOffline = !monitor.isNetworkAvailableNow()
+            monitor.isNetworkAvailable.observeForever { isAvailable ->
+                if (isAvailable && wasOffline) {
+                    Log.d("TaskSyncManager", "Network restored, starting immediate sync")
+                    wasOffline = false
+                    // Немедленная синхронизация при восстановлении сети
+                    scope.launch {
+                        try {
+                            val syncResult = performDataSync()
+                            if (syncResult.isSuccess) {
+                                Log.d("TaskSyncManager", "Network restore sync completed successfully")
+                            } else {
+                                Log.w("TaskSyncManager", "Network restore sync failed: ${syncResult.exceptionOrNull()?.message}")
+                            }
+                        } catch (e: Exception) {
+                            Log.e("TaskSyncManager", "Error in network restore sync", e)
+                        }
+                    }
+                } else if (!isAvailable) {
+                    wasOffline = true
                 }
             }
         }

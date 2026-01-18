@@ -3,7 +3,7 @@ package com.homeplanner
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.homeplanner.database.AppDatabase
-import com.homeplanner.database.entity.TaskCache
+import com.homeplanner.database.entity.TaskEntity
 import com.homeplanner.sync.SyncService
 import com.homeplanner.repository.OfflineRepository
 import com.homeplanner.api.ServerSyncApi
@@ -64,8 +64,8 @@ class SyncTest {
     @Test
     fun testTaskCreationAndSync() = runBlocking {
         // Create a test task in local database
-        val taskDao = database.taskCacheDao()
-        val testTask = TaskCache(
+        val taskDao = database.taskDao()
+        val testTask = TaskEntity(
             id = 1,
             title = "Test Task",
             description = "Description",
@@ -78,6 +78,7 @@ class SyncTest {
             enabled = true,
             completed = false,
             assignedUserIds = "[]",
+            hash = "test_hash",
             updatedAt = System.currentTimeMillis(),
             lastAccessed = System.currentTimeMillis(),
             lastShownAt = null,

@@ -291,11 +291,33 @@ class TaskService:
         if not task:
             return None
 
-        # Конфликты разрешаются по времени обновления (updated_at)
-        # Сервер - источник истины: проверка конфликтов выполняется на уровне роутера
-        # при обработке sync-queue. Если серверная версия новее, операция пропускается.
-
         update_data = task_data.model_dump(exclude_unset=True, exclude={"assigned_user_ids"})
+
+        # Conflict resolution for sync operations
+        if resolve_conflicts and timestamp is not None:
+            from backend.services.conflict_resolver import ConflictResolver
+            from backend.utils.hash_calculator import HashCalculator
+
+            # Create client task data for conflict resolution
+            client_task_data = task.__dict__.copy()
+            client_task_data.update(update_data)
+            client_task_data['updated_at'] = timestamp
+
+            # Determine changed fields
+            changed_fields = list(update_data.keys())
+            if task_data.assigned_user_ids is not None:
+                changed_fields.append('assigned_user_ids')
+
+            # Apply conflict resolution
+            winner, resolved_data = ConflictResolver.resolve_task_conflict(
+                client_task_data, task.__dict__, changed_fields
+            )
+
+            if winner == 'server':
+                # Server wins - no changes needed
+                return task
+            # Client wins - proceed with update
+            update_data = {k: v for k, v in resolved_data.items() if k in update_data}
         
         # Log reminder_time update for debugging
         if "reminder_time" in update_data:

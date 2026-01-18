@@ -5,5 +5,6 @@ data class Group(
     val name: String,
     val description: String?,
     val createdBy: Int,
-    val updatedAt: Long
+    val updatedAt: Long,
+    val userIds: List<Int> = emptyList()
 )
